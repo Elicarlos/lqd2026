@@ -1,0 +1,2160 @@
+from django.db import models
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from lojista.models import Lojista
+from django.urls import reverse
+from django.core import validators
+from django.core.mail import EmailMessage
+import datetime
+from datetime import timedelta
+from django.utils import timezone
+import logging
+from django.utils.timezone import now
+from django.db.models import F, ExpressionWrapper, DurationField, Sum
+from django.utils.timezone import localtime
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+def get_storage():
+    """
+    Retorna o storage apropriado baseado nas configurações.
+    Esta função garante que o storage correto seja usado mesmo com cache do Django.
+    """
+    if getattr(settings, 'USE_S3', False):
+        from liquida2018.storage_backends import MediaStorage
+        return MediaStorage()
+    return None  # None usa o DEFAULT_FILE_STORAGE quando USE_S3=False
+
+
+def calcular_horas_trabalhadas_diaria(operador, data):
+    registros = RegistroJornada.objects.filter(
+        operador=operador, horario_inicio__date=data
+    )
+
+    total_horas = timedelta()
+    for registro in registros:
+        duracao = registro.calcular_duracao()
+        if duracao:
+            total_horas += duracao
+
+    return total_horas
+
+
+class Campanha(models.Model):
+    nome = models.CharField(max_length=250)
+    data_inicio = models.DateField()
+    data_fim = models.DateField()
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    instagram = models.CharField(max_length=250, null=True)
+    site = models.CharField(max_length=250, null=True)
+    whatsapp = models.CharField(max_length=250, null=True)
+    criada_em = models.DateTimeField(auto_now=True)
+    finalizada_em = models.DateTimeField(null=True, blank=True)
+    finalizada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="registro_campanha",
+        null=True,
+        blank=True,
+    )
+    ativa = models.BooleanField(default=True)
+
+    # Campos de Personalização Visual
+    logo_principal = models.ImageField(
+        upload_to="campanhas/logos/",
+        null=True,
+        blank=True,
+        help_text="Logo que aparecerá na barra de navegação.",
+        storage=get_storage()  # Usa storage explícito para garantir S3 quando USE_S3=True
+    )
+    banner_hero = models.ImageField(
+        upload_to="campanhas/banners/",
+        null=True,
+        blank=True,
+        help_text="Imagem principal da página inicial.",
+        storage=get_storage()  # Usa storage explícito para garantir S3 quando USE_S3=True
+    )
+    cor_primaria = models.CharField(
+        max_length=7,
+        default="#2B5C3F",
+        help_text="Cor principal para botões e links (formato HEX, ex: #FF5733).",
+    )
+    cor_hover = models.CharField(
+        max_length=7,
+        default="#1A4A2E",
+        help_text="Cor para o estado 'hover' dos botões (formato HEX).",
+    )
+
+    class Meta:
+        permissions = [("finalizar_campanha", "Pode finalizar a campanha")]
+
+    def __str__(self):
+        return self.nome
+
+    def verificar_inativacao(self):
+        if self.data_fim < timezone.now().date() and self.ativa:
+            self.ativa = False
+
+    def esta_ativa(self):
+        """Retorna True se a campanha está ativa e dentro do prazo."""
+        return self.ativa and (self.data_inicio <= now().date() <= self.data_fim)
+
+    def pode_finalizar(self):
+        logger = logging.getLogger(__name__)
+        logger.info("Verificando se a campanha pode ser finalizada.")
+        from participante.models import DocumentoFiscal
+        from cupom.models import Cupom
+
+        documentos_pendentes = DocumentoFiscal.objects.filter(pendente=True).exists()
+        cupons_pendentes = Cupom.objects.filter(impresso=False).exists()
+
+        if documentos_pendentes or cupons_pendentes:
+            return False
+
+        return timezone.now().date() >= self.data_fim
+
+
+def validate_promotional_period(value):
+    try:
+        campanha_ativa = Campanha.objects.get(ativa=True)
+        promotion_start = campanha_ativa.data_inicio
+        promotion_end = campanha_ativa.data_fim
+
+        if not (promotion_start <= value <= promotion_end):
+            raise ValidationError(
+                f"A data do documento deve estar dentro do período da campanha: "
+                f"{promotion_start.strftime('%d/%m/%Y')} a {promotion_end.strftime('%d/%m/%Y')}."
+            )
+    except Campanha.DoesNotExist:
+        raise ValidationError("Não há nenhuma campanha ativa configurada no sistema.")
+    except Campanha.MultipleObjectsReturned:
+        raise ValidationError(
+            "ERRO: Existem múltiplas campanhas ativas. Contate o administrador."
+        )
+
+def validate_data_futura(value):
+    if value > timezone.now().date():
+        raise ValidationError("Verifique a data do documento, não pode ser uma data futura.")
+
+
+class PostoTrabalho(models.Model):
+    nome = models.CharField(max_length=250)
+    descricao = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.nome
+
+
+class TipoJornada(models.Model):
+    """
+    Define tipos de jornada de trabalho com horários e dias da semana
+    """
+    nome = models.CharField(
+        max_length=100,
+        verbose_name="Nome da Jornada",
+        help_text="Ex: Manhã, Tarde, Noite, Integral"
+    )
+    hora_inicio = models.TimeField(
+        verbose_name="Horário de Início",
+        help_text="Horário de início da jornada"
+    )
+    hora_fim = models.TimeField(
+        verbose_name="Horário de Fim", 
+        help_text="Horário de fim da jornada"
+    )
+    dias_semana = models.JSONField(
+        default=list,
+        verbose_name="Dias da Semana",
+        help_text="Lista com números dos dias: 1=Segunda, 2=Terça, ..., 7=Domingo"
+    )
+    tolerancia_entrada = models.PositiveIntegerField(
+        default=15,
+        verbose_name="Tolerância Entrada (min)",
+        help_text="Minutos de tolerância antes do horário de início"
+    )
+    tolerancia_saida = models.PositiveIntegerField(
+        default=15,
+        verbose_name="Tolerância Saída (min)",
+        help_text="Minutos de tolerância após o horário de fim"
+    )
+    ativo = models.BooleanField(
+        default=True,
+        verbose_name="Ativo",
+        help_text="Se esta jornada está ativa para uso"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Tipo de Jornada"
+        verbose_name_plural = "Tipos de Jornada"
+        ordering = ['nome']
+        permissions = [
+            ("criar_jornada", "Pode criar tipos de jornada"),
+            ("editar_jornada", "Pode editar tipos de jornada"),
+            ("excluir_jornada", "Pode excluir tipos de jornada"),
+            ("visualizar_jornada", "Pode visualizar tipos de jornada"),
+        ]
+    
+    def __str__(self):
+        return f"{self.nome} ({self.hora_inicio.strftime('%H:%M')} - {self.hora_fim.strftime('%H:%M')})"
+    
+    def get_dias_semana_display(self):
+        """Retorna os dias da semana em formato legível"""
+        dias_map = {
+            1: "Segunda", 2: "Terça", 3: "Quarta", 
+            4: "Quinta", 5: "Sexta", 6: "Sábado", 7: "Domingo"
+        }
+        return ", ".join([dias_map.get(dia, str(dia)) for dia in self.dias_semana])
+    
+    def pode_logar_agora(self):
+        """Verifica se é possível fazer login neste momento considerando esta jornada"""
+        from django.utils import timezone
+        now = timezone.localtime()
+        
+        # Verifica se hoje é um dia permitido
+        dia_semana = now.isoweekday()  # 1=Segunda, 7=Domingo
+        if dia_semana not in self.dias_semana:
+            return False, "Hoje não é um dia de trabalho para esta jornada"
+        
+        # Horário atual
+        hora_atual = now.time()
+        
+        # Verifica se está dentro do horário permitido
+        if self.hora_inicio <= hora_atual <= self.hora_fim:
+            return True, "Horário permitido"
+            
+        return False, f"Fora do horário. Permitido das {self.hora_inicio.strftime('%H:%M')} às {self.hora_fim.strftime('%H:%M')}"
+
+
+class JornadaColaborador(models.Model):
+    """
+    Associa colaboradores a tipos específicos de jornada
+    """
+    colaborador = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="jornadas_atribuidas",
+        verbose_name="Colaborador"
+    )
+    tipo_jornada = models.ForeignKey(
+        TipoJornada,
+        on_delete=models.CASCADE,
+        related_name="colaboradores",
+        verbose_name="Tipo de Jornada"
+    )
+    data_inicio = models.DateField(
+        verbose_name="Data de Início",
+        help_text="A partir de quando esta jornada vale para o colaborador"
+    )
+    data_fim = models.DateField(
+        null=True, blank=True,
+        verbose_name="Data de Fim",
+        help_text="Até quando esta jornada vale (deixe vazio para indefinido)"
+    )
+    ativo = models.BooleanField(
+        default=True,
+        verbose_name="Ativo",
+        help_text="Se esta atribuição está ativa"
+    )
+    observacoes = models.TextField(
+        blank=True,
+        verbose_name="Observações",
+        help_text="Observações sobre esta atribuição de jornada"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Jornada do Colaborador"
+        verbose_name_plural = "Jornadas dos Colaboradores"
+        ordering = ['-data_inicio']
+        # Evita múltiplas jornadas ativas para o mesmo colaborador no mesmo período
+        unique_together = ['colaborador', 'data_inicio']
+        permissions = [
+            ("atribuir_jornada", "Pode atribuir jornadas a colaboradores"),
+            ("editar_atribuicao", "Pode editar atribuições de jornada"),
+            ("remover_atribuicao", "Pode remover atribuições de jornada"),
+            ("visualizar_atribuicoes", "Pode visualizar atribuições de jornada"),
+        ]
+    
+    def __str__(self):
+        return f"{self.colaborador.username} - {self.tipo_jornada.nome}"
+    
+    def is_vigente(self, data=None):
+        """Verifica se esta jornada está vigente na data especificada (ou hoje)"""
+        from django.utils import timezone
+        if data is None:
+            data = timezone.localdate()
+        
+        if not self.ativo:
+            return False
+        
+        if data < self.data_inicio:
+            return False
+        
+        if self.data_fim and data > self.data_fim:
+            return False
+        
+        return True
+    
+    @classmethod
+    def get_jornada_ativa(cls, colaborador, data=None):
+        """Retorna a jornada ativa do colaborador para a data especificada"""
+        from django.utils import timezone
+        if data is None:
+            data = timezone.localdate()
+        
+        return cls.objects.filter(
+            colaborador=colaborador,
+            ativo=True,
+            data_inicio__lte=data
+        ).filter(
+            models.Q(data_fim__isnull=True) | models.Q(data_fim__gte=data)
+        ).first()
+
+
+class RegistroJornada(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="registros_jornada",
+        verbose_name="Usuário",
+        help_text="Usuário ao qual a jornada pertence.",
+    )
+    posto_trabalho = models.ForeignKey(
+        PostoTrabalho,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Posto de Trabalho",
+        help_text="Posto de trabalho selecionado.",
+    )
+    horario_inicio = models.DateTimeField(
+        verbose_name="Horário de Início", help_text="Data e hora de início da jornada."
+    )
+    horario_fim = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Horário de Fim",
+        help_text="Data e hora de término da jornada (opcional).",
+    )
+
+    ultimo_update = models.DateTimeField(default=timezone.now)
+    
+    # Novos campos para melhor controle
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('ATIVA', 'Ativa'),
+            ('FINALIZADA', 'Finalizada'),
+            ('PAUSA', 'Em Pausa'),
+            ('CANCELADA', 'Cancelada')
+        ],
+        default='ATIVA',
+        verbose_name="Status"
+    )
+    observacoes = models.TextField(
+        blank=True,
+        verbose_name="Observações",
+        help_text="Observações sobre esta jornada"
+    )
+    finalizada_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="jornadas_finalizadas",
+        verbose_name="Finalizada por"
+    )
+
+    class Meta:
+        verbose_name = "Registro de Jornada"
+        verbose_name_plural = "Registros de Jornada"
+
+    def clean(self):
+        """Valida que o horário de fim seja maior que o horário de início."""
+        if self.horario_fim and self.horario_fim <= self.horario_inicio:
+            raise ValidationError(
+                {
+                    "horario_fim": "O horário de fim deve ser maior que o horário de início."
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        """Finaliza registros anteriores ativos antes de criar um novo."""
+        if not self.horario_fim:
+            RegistroJornada.objects.filter(
+                user=self.user, horario_fim__isnull=True
+            ).exclude(id=self.id).update(horario_fim=now())
+
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def calcular_duracao(self):
+        """Calcula a duração entre o horário de início e fim."""
+        if (
+            self.horario_inicio
+            and self.horario_fim
+            and self.horario_fim > self.horario_inicio
+        ):
+            return self.horario_fim - self.horario_inicio
+        return timedelta(0)  # Retorna 0 caso não haja um horário válido
+
+    @staticmethod
+    def calcular_horas_diarias(user, data):
+        """Calcula as horas trabalhadas em um dia específico."""
+        registros = RegistroJornada.objects.filter(user=user, horario_inicio__date=data)
+        total_horas = registros.annotate(
+            duracao=ExpressionWrapper(
+                F("horario_fim") - F("horario_inicio"), output_field=DurationField()
+            )
+        ).aggregate(total=Sum("duracao"))["total"]
+        return total_horas or timedelta(0)
+
+    @staticmethod
+    def calcular_horas_mensais(user, ano, mes):
+        """Calcula as horas trabalhadas em um mês específico."""
+        registros = RegistroJornada.objects.filter(
+            user=user, horario_inicio__year=ano, horario_inicio__month=mes
+        )
+        total_horas = registros.annotate(
+            duracao=ExpressionWrapper(
+                F("horario_fim") - F("horario_inicio"), output_field=DurationField()
+            )
+        ).aggregate(total=Sum("duracao"))["total"]
+        return total_horas or timedelta(0)
+
+    @staticmethod
+    def formatar_duracao(duracao):
+        """Formata a duração em horas, minutos e segundos."""
+        total_segundos = duracao.total_seconds()
+        horas = int(total_segundos // 3600)
+        minutos = int((total_segundos % 3600) // 60)
+        segundos = int(total_segundos % 60)
+        return f"{horas}h {minutos}m {segundos}s"
+    
+    def get_duracao_formatada(self):
+        """Retorna a duração formatada da jornada atual"""
+        duracao = self.calcular_duracao()
+        return self.formatar_duracao(duracao) if duracao else "N/A"
+
+    def is_ativa(self):
+        """Verifica se a jornada está ativa"""
+        return self.status == 'ATIVA' and not self.horario_fim
+    
+    def finalizar(self, finalizada_por=None, observacoes=None, deslogar_usuario=True):
+        """
+        Finaliza a jornada
+        
+        Args:
+            finalizada_por: Usuário que finalizou a jornada
+            observacoes: Observações sobre a finalização
+            deslogar_usuario: Se deve deslogar o usuário (padrão: True)
+        """
+        self.horario_fim = timezone.now()
+        self.status = 'FINALIZADA'
+        if finalizada_por:
+            self.finalizada_por = finalizada_por
+        if observacoes:
+            self.observacoes = observacoes
+        self.save()
+        
+        # Deslogar o usuário se solicitado e se atender aos critérios
+        if deslogar_usuario and self._deve_deslogar_usuario(finalizada_por):
+            self._deslogar_usuario()
+    
+    def _deve_deslogar_usuario(self, finalizada_por):
+        """
+        Verifica se o usuário deve ser deslogado
+        
+        Critérios:
+        - Deve ter um usuário que finalizou a jornada
+        - Não deve ser o próprio usuário finalizando sua jornada
+        - Deve ser um colaborador (is_staff=True)
+        """
+        if not finalizada_por:
+            return False
+        
+        if finalizada_por == self.user:
+            return False
+        
+        # Verificar se é um colaborador
+        if not hasattr(self.user, 'is_staff') or not self.user.is_staff:
+            return False
+        
+        return True
+    
+    def _deslogar_usuario(self):
+        """Desloga o usuário da jornada"""
+        try:
+            from django.contrib.sessions.models import Session
+            from django.utils import timezone
+            
+            agora = timezone.now()
+            sessions = Session.objects.filter(expire_date__gt=agora)
+            
+            for session in sessions:
+                if session.get_decoded().get('_auth_user_id') == str(self.user.id):
+                    session.delete()
+                    print(f"🔒 Usuário {self.user.username} deslogado após finalização da jornada")
+                    break
+                    
+        except Exception as e:
+            print(f"⚠️ Erro ao deslogar usuário {self.user.username}: {e}")
+    
+    def pausar(self, observacoes=None):
+        """Pausa a jornada"""
+        self.status = 'PAUSA'
+        if observacoes:
+            self.observacoes = observacoes
+        self.save()
+    
+    def retomar(self, observacoes=None):
+        """Retoma uma jornada pausada"""
+        self.status = 'ATIVA'
+        if observacoes:
+            self.observacoes = observacoes
+        self.save()
+    
+    def cancelar(self, observacoes=None):
+        """Cancela a jornada"""
+        self.status = 'CANCELADA'
+        if observacoes:
+            self.observacoes = observacoes
+        self.save()
+    
+    @classmethod
+    def get_jornada_ativa(cls, user):
+        """Retorna a jornada ativa do usuário"""
+        return cls.objects.filter(
+            user=user,
+            status='ATIVA',
+            horario_fim__isnull=True
+        ).first()
+    
+    @classmethod
+    def get_jornadas_do_dia(cls, user, data=None):
+        """Retorna todas as jornadas do usuário em uma data específica"""
+        from django.utils import timezone
+        if data is None:
+            data = timezone.localdate()
+        
+        return cls.objects.filter(
+            user=user,
+            horario_inicio__date=data
+        ).order_by('horario_inicio')
+    
+    def __str__(self):
+        """Representação legível do objeto."""
+        inicio_formatado = (
+            localtime(self.horario_inicio).strftime("%d/%m/%Y %H:%M:%S")
+            if self.horario_inicio
+            else "N/A"
+        )
+        fim_formatado = (
+            localtime(self.horario_fim).strftime("%d/%m/%Y %H:%M:%S")
+            if self.horario_fim
+            else "N/A"
+        )
+        duracao = self.calcular_duracao()
+        duracao_formatada = self.formatar_duracao(duracao) if duracao else "N/A"
+
+        return f"{self.user.username} - {self.status} - Início: {inicio_formatado} - Fim: {fim_formatado} - Duração: {duracao_formatada}"
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="profile"
+    )
+    date_of_birth = models.DateField(blank=True, null=True)
+    photo = models.ImageField(
+        upload_to="users/%Y/%m/%d", 
+        blank=True,
+        storage=get_storage()  # Usa storage explícito para garantir S3 quando USE_S3=True
+    )
+    CHOICES_SEXO = (("M", "Masculino"), ("F", "Feminino"), ("P", "Prefiro não dizer"))
+    nome = models.CharField(max_length=100, blank=True)
+    RG = models.CharField(max_length=40, blank=True, unique=False)
+    CPF = models.CharField(max_length=14, blank=True, unique=True)
+    # dataAtual = models.DateField(verbose_name=u'Data Atual', null=True, blank=True)  #mudar depois para nao colocar a data atual
+    sexo = models.CharField(
+        verbose_name="Sexo",
+        max_length=1,
+        choices=CHOICES_SEXO,
+        blank=True,
+        help_text="ex. M ou F ou P",
+    )
+    foneFixo = models.CharField(
+        verbose_name="Telefone Fixo",
+        max_length=20,
+        blank=True,
+        help_text="ex. (85)3212-0000",
+    )
+    foneCelular1 = models.CharField(
+        verbose_name="Celular1",
+        max_length=20,
+        blank=True,
+        help_text="ex. (85)98888-8675",
+    )
+    foneCelular2 = models.CharField(
+        verbose_name="Celular2",
+        max_length=20,
+        blank=True,
+        help_text="ex. (85)98888-8675",
+    )
+    foneCelular3 = models.CharField(
+        verbose_name="Celular3",
+        max_length=20,
+        blank=True,
+        help_text="ex. (85)98888-8675",
+    )
+    whatsapp = models.CharField(
+        max_length=20, blank=True, help_text="ex. (85)98888-8675"
+    )
+    facebook = models.CharField(
+        max_length=50, blank=True, help_text="ex. fb.com/nomenofacebook"
+    )
+    twitter = models.CharField(max_length=50, blank=True)
+    endereco = models.CharField(verbose_name="Endereço", max_length=150, blank=True)
+    enderecoNumero = models.CharField(
+        verbose_name="Nº Endereço", max_length=200, blank=True
+    )
+    enderecoComplemento = models.CharField(
+        verbose_name="Complemento", max_length=100, blank=True
+    )
+
+    @property
+    def jornada_atual(self):
+        """Retorna a jornada ativa do colaborador para hoje"""
+        from django.utils import timezone
+        from datetime import date
+        
+        hoje = date.today()
+        try:
+            return JornadaColaborador.objects.filter(
+                colaborador=self.user,
+                data_inicio__lte=hoje,
+                ativo=True
+            ).filter(
+                models.Q(data_fim__isnull=True) | models.Q(data_fim__gte=hoje)
+            ).get()
+        except JornadaColaborador.DoesNotExist:
+            return None
+    
+    def requer_controle_jornada(self):
+        """Verifica se o usuário precisa de controle de jornada"""
+        # Verifica exceções individuais primeiro
+        excecao = ExcecaoJornada.objects.filter(
+            usuario=self.user,
+            tipo='SEM_JORNADA',
+            ativo=True
+        ).filter(
+            models.Q(data_fim__isnull=True) | models.Q(data_fim__gte=timezone.localdate())
+        ).first()
+        
+        if excecao and excecao.is_vigente():
+            return False
+        
+        # Verifica configuração do grupo
+        for grupo in self.user.groups.all():
+            config = ConfiguracaoJornada.objects.filter(
+                grupo=grupo,
+                ativo=True
+            ).first()
+            
+            if config and not config.requer_jornada:
+                return False
+        
+        # Verifica configuração individual
+        return self.requer_jornada
+    
+    def tem_jornada_flexivel(self):
+        """Verifica se o usuário tem jornada flexível"""
+        # Verifica exceções individuais primeiro
+        excecao = ExcecaoJornada.objects.filter(
+            usuario=self.user,
+            tipo='JORNADA_FLEXIVEL',
+            ativo=True
+        ).filter(
+            models.Q(data_fim__isnull=True) | models.Q(data_fim__gte=timezone.localdate())
+        ).first()
+        
+        if excecao and excecao.is_vigente():
+            return True
+        
+        # Verifica configuração do grupo
+        for grupo in self.user.groups.all():
+            config = ConfiguracaoJornada.objects.filter(
+                grupo=grupo,
+                ativo=True
+            ).first()
+            
+            if config and config.jornada_flexivel:
+                return True
+        
+        # Verifica configuração individual
+        return self.jornada_flexivel
+    
+    def get_jornada_ativa(self):
+        """Retorna a jornada ativa do usuário"""
+        return RegistroJornada.get_jornada_ativa(self.user)
+    
+    def tem_jornada_ativa(self):
+        """Verifica se o usuário tem uma jornada ativa"""
+        return self.get_jornada_ativa() is not None
+    
+    def pode_iniciar_jornada(self):
+        """Verifica se o usuário pode iniciar uma nova jornada"""
+        # Se não requer jornada, não pode iniciar
+        if not self.requer_controle_jornada():
+            return False, "Usuário não requer controle de jornada"
+        
+        # Se já tem jornada ativa, não pode iniciar outra
+        if self.tem_jornada_ativa():
+            return False, "Usuário já possui jornada ativa"
+        
+        # Verificar se já tem uma jornada ativa hoje (não pode ter duas jornadas ativas simultaneamente)
+        from datetime import date
+        hoje = date.today()
+        jornada_ativa_hoje = RegistroJornada.objects.filter(
+            user=self.user,
+            horario_inicio__date=hoje,
+            status='ATIVA',
+            horario_fim__isnull=True
+        ).exists()
+        
+        if jornada_ativa_hoje:
+            return False, "Você já possui uma jornada ativa hoje. Finalize a jornada atual antes de iniciar uma nova."
+        
+        # Se tem jornada flexível, pode iniciar a qualquer momento
+        if self.tem_jornada_flexivel():
+            return True, "Jornada flexível permitida"
+        
+        # Verifica se está no horário permitido usando a mesma lógica de verificar_jornada_ativa
+        from datetime import date
+        hoje = date.today()
+        try:
+            jornada_colaborador = JornadaColaborador.objects.filter(
+                colaborador=self.user,
+                data_inicio__lte=hoje,
+                ativo=True
+            ).filter(
+                models.Q(data_fim__isnull=True) | models.Q(data_fim__gte=hoje)
+            ).get()
+            pode_logar, motivo = jornada_colaborador.tipo_jornada.pode_logar_agora()
+            if pode_logar:
+                return True, "Horário permitido"
+            else:
+                return False, motivo
+        except JornadaColaborador.DoesNotExist:
+            return False, "Nenhuma jornada configurada para hoje"
+    bairro = models.CharField(max_length=40, blank=True)
+    cidade = models.CharField(max_length=50, blank=True, default="Teresina")
+    estado = models.CharField(max_length=2, blank=True, default="PI")
+    CEP = models.CharField(max_length=12, blank=True)
+    observacao = models.TextField(
+        verbose_name="Observação", max_length=1000, blank=True, null=True
+    )  # , widget=forms.Textarea(attrs={'placeholder': 'Escreva aqui alguma observação caso seja necessário.'}))
+    dataCadastro = models.DateTimeField(
+        verbose_name="Cadastrado em", auto_now_add=True, editable=False
+    )  # nao vai aparecer na tela
+    pergunta = models.TextField(
+        verbose_name="Pergunta", max_length=50, blank=True, null=True
+    )  # , widget=forms.Textarea(attrs={'placeholder': 'Escreva aqui alguma observação caso seja necessário.'}))
+    ativo = models.BooleanField(default=True)
+    pendente = models.BooleanField(default=True, verbose_name="Pendente")
+    termos_de_aceite = models.BooleanField(
+        default=False, verbose_name="Termos de aceite para tratamento de dados pessoais"
+    )
+    posto_trabalho = models.ForeignKey(
+        PostoTrabalho,
+        verbose_name="Posto de trabalho",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    cadastrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Cadastrado Por",
+        related_name="rel_cadastrado_por",
+        editable=False,
+    )
+    
+    is_colaborador = models.BooleanField(
+        default=False,
+        verbose_name="É Colaborador",
+        help_text="Define se este usuário é um colaborador (equipe interna) ou participante comum"
+    )
+    
+    senha_temporaria = models.BooleanField(
+        default=False,
+        verbose_name="Senha Temporária",
+        help_text="Indica se o usuário precisa trocar a senha no próximo login"
+    )
+    
+    status_ativo = models.BooleanField(
+        default=True,
+        verbose_name="Status Ativo",
+        help_text="Para colaboradores: indica se o cadastro está ativo e configurado"
+    )
+    
+    # Campos para controle de jornada
+    requer_jornada = models.BooleanField(
+        default=True,
+        verbose_name="Requer controle de jornada",
+        help_text="Se este usuário precisa de controle de jornada"
+    )
+    jornada_flexivel = models.BooleanField(
+        default=False,
+        verbose_name="Jornada flexível",
+        help_text="Permite entrada/saída sem horário fixo"
+    )
+    ultima_jornada_data = models.DateField(
+        null=True, blank=True,
+        verbose_name="Data da última jornada",
+        help_text="Data do último registro de jornada"
+    )
+
+    def __str__(self):
+        return "Nome completo {}".format(self.user.username)
+
+    def get_absolute_url_edit(self):
+        return reverse("participante:user_edit", args=[self.user.id])
+
+    def get_absolute_url_detail(self):
+        return reverse("participante:user_detail", args=[self.user.id])
+
+    def clean(self):
+        """Validações customizadas do modelo"""
+        super().clean()
+        
+        # Verificar se colaborador está tentando participar da campanha
+        if self.is_colaborador and self.user.is_staff:
+            raise ValidationError({
+                'is_colaborador': 'Colaboradores não podem participar da campanha. Esta funcionalidade é restrita a participantes comuns.'
+            })
+
+
+
+class StatusChoices(models.TextChoices):
+    PENDENTE = 'pendente', 'Pendente'
+    VALIDADO = 'validado', 'Validado'
+    INCONSISTENTE = 'inconsistente', 'Inconsistente'
+
+class DocumentoFiscal(models.Model):
+    # Lojista_Id = models.ForeignKey('Lojista', verbose_name=u'Loja', on_delete=models.SET_NULL, null=True)
+    # Participante_Id = models.ForeignKey('Participante', default=1, verbose_name=u'Participante', on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(
+        User, related_name="rel_username", on_delete=models.PROTECT
+    )
+    lojista = models.ForeignKey(
+        Lojista,
+        related_name="rel_lojista",
+        null=False,
+        blank=False,
+        default=1,
+        on_delete=models.PROTECT,
+    )
+    vendedor = models.CharField(
+        verbose_name="Nome do Vendedor", max_length=50, blank=True, null=True
+    )
+    numeroDocumento = models.CharField(
+        verbose_name="Número do Documento",
+        max_length=50,
+        blank=False,
+        null=False,
+        unique=False,
+    )
+    dataDocumento = models.DateField(
+        verbose_name="Data do Documento",
+        null=False,
+        blank=False,
+        validators=[validate_promotional_period, validate_data_futura],
+    )
+    valorDocumento = models.DecimalField(
+        verbose_name="Valor do Documento",
+        max_digits=15,
+        decimal_places=2,
+        blank=False,
+        default=0,
+    )
+    compradoREDE = models.BooleanField(
+        verbose_name="Comprou na maquininha da PagBank?", default=False
+    )
+    compradoMASTERCARD = models.BooleanField(
+        verbose_name="Comprou com Elo?", default=False
+    )
+    compradoCielo = models.BooleanField(
+        verbose_name="Comprou com Cielo?", default=False
+    )
+    valorCielo = models.DecimalField(
+        verbose_name="Valor pago na Cielo",
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,  # Permite valores nulos no banco de dados
+        default=0,
+    )
+    valorREDE = models.DecimalField(
+        verbose_name="Valor na REDE",
+        max_digits=7,
+        decimal_places=2,
+        editable=False,
+        blank=True,
+        default=0,
+    )  # depois posso nao mostrar
+    valorOutros = models.DecimalField(
+        verbose_name="Valor pago em outros métodos",
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        default=0,
+    )
+    photo = models.FileField(
+        upload_to="docs/%Y/%m/%d", 
+        blank=True, 
+        verbose_name="Foto do documento fiscal",
+        storage=get_storage()  # Usa storage explícito para garantir S3 quando USE_S3=True
+    )
+    photo2 = models.FileField(
+        upload_to="docs2/%Y/%m/%d",
+        blank=True,
+        verbose_name="Foto do comprovante do cartão",
+        storage=get_storage()  # Usa storage explícito para garantir S3 quando USE_S3=True
+    )
+    valorMASTERCARD = models.DecimalField(
+        verbose_name="Valor no MASTERCARD",
+        max_digits=7,
+        decimal_places=2,
+        editable=False,
+        blank=True,
+        default=0,
+    )
+    valorVirtual = models.DecimalField(
+        verbose_name="Valor com Bonificações",
+        max_digits=20,
+        decimal_places=2,
+        editable=False,
+        blank=True,
+        default=0,
+    )  # depois posso nao mostrar
+    dataCadastro = models.DateTimeField(
+        verbose_name="Cadastrado em", auto_now_add=True, editable=False
+    )
+    cadastrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Cadastrado Por",
+        editable=False,
+    )
+    corrigido_pelo_participante = models.BooleanField(
+        default=False,
+        verbose_name="Corrigido pelo participante"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=StatusChoices.choices,
+        verbose_name="Status",
+        default=StatusChoices.PENDENTE
+    )
+    observacao = models.TextField(
+        verbose_name="Observação",
+        max_length=1000,
+        blank=True,
+        null=True,
+        default="Nenhuma",
+    )
+    # impressaoHab = models.BooleanField(verbose_name=u'Status', default=False)
+    qtdeCupom = models.IntegerField(blank=True, null=True, editable=False)
+    posto_trabalho = models.ForeignKey(
+        PostoTrabalho,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Posto de Trabalho",
+    )
+    enviado_por_operador = models.BooleanField(
+        default=False, verbose_name="Enviado por operador"
+    )
+
+    def save(self, *args, **kwargs):
+        # Garantir validações de equivalência sempre que salvar via ORM
+        # Executa apenas em criação para minimizar impacto em updates existentes
+        try:
+            if self._state.adding:
+                self.full_clean()
+        except ValidationError:
+            raise
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.numeroDocumento
+
+    class Meta:
+        # ordering = ['Participante_Id', 'NumeroDocumento']
+        verbose_name = "Documento Fiscal"
+        verbose_name_plural = "Documentos Fiscais"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["numeroDocumento", "lojista"],
+                name="unique_user_numeroDocumento_lojista",
+            )
+        ]
+
+    def get_absolute_url(self):
+        return reverse("participante:editdocfiscal", args=[self.id])
+
+    def get_absolute_url_byop(self):
+        return reverse("participante:editdocfiscalbyop", args=[self.id])
+
+    def clean(self):
+        super().clean()
+        try:
+            campanha_ativa = Campanha.objects.get(ativa=True)
+            valor_minimo = campanha_ativa.valor
+            if self.valorDocumento < valor_minimo:
+                raise ValidationError(
+                    {
+                        "valorDocumento": f"O valor do documento deve ser de no mínimo R$ {valor_minimo}."
+                    }
+                )
+        except Campanha.DoesNotExist:
+            raise ValidationError(
+                "Não há nenhuma campanha ativa configurada no sistema."
+            )
+        except Campanha.MultipleObjectsReturned:
+            raise ValidationError(
+                "ERRO: Existem múltiplas campanhas ativas. Contate o administrador."
+            )
+
+        # Prevenir duplicidade equivalente por participante (ex.: "10" vs "010") para o mesmo lojista
+
+        ### Se de ruim remover isso aqui
+        try:
+            if self.user_id and self.lojista_id and self.numeroDocumento:
+                def normalize_document_number(raw_value: str) -> str:
+                    text = str(raw_value or "").strip()
+                    digits_only = "".join(ch for ch in text if ch.isdigit())
+                    if digits_only:
+                        # Converte para inteiro para remover zeros à esquerda e retorna como string
+                        try:
+                            return str(int(digits_only))
+                        except ValueError:
+                            pass
+                    # Fallback para casos não numéricos: normaliza espaços e caixa
+                    return text.lower()
+
+                current_norm = normalize_document_number(self.numeroDocumento)
+                if current_norm:
+                    candidatos = (
+                        DocumentoFiscal.objects
+                        .filter(user_id=self.user_id, lojista_id=self.lojista_id)
+                        .exclude(pk=self.pk)
+                        .only("id", "numeroDocumento")
+                    )
+                    for existente in candidatos:
+                        if normalize_document_number(existente.numeroDocumento) == current_norm:
+                            raise ValidationError({
+                                "numeroDocumento": (
+                                    f"Já existe para você um documento equivalente deste lojista: "
+                                    f"{existente.numeroDocumento}. Verifique zeros à esquerda/formatação."
+                                )
+                            })
+        except ValidationError:
+            # Propaga validações de equivalência
+            raise
+        except Exception:
+            # Nunca bloquear salvamento por erro inesperado nesta checagem
+            pass
+
+    # def get_cupons(self):
+    #     cupons = 0
+    #     if self.valorDocumento >= 50:
+    #         multiplo = self.valorDocumento // 50
+    #         if self.compradoMASTERCARD and self.compradoREDE:
+    #             # Com cartão Elo na maquininha PagBank = 5 cupons por múltiplo de R$ 50
+    #             cupons = multiplo * 5
+    #         elif self.compradoREDE:
+    #             # Pagando na maquininha da PagBank = 3 cupons por múltiplo de R$ 50
+    #             cupons = multiplo * 3
+    #         elif self.compradoMASTERCARD:
+    #             # Pagando com cartão Elo = 5 cupons por múltiplo de R$ 50
+    #             cupons = multiplo * 3
+    #         else:
+    
+    
+    # def get_cupons(self):
+    #     # Só gera cupons se o documento estiver validado
+    #     if self.status != StatusChoices.VALIDADO:
+    #         return 0
+            
+    #     if self.valorDocumento < 50:
+    #         return 0
+
+    #     # Calcula cupons para valor pago na Cielo
+    #     cupons_cielo = 0
+    #     valor_cielo = self.valorCielo or 0
+    #     if valor_cielo > 0:
+    #         multiplo_cielo = int(valor_cielo // 50)
+    #         cupons_cielo = multiplo_cielo * 3
+
+    #     # Calcula cupons para valor restante
+    #     valor_restante = self.valorDocumento - valor_cielo
+    #     cupons_restante = 0
+    #     if valor_restante > 0:
+    #         multiplo_restante = int(valor_restante // 50)
+    #         cupons_restante = multiplo_restante
+
+    #     return cupons_cielo + cupons_restante
+
+
+
+    def get_cupons(self):
+        # Só gera cupons se o documento estiver validado
+        if self.status != StatusChoices.VALIDADO:
+            return 0
+            
+        if self.valorDocumento < 50:
+            return 0
+
+        valor_cielo = self.valorCielo or 0
+        valor_outros = self.valorOutros or 0  # CORREÇÃO: Usar o campo valorOutros
+
+        # 1. Cielo > Outros
+        if valor_cielo > valor_outros:
+            # Calcula cupons Cielo (triplicados)
+            cupons_cielo = int(valor_cielo // 50)
+            resto_cielo = valor_cielo % 50
+            
+            # Se resto Cielo < 50, soma aos outros
+            if resto_cielo > 0:
+                valor_outros_ajustado = valor_outros + resto_cielo
+            else:
+                valor_outros_ajustado = valor_outros
+            
+            # Calcula cupons Outros (normais)
+            cupons_outros = int(valor_outros_ajustado // 50)
+            
+            # Total de cupons
+            return (cupons_cielo * 3) + cupons_outros
+            
+        # 2. Cielo < Outros
+        else:
+            # Calcula cupons Outros (normais)
+            cupons_outros = int(valor_outros // 50)
+            resto_outros = valor_outros % 50
+            
+            # Se resto Outros < 50, soma ao Cielo
+            if resto_outros > 0:
+                valor_cielo_ajustado = valor_cielo + resto_outros
+            else:
+                valor_cielo_ajustado = valor_cielo
+            
+            # Calcula cupons Cielo (triplicados)
+            cupons_cielo = int(valor_cielo_ajustado // 50)
+            
+            # Total de cupons
+            return (cupons_cielo * 3) + cupons_outros
+        
+
+
+
+    def tem_cupons_impressos(self):
+        """
+        Verifica se o documento tem cupons impressos
+        """
+        return self.rel_cupom_doc.filter(impresso=True).exists()
+
+    def send_email(self):
+        body = "Estamos chegando no ultimo dia de campanha do Natal de Luz e Prêmios. \nPedimos que você cheque os seus documentos para verificar se está tudo certo, se não falta nenhuma foto dos seus cupons fiscal para que seus documentos sejam validados com sucesso e você possa concorrer para ganhar prêmios incriveis. \n \n Atenciosamente, \n \n Organização Natal de Luz e Prêmios.\n www.liquidateresina.com.br"
+        subject = "Natal de Luz e Prêmios - Estamos chegando no último dia"
+        email = EmailMessage(subject, body, to=[self.user.email])
+        email.send()
+
+
+# class Ticket(models.Model):
+#     ticketUser =  models.ForeignKey(User, related_name='ticket_user_set', on_delete=models.PROTECT)
+#     ticketDocumentoFiscal = models.ForeignKey(DocumentoFiscal, related_name='ticket_doc_set', null=False, blank=False, default=1, on_delete=models.PROTECT)
+#     ticketOperador = CurrentUserField(verbose_name=u'Cadastrado Por', related_name='ticket_operador_set', editable=False)
+#     ticketDataCriacao = models.DateTimeField(verbose_name=u'Cadastrado em', auto_now_add=True, editable=False)
+#     ticketImpresso = models.BooleanField(default=False)
+#     ticketDataImpressao = models.DateTimeField(null=True)
+#     ticketLocal = models.CharField(max_length=15, null=False, blank=False, default=1,)
+
+# def __str__(self):
+#     return 'Cupom número: {}'.format(self.id)
+
+
+# def get_absolute_url(self):
+#     return reverse('cupom:details', args=[str(self.numeroCupom)])
+
+
+# def get_info(self):
+#     return 'Participante: {} CPF:{} Celular {} Documento Fiscal: {} Operador: {} Data de impressão: {} Data da compra: {} vendedor: {} '
+#                                                                                                           self.user.profile.nome,
+#                                                                                                           self.user.profile.CPF,
+
+
+class SystemRole(models.Model):
+    """
+    Modelo para armazenar funções do sistema.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    is_system_role = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="roles_created",
+    )
+
+    class Meta:
+        verbose_name = "Função do Sistema"
+        verbose_name_plural = "Funções do Sistema"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class SystemPermission(models.Model):
+    """
+    Modelo para armazenar permissões do sistema.
+    """
+
+    CATEGORIES = [
+        ("dashboard", "Dashboard"),
+        ("documents", "Documentos"),
+        ("stores", "Lojistas"),
+        ("system", "Sistema"),
+        ("jornadas", "Jornadas de Trabalho"),
+    ]
+
+    name = models.CharField(max_length=100, unique=True)
+    codename = models.CharField(max_length=100, unique=True)
+    category = models.CharField(max_length=50, choices=CATEGORIES)
+    description = models.TextField(blank=True)
+    is_system_permission = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Permissão do Sistema"
+        verbose_name_plural = "Permissões do Sistema"
+        ordering = ["category", "name"]
+
+    def __str__(self):
+        return f"{self.get_category_display()} - {self.name}"
+
+
+class SystemResource(models.Model):
+    """
+    Modelo para armazenar recursos do sistema.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    codename = models.CharField(max_length=100, unique=True)
+    icon = models.CharField(max_length=50)
+    url = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    is_system_resource = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Recurso do Sistema"
+        verbose_name_plural = "Recursos do Sistema"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class RolePermission(models.Model):
+    """
+    Modelo para relacionar funções e permissões.
+    """
+
+    role = models.ForeignKey(SystemRole, on_delete=models.CASCADE)
+    permission = models.ForeignKey(SystemPermission, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["role", "permission"]
+        verbose_name = "Permissão da Função"
+        verbose_name_plural = "Permissões das Funções"
+
+
+class RoleResource(models.Model):
+    """
+    Modelo para relacionar funções e recursos.
+    """
+
+    role = models.ForeignKey(SystemRole, on_delete=models.CASCADE)
+    resource = models.ForeignKey(SystemResource, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["role", "resource"]
+        verbose_name = "Recurso da Função"
+        verbose_name_plural = "Recursos das Funções"
+
+
+class UserRole(models.Model):
+    """
+    Modelo para relacionar usuários e funções.
+    """
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.ForeignKey(SystemRole, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="user_roles_created",
+    )
+
+    class Meta:
+        unique_together = ["user", "role"]
+        verbose_name = "Função do Usuário"
+        verbose_name_plural = "Funções dos Usuários"
+
+
+class DashboardCard(models.Model):
+    """
+    Modelo para controlar quais cards do dashboard cada grupo pode acessar.
+    """
+    CARD_TYPES = [
+        ('participantes', 'Participantes'),
+        ('lojistas', 'Lojistas'),
+        ('configuracoes', 'Configurações'),
+        ('backoffice', 'Backoffice'),
+        ('relatorios', 'Relatórios'),
+        ('documentos', 'Documentos'),
+        ('usuarios', 'Usuários'),
+        ('campanha', 'Campanha'),
+        ('ponto', 'Registro de Ponto'),
+        ('impressao', 'Impressão'),
+        ('estatisticas', 'Estatísticas'),
+    ]
+    
+    name = models.CharField(max_length=100, unique=True)
+    codename = models.CharField(max_length=50, unique=True)
+    card_type = models.CharField(max_length=20, choices=CARD_TYPES)
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    url_name = models.CharField(max_length=100, blank=True)
+    icon = models.CharField(max_length=50, default='fas fa-cog')
+    color = models.CharField(max_length=20, default='blue')
+    order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    is_system_card = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Card do Dashboard"
+        verbose_name_plural = "Cards do Dashboard"
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return self.name
+
+
+class RoleCard(models.Model):
+    """
+    Modelo para relacionar funções e cards do dashboard.
+    """
+    role = models.ForeignKey(SystemRole, on_delete=models.CASCADE)
+    card = models.ForeignKey(DashboardCard, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ["role", "card"]
+        verbose_name = "Card da Função"
+        verbose_name_plural = "Cards das Funções"
+    
+    def __str__(self):
+        return f"{self.role.name} - {self.card.name}"
+
+
+# ===== MODELOS DE CONFIGURAÇÃO DE JORNADA =====
+
+class ConfiguracaoJornada(models.Model):
+    """Configurações globais do sistema de jornada por grupo"""
+    grupo = models.ForeignKey(
+        'auth.Group',
+        on_delete=models.CASCADE,
+        verbose_name="Grupo",
+        help_text="Grupo de usuários afetado por esta configuração"
+    )
+    requer_jornada = models.BooleanField(
+        default=True,
+        verbose_name="Requer controle de jornada",
+        help_text="Se este grupo precisa de controle de jornada"
+    )
+    jornada_flexivel = models.BooleanField(
+        default=False,
+        verbose_name="Jornada flexível",
+        help_text="Permite entrada/saída sem horário fixo"
+    )
+    tolerancia_entrada = models.PositiveIntegerField(
+        default=15,
+        verbose_name="Tolerância entrada (min)",
+        help_text="Minutos de tolerância antes do horário de início"
+    )
+    tolerancia_saida = models.PositiveIntegerField(
+        default=15,
+        verbose_name="Tolerância saída (min)",
+        help_text="Minutos de tolerância após o horário de fim"
+    )
+    ativo = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuração de Jornada"
+        verbose_name_plural = "Configurações de Jornada"
+        unique_together = ['grupo']
+
+    def __str__(self):
+        return f"Configuração para {self.grupo.name}"
+
+
+class ExcecaoJornada(models.Model):
+    """Exceções individuais para controle de jornada"""
+    TIPO_CHOICES = [
+        ('SEM_JORNADA', 'Sem controle de jornada'),
+        ('JORNADA_FLEXIVEL', 'Jornada flexível'),
+        ('HORARIO_ESPECIAL', 'Horário especial'),
+        ('FERIADO', 'Feriado/Evento'),
+    ]
+    
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Usuário",
+        related_name="excecoes_jornada"
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        verbose_name="Tipo de Exceção"
+    )
+    data_inicio = models.DateField(verbose_name="Data de Início")
+    data_fim = models.DateField(
+        null=True, blank=True,
+        verbose_name="Data de Fim",
+        help_text="Deixe vazio para exceção permanente"
+    )
+    horario_inicio = models.TimeField(
+        null=True, blank=True,
+        verbose_name="Horário de Início",
+        help_text="Para horários especiais"
+    )
+    horario_fim = models.TimeField(
+        null=True, blank=True,
+        verbose_name="Horário de Fim",
+        help_text="Para horários especiais"
+    )
+    justificativa = models.TextField(
+        verbose_name="Justificativa",
+        help_text="Motivo da exceção"
+    )
+    ativo = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="excecoes_criadas"
+    )
+
+    class Meta:
+        verbose_name = "Exceção de Jornada"
+        verbose_name_plural = "Exceções de Jornada"
+        ordering = ['-data_inicio']
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.get_tipo_display()}"
+    
+    def is_vigente(self, data=None):
+        """Verifica se a exceção está vigente na data especificada"""
+        from django.utils import timezone
+        if data is None:
+            data = timezone.localdate()
+        
+        if not self.ativo:
+            return False
+        
+        if data < self.data_inicio:
+            return False
+        
+        if self.data_fim and data > self.data_fim:
+            return False
+        
+        return True
+
+
+class CardDinamico(models.Model):
+    """Modelo para cards dinâmicos que podem ser configurados via admin"""
+    TIPO_CHOICES = [
+        ('PARTICIPANTE', 'Participante'),
+        ('LOJISTA', 'Lojista'),
+        ('RECURSOS_HUMANOS', 'Recursos Humanos'),
+        ('BACKOFFICE', 'Backoffice'),
+        ('RELATORIO', 'Relatório'),
+        ('CONFIGURACAO', 'Configuração'),
+        ('OPERACOES', 'Operações'),
+    ]
+    
+    ICONE_CHOICES = [
+        ('fas fa-chart-bar', 'Gráfico'),
+        ('fas fa-file-alt', 'Documento'),
+        ('fas fa-users', 'Usuários'),
+        ('fas fa-store', 'Loja'),
+        ('fas fa-ticket-alt', 'Cupom'),
+        ('fas fa-clock', 'Jornada'),
+        ('fas fa-cog', 'Configuração'),
+        ('fas fa-chart-line', 'Relatório'),
+        ('fas fa-database', 'Dados'),
+        ('fas fa-tools', 'Ferramentas'),
+        ('fas fa-eye', 'Visualizar'),
+        ('fas fa-edit', 'Editar'),
+        ('fas fa-plus', 'Adicionar'),
+        ('fas fa-trash', 'Excluir'),
+        ('fas fa-download', 'Download'),
+        ('fas fa-upload', 'Upload'),
+        ('fas fa-print', 'Imprimir'),
+        ('fas fa-search', 'Buscar'),
+        ('fas fa-filter', 'Filtrar'),
+        ('fas fa-sort', 'Ordenar'),
+    ]
+    
+    nome = models.CharField(max_length=100, verbose_name="Nome do Card")
+    titulo = models.CharField(max_length=200, verbose_name="Título")
+    descricao = models.TextField(blank=True, verbose_name="Descrição")
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo")
+    icone = models.CharField(max_length=50, choices=ICONE_CHOICES, verbose_name="Ícone")
+    cor = models.CharField(max_length=20, default='primary', verbose_name="Cor")
+    url = models.CharField(max_length=200, blank=True, verbose_name="URL de destino")
+    ordem = models.PositiveIntegerField(default=0, verbose_name="Ordem de exibição")
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    grupos_permitidos = models.ManyToManyField(
+        'auth.Group', 
+        blank=True, 
+        verbose_name="Grupos permitidos",
+        help_text="Deixe vazio para permitir todos os grupos"
+    )
+    usuarios_permitidos = models.ManyToManyField(
+        User, 
+        blank=True, 
+        verbose_name="Usuários permitidos",
+        help_text="Usuários específicos que podem ver este card"
+    )
+    usuarios_excluidos = models.ManyToManyField(
+        User, 
+        blank=True, 
+        related_name='cards_excluidos',
+        verbose_name="Usuários excluídos",
+        help_text="Usuários específicos que NÃO podem ver este card"
+    )
+    mostrar_apenas_admin = models.BooleanField(
+        default=False, 
+        verbose_name="Mostrar apenas para admin"
+    )
+    mostrar_apenas_staff = models.BooleanField(
+        default=False, 
+        verbose_name="Mostrar apenas para staff"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['ordem', 'nome']
+        verbose_name = "Card Dinâmico"
+        verbose_name_plural = "Cards Dinâmicos"
+    
+    def __str__(self):
+        return self.nome
+    
+    def pode_ver(self, user):
+        """Verifica se o usuário pode ver este card"""
+        # Superusers sempre podem ver todos os cards ativos
+        if user.is_superuser:
+            return self.ativo
+        
+        # Se não está ativo, ninguém pode ver
+        if not self.ativo:
+            return False
+        
+        # Se é apenas para admin e usuário não é admin
+        if self.mostrar_apenas_admin and not user.is_superuser:
+            return False
+        
+        # Se é apenas para staff e usuário não é staff
+        if self.mostrar_apenas_staff and not user.is_staff:
+            return False
+        
+        # Se usuário está na lista de excluídos
+        if self.usuarios_excluidos.filter(id=user.id).exists():
+            return False
+        
+        # Se usuário está na lista de permitidos específicos
+        if self.usuarios_permitidos.filter(id=user.id).exists():
+            return True
+        
+        # Se há grupos específicos configurados
+        if self.grupos_permitidos.exists():
+            # Verifica se o usuário pertence a algum dos grupos permitidos
+            return self.grupos_permitidos.filter(id__in=user.groups.all()).exists()
+        
+        # Se não há restrições específicas, permite para todos
+        return True
+
+
+class Funcionalidade(models.Model):
+    """Modelo para funcionalidades do sistema que podem ser controladas por permissão"""
+    TIPO_CHOICES = [
+        ('VIEW', 'Visualizar'),
+        ('CREATE', 'Criar'),
+        ('EDIT', 'Editar'),
+        ('DELETE', 'Excluir'),
+        ('EXPORT', 'Exportar'),
+        ('IMPORT', 'Importar'),
+        ('PRINT', 'Imprimir'),
+        ('VALIDATE', 'Validar'),
+        ('APPROVE', 'Aprovar'),
+        ('REJECT', 'Rejeitar'),
+    ]
+    
+    nome = models.CharField(max_length=100, verbose_name="Nome da Funcionalidade")
+    descricao = models.TextField(blank=True, verbose_name="Descrição")
+    codigo = models.CharField(max_length=50, unique=True, verbose_name="Código único")
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo")
+    modelo = models.CharField(max_length=100, blank=True, verbose_name="Modelo relacionado")
+    ativo = models.BooleanField(default=True, verbose_name="Ativa")
+    grupos_permitidos = models.ManyToManyField(
+        'auth.Group', 
+        blank=True, 
+        verbose_name="Grupos permitidos"
+    )
+    usuarios_permitidos = models.ManyToManyField(
+        User, 
+        blank=True, 
+        verbose_name="Usuários permitidos"
+    )
+    usuarios_excluidos = models.ManyToManyField(
+        User, 
+        blank=True, 
+        related_name='funcionalidades_excluidas',
+        verbose_name="Usuários excluídos"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['nome']
+        verbose_name = "Funcionalidade"
+        verbose_name_plural = "Funcionalidades"
+    
+    def __str__(self):
+        return f"{self.nome} ({self.get_tipo_display()})"
+    
+    def pode_usar(self, user):
+        """Verifica se o usuário pode usar esta funcionalidade"""
+        # Superusers sempre podem usar todas as funcionalidades ativas
+        if user.is_superuser:
+            return self.ativo
+        
+        if not self.ativo:
+            return False
+        
+        # Se usuário está na lista de excluídos
+        if self.usuarios_excluidos.filter(id=user.id).exists():
+            return False
+        
+        # Se usuário está na lista de permitidos específicos
+        if self.usuarios_permitidos.filter(id=user.id).exists():
+            return True
+        
+        # Se há grupos específicos configurados
+        if self.grupos_permitidos.exists():
+            return self.grupos_permitidos.filter(id__in=user.groups.all()).exists()
+        
+        # Se não há restrições específicas, permite para todos
+        return True
+
+
+class ConfiguracaoSistema(models.Model):
+    """Configurações gerais do sistema"""
+    chave = models.CharField(max_length=100, unique=True, verbose_name="Chave")
+    valor = models.TextField(verbose_name="Valor")
+    descricao = models.TextField(blank=True, verbose_name="Descrição")
+    tipo = models.CharField(
+        max_length=20, 
+        choices=[
+            ('TEXT', 'Texto'),
+            ('NUMBER', 'Número'),
+            ('BOOLEAN', 'Booleano'),
+            ('JSON', 'JSON'),
+            ('URL', 'URL'),
+        ],
+        default='TEXT',
+        verbose_name="Tipo"
+    )
+    ativo = models.BooleanField(default=True, verbose_name="Ativo")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['chave']
+        verbose_name = "Configuração do Sistema"
+        verbose_name_plural = "Configurações do Sistema"
+    
+    def __str__(self):
+        return self.chave
+    
+    @classmethod
+    def get_valor(cls, chave, default=None):
+        """Obtém o valor de uma configuração"""
+        try:
+            config = cls.objects.get(chave=chave, ativo=True)
+            return config.valor
+        except cls.DoesNotExist:
+            return default
+    
+    @classmethod
+    def set_valor(cls, chave, valor, descricao="", tipo="TEXT"):
+        """Define o valor de uma configuração"""
+        config, created = cls.objects.get_or_create(
+            chave=chave,
+            defaults={
+                'valor': str(valor),
+                'descricao': descricao,
+                'tipo': tipo
+            }
+        )
+        if not created:
+            config.valor = str(valor)
+            config.save(update_fields=['valor', 'updated_at'])
+        return config
+
+
+class ConfiguracaoSecao(models.Model):
+    """Modelo para configurar seções do dashboard"""
+    TIPO_CHOICES = [
+        ('PARTICIPANTE', 'Participante'),
+        ('LOJISTA', 'Lojista'),
+        ('RECURSOS_HUMANOS', 'Recursos Humanos'),
+        ('BACKOFFICE', 'Backoffice'),
+        ('RELATORIO', 'Relatório'),
+        ('CONFIGURACAO', 'Configuração'),
+        ('OPERACOES', 'Operações'),
+    ]
+    
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, unique=True, verbose_name="Tipo da Seção")
+    titulo = models.CharField(max_length=100, verbose_name="Título da Seção")
+    icone = models.CharField(max_length=50, verbose_name="Ícone", help_text="Código FontAwesome (ex: fas fa-users)")
+    cor = models.CharField(max_length=7, default='#0d6efd', verbose_name="Cor do Cabeçalho", help_text="Código hexadecimal (ex: #0d6efd)")
+    grupos_permitidos = models.ManyToManyField(
+        'auth.Group', 
+        blank=True, 
+        verbose_name="Grupos que podem ver esta seção",
+        help_text="Deixe vazio para permitir todos os grupos"
+    )
+    ativo = models.BooleanField(default=True, verbose_name="Seção Ativa")
+    ordem = models.PositiveIntegerField(default=0, verbose_name="Ordem de Exibição")
+    
+    class Meta:
+        ordering = ['ordem', 'tipo']
+        verbose_name = "Configuração de Seção"
+        verbose_name_plural = "Configurações de Seções"
+    
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.titulo}"
+    
+    @classmethod
+    def get_config(cls, tipo):
+        """Retorna a configuração de uma seção específica"""
+        try:
+            return cls.objects.get(tipo=tipo, ativo=True)
+        except cls.DoesNotExist:
+            # Configuração padrão se não existir
+            return cls(
+                tipo=tipo,
+                titulo=tipo.title(),
+                icone='fas fa-cog',
+                cor='#0d6efd',  # Cor hexadecimal padrão
+                ativo=True,
+                ordem=0
+            )
+    
+    def pode_ver(self, user):
+        """Verifica se o usuário pode ver esta seção"""
+        # Superusuários sempre podem ver todas as seções
+        if user.is_superuser:
+            return True
+        
+        # Se não está ativo, ninguém pode ver
+        if not self.ativo:
+            return False
+        
+        # Se não há grupos específicos, todos podem ver
+        if not self.grupos_permitidos.exists():
+            return True
+        
+        # Verificar se o usuário está em algum dos grupos permitidos
+        return self.grupos_permitidos.filter(id__in=user.groups.values_list('id', flat=True)).exists()
+
+
+class URLTreinamento(models.Model):
+    """
+    Modelo para controlar URLs de treinamento para cadastro de colaboradores.
+    
+    Permite criar URLs públicas com hash único para cadastro de colaboradores
+    durante treinamentos, com controle de ativação/desativação.
+    """
+    hash_url = models.CharField(max_length=50, unique=True, verbose_name="Hash da URL")
+    titulo = models.CharField(max_length=100, verbose_name="Título do Treinamento")
+    descricao = models.TextField(verbose_name="Descrição")
+    ativo = models.BooleanField(default=True, verbose_name="URL Ativa")
+    data_criacao = models.DateTimeField(auto_now_add=True, verbose_name="Data de Criação")
+    criado_por = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Criado por")
+    colaboradores_cadastrados = models.ManyToManyField('Profile', blank=True, verbose_name="Colaboradores Cadastrados")
+    
+    class Meta:
+        verbose_name = "URL de Treinamento"
+        verbose_name_plural = "URLs de Treinamento"
+        ordering = ['-data_criacao']
+    
+    def __str__(self):
+        return f"{self.titulo} ({self.hash_url})"
+    
+    def get_url_completa(self, request=None):
+        """Retorna a URL completa para cadastro"""
+        if request:
+            # Se temos o request, usa build_absolute_uri
+            return request.build_absolute_uri(f'/cadastro/{self.hash_url}/')
+        else:
+            # Fallback para configuração manual
+            from django.conf import settings
+            site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+            return f"{site_url}/cadastro/{self.hash_url}/"
+    
+    @property
+    def url_completa(self):
+        """Retorna a URL completa para cadastro (sem request)"""
+        return self.get_url_completa()
+    
+    @property
+    def total_colaboradores(self):
+        """Retorna o total de colaboradores cadastrados via esta URL"""
+        return self.colaboradores_cadastrados.count()
+    
+    def ativar(self):
+        """Ativa a URL de treinamento"""
+        self.ativo = True
+        self.save()
+    
+    def desativar(self):
+        """Desativa a URL de treinamento"""
+        self.ativo = False
+        self.save()
+
+
+class ReversaoImpressao(models.Model):
+    """
+    Modelo para rastrear reversões de impressão por usuário e documento.
+    Permite controlar quantas vezes cada usuário pode reverter a impressão de um documento.
+    """
+    documento = models.ForeignKey(
+        DocumentoFiscal,
+        on_delete=models.CASCADE,
+        related_name='reversoes_impressao',
+        verbose_name="Documento Fiscal"
+    )
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reversoes_realizadas',
+        verbose_name="Usuário que realizou a reversão"
+    )
+    data_reversao = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data da reversão"
+    )
+    cupons_removidos = models.PositiveIntegerField(
+        verbose_name="Quantidade de cupons removidos"
+    )
+    motivo = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Motivo da reversão",
+        help_text="Justificativa para a reversão"
+    )
+
+    class Meta:
+        verbose_name = "Reversão de Impressão"
+        verbose_name_plural = "Reversões de Impressão"
+        # Removido unique_together para permitir múltiplas reversões para suporte
+        ordering = ['-data_reversao']
+
+    def __str__(self):
+        return f"Reversão de {self.documento.numeroDocumento} por {self.usuario.username} em {self.data_reversao.strftime('%d/%m/%Y %H:%M')}"
+
+    @classmethod
+    def pode_reverter(cls, usuario, documento):
+        """
+        Verifica se o usuário pode reverter a impressão do documento.
+        
+        Regras:
+        - Operador e Backoffice: apenas 1 vez por documento por grupo
+        - Suporte: ilimitado
+        - Outros grupos: não podem reverter
+        """
+        from participante.permissions import is_operador, is_backoffice, is_suporte
+        
+        # Suporte pode reverter ilimitado
+        if is_suporte(usuario):
+            return True, "Suporte pode reverter ilimitado"
+        
+        # Operador e Backoffice podem reverter apenas 1 vez por grupo
+        if is_operador(usuario) or is_backoffice(usuario):
+            # Buscar todos os usuários do mesmo grupo
+            grupo_atual = usuario.groups.first()
+            if grupo_atual:
+                usuarios_do_grupo = grupo_atual.user_set.all()
+                
+                # Verificar se qualquer usuário do grupo já reverteu este documento
+            ja_reverteu = cls.objects.filter(
+                documento=documento,
+                    usuario__in=usuarios_do_grupo
+            ).exists()
+            
+            if ja_reverteu:
+                    return False, f"Um {grupo_atual.name} já reverteu a impressão deste documento uma vez. Não é possível reverter novamente. Solicite ao suporte."
+            else:
+                    return True, f"Pode reverter (primeira vez para o grupo {grupo_atual.name})"
+        
+        # Outros grupos não podem reverter
+        return False, "Seu grupo não tem permissão para reverter impressões."
+
+    @classmethod
+    def registrar_reversao(cls, usuario, documento, cupons_removidos, motivo):
+        """
+        Registra uma nova reversão de impressão.
+        A validação de permissões deve ser feita antes de chamar este método.
+        O motivo é obrigatório.
+        """
+        if not motivo or not motivo.strip():
+            raise ValueError("Motivo da reversão é obrigatório")
+        
+        return cls.objects.create(
+            documento=documento,
+            usuario=usuario,
+            cupons_removidos=cupons_removidos,
+            motivo=motivo.strip()
+        )
+
+
+class CancelamentoImpressao(models.Model):
+    """
+    Modelo para rastrear cancelamentos de impressão por usuário e documento.
+    Permite controlar quantas vezes cada usuário pode cancelar a impressão de um documento.
+    """
+    documento = models.ForeignKey(
+        DocumentoFiscal,
+        on_delete=models.CASCADE,
+        related_name='cancelamentos_impressao',
+        verbose_name="Documento Fiscal"
+    )
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='cancelamentos_realizados',
+        verbose_name="Usuário que realizou o cancelamento"
+    )
+    data_cancelamento = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data do cancelamento"
+    )
+    motivo = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Motivo do cancelamento"
+    )
+
+    class Meta:
+        verbose_name = "Cancelamento de Impressão"
+        verbose_name_plural = "Cancelamentos de Impressão"
+        ordering = ['-data_cancelamento']
+
+    def __str__(self):
+        return f"Cancelamento de {self.documento.numeroDocumento} por {self.usuario.username} em {self.data_cancelamento.strftime('%d/%m/%Y %H:%M')}"
+
+    @classmethod
+    def pode_cancelar(cls, usuario, documento):
+        """
+        Verifica se o usuário pode cancelar a impressão do documento.
+        
+        Regras:
+        - Suporte e Superuser: ilimitado
+        - Outros usuários: apenas 1 vez por documento
+        """
+        from participante.permissions import is_suporte
+        
+        # Suporte e Superuser podem cancelar ilimitado
+        if is_suporte(usuario) or usuario.is_superuser:
+            return True, "Pode cancelar ilimitado"
+        
+        # Verificar se já foi cancelado/revertido por qualquer usuário
+        ja_cancelado = cls.objects.filter(documento=documento).exists()
+        ja_revertido = ReversaoImpressao.objects.filter(documento=documento).exists()
+        
+        if ja_cancelado or ja_revertido:
+            return False, "Este documento já foi cancelado/revertido uma vez. Solicite ao suporte."
+        
+        return True, "Pode cancelar (primeira vez para este documento)"
+
+    @classmethod
+    def registrar_cancelamento(cls, usuario, documento, motivo):
+        """
+        Registra um novo cancelamento de impressão.
+        A validação de permissões deve ser feita antes de chamar este método.
+        """
+        if not motivo or not motivo.strip():
+            raise ValueError("Motivo do cancelamento é obrigatório")
+        
+        return cls.objects.create(
+            documento=documento,
+            usuario=usuario,
+            motivo=motivo.strip()
+        )
+
+
+class Auditoria(models.Model):
+    """
+    Modelo para rastrear todas as ações importantes do sistema.
+    Permite auditoria completa de quem fez o quê, quando e por quê.
+    """
+    TIPO_ACAO_CHOICES = [
+        ('reversao_impressao', 'Reversão de Impressão'),
+        ('cancelamento_impressao', 'Cancelamento de Impressão'),
+        ('impressao_cupons', 'Impressão de Cupons'),
+        ('validacao_documento', 'Validação de Documento'),
+        ('edicao_documento', 'Edição de Documento'),
+        ('cadastro_documento', 'Cadastro de Documento'),
+        ('finalizacao_jornada', 'Finalização de Jornada'),
+        ('selecao_posto', 'Seleção de Posto de Trabalho'),
+        ('login', 'Login no Sistema'),
+        ('logout', 'Logout do Sistema'),
+        ('alteracao_senha', 'Alteração de Senha'),
+        ('outro', 'Outro'),
+    ]
+    
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='acoes_auditoria',
+        verbose_name="Usuário que realizou a ação"
+    )
+    data_hora = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data e Hora da Ação"
+    )
+    tipo_acao = models.CharField(
+        max_length=50,
+        choices=TIPO_ACAO_CHOICES,
+        verbose_name="Tipo de Ação"
+    )
+    descricao = models.TextField(
+        verbose_name="Descrição da Ação"
+    )
+    documento_fiscal = models.ForeignKey(
+        DocumentoFiscal,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='auditorias',
+        verbose_name="Documento Fiscal Relacionado"
+    )
+    justificativa = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Justificativa da Ação"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="Endereço IP"
+    )
+    user_agent = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="User Agent"
+    )
+    
+    class Meta:
+        verbose_name = "Registro de Auditoria"
+        verbose_name_plural = "Registros de Auditoria"
+        ordering = ['-data_hora']
+        indexes = [
+            models.Index(fields=['usuario', 'data_hora']),
+            models.Index(fields=['tipo_acao', 'data_hora']),
+            models.Index(fields=['documento_fiscal', 'data_hora']),
+        ]
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.get_tipo_acao_display()} - {self.data_hora.strftime('%d/%m/%Y %H:%M')}"
+    
+    @classmethod
+    def registrar_acao(cls, usuario, tipo_acao, descricao, documento_fiscal=None, justificativa=None, request=None):
+        """
+        Registra uma nova ação na auditoria.
+        
+        Args:
+            usuario: Usuário que realizou a ação
+            tipo_acao: Tipo da ação (usar choices do modelo)
+            descricao: Descrição detalhada da ação
+            documento_fiscal: Documento relacionado (opcional)
+            justificativa: Justificativa da ação (opcional)
+            request: Request object para capturar IP e User Agent (opcional)
+        """
+        ip_address = None
+        user_agent = None
+        
+        if request:
+            # Capturar IP do usuário
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip_address = x_forwarded_for.split(',')[0].strip()
+            else:
+                ip_address = request.META.get('REMOTE_ADDR')
+            
+            # Capturar User Agent
+            user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        return cls.objects.create(
+            usuario=usuario,
+            tipo_acao=tipo_acao,
+            descricao=descricao,
+            documento_fiscal=documento_fiscal,
+            justificativa=justificativa,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+
+
+

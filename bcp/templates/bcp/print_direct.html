@@ -1,0 +1,129 @@
+{% extends "mobile.html" %}
+{% load static %}
+
+{% block title %}Gerando PDF{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <h2 class="text-xl font-semibold text-gray-900 mb-2">
+                Gerando PDF...
+            </h2>
+            <p class="text-sm text-gray-600">
+                Aguarde um momento...
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+const pdfUrl = '{{ pdf_url }}';
+const taskId = '{{ task_id }}';
+let attempts = 0;
+const maxAttempts = 10; // 10 tentativas de 1 segundo = 10 segundos de timeout
+let printAttempted = false;
+
+function downloadAndPrintPDF(url) {
+    if (printAttempted) return;
+    printAttempted = true;
+
+    // Fazer download do PDF como blob
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao baixar PDF');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // Criar URL do blob
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Criar um iframe temporário para impressão
+            const printFrame = document.createElement('iframe');
+            printFrame.style.display = 'none';
+            printFrame.src = blobUrl;
+            
+            document.body.appendChild(printFrame);
+            
+            // Aguardar o carregamento e imprimir
+            printFrame.onload = function() {
+                setTimeout(() => {
+                    try {
+                        printFrame.contentWindow.focus();
+                        printFrame.contentWindow.print();
+                        
+                        // Limpar após impressão
+                        setTimeout(() => {
+                            document.body.removeChild(printFrame);
+                            URL.revokeObjectURL(blobUrl);
+                            window.close();
+                        }, 2000);
+                    } catch (error) {
+                        console.error('Erro ao imprimir:', error);
+                        // Mostrar botão de impressão manual
+                        showManualPrintButton(blobUrl);
+                    }
+                }, 2000);
+            };
+        })
+        .catch(error => {
+            console.error('Erro ao processar PDF:', error);
+            alert('Erro ao carregar PDF. Tente novamente.');
+            window.close();
+        });
+}
+
+function showManualPrintButton(blobUrl) {
+    const manualBtn = document.createElement('button');
+    manualBtn.textContent = 'Clique aqui para imprimir manualmente';
+    manualBtn.onclick = function() {
+        const newWindow = window.open(blobUrl);
+        if (newWindow) {
+            newWindow.onload = function() {
+                newWindow.print();
+            };
+        }
+    };
+    
+    document.body.appendChild(manualBtn);
+}
+
+function checkAndRedirect() {
+    attempts++;
+    if (attempts > maxAttempts) {
+        alert('Erro: O PDF demorou muito para ser gerado. Tente novamente.');
+        window.close();
+        return;
+    }
+
+    // Verificar se o task está pronto
+    fetch(`/barcode/check_task_status/${taskId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'SUCCESS') {
+                // PDF pronto, usar nova função para download e impressão
+                downloadAndPrintPDF(pdfUrl);
+            } else if (data.status === 'PENDING' || data.status === 'RECEIVED') {
+                // Ainda processando, tentar novamente em 1 segundo
+                setTimeout(checkAndRedirect, 1000);
+            } else if (data.status === 'FAILURE') {
+                alert('Erro ao gerar o PDF. Tente novamente.');
+                window.close();
+            } else {
+                // Status desconhecido, tentar novamente
+                setTimeout(checkAndRedirect, 1000);
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao verificar status:', error);
+            setTimeout(checkAndRedirect, 1000);
+        });
+}
+
+// Iniciar verificação após 500ms
+setTimeout(checkAndRedirect, 500);
+</script>
+{% endblock %} 

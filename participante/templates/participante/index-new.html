@@ -1,0 +1,707 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Natal de Luz e Prêmios - A Maior Promoção da Cidade{% endblock %}
+
+{% block content %}
+
+    <!-- Hero Section - Banner Fullscreen -->
+    <section class="hero-section position-relative w-100 banner-responsive">
+        <!-- Scroll Indicator -->
+        <!-- <div class="position-absolute bottom-0 start-50 translate-middle-x mb-4" style="z-index: 10;">
+            <a href="#como-participar" class="text-white opacity-75 hover-opacity-100 transition">
+                <div class="d-flex flex-column align-items-center">
+                    <span class="small mb-2">Saiba mais</span>
+                    <i class="fas fa-chevron-down fs-4 animate-bounce"></i>
+                </div>
+            </a>
+        </div> -->
+    </section>
+    <!-- Hero Section -->
+    <!-- <section class="hero-section position-relative min-vh-100 d-flex align-items-center" style="background: linear-gradient(135deg,#0d6efd 100%);">
+        <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-6 col-md-12 text-white">
+                <div class="hero-content" data-aos="fade-right">
+                    <h1 class="display-4 fw-bold mb-4">
+                        Natal de Luz e Prêmios
+                    </h1>
+                    <p class="lead mb-4 opacity-90">
+                        A maior promoção da cidade está de volta! Compre, cadastre-se e concorra a prêmios incríveis, incluindo um Citroën C3 Live 1.0 MT 0km!
+                    </p>
+                    <div class="d-flex flex-column flex-md-row flex-wrap gap-3">
+                        <a href="#como-participar" class="btn btn-light px-4 py-3 fw-semibold">
+                            <i class="fas fa-play me-2"></i>Como Participar
+                        </a>
+                        <a href="{% url 'participante:register' %}" class="btn btn-outline-light px-4 py-3 fw-semibold">
+                            <i class="fas fa-user-plus me-2"></i>Cadastre-se
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12 text-center" data-aos="fade-left">
+                <div class="hero-image">
+                    <img src="{% static 'img/2023/peugeot-208.png' %}" 
+                         alt="Citroën C3 Live 1.0 MT - Prêmio Principal" 
+                         class="img-fluid"
+                         style="max-height: 400px; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.3));">
+                </div>
+                </div>
+            </div>
+        </div> -->
+
+    <!-- Scroll Indicator -->
+    <!-- <div class="position-absolute bottom-0 start-50 translate-middle-x mb-4">
+        <a href="#como-participar" class="text-white opacity-75 hover-opacity-100 transition">
+            <div class="d-flex flex-column align-items-center">
+                <span class="small mb-2">Saiba mais</span>
+                <i class="fas fa-chevron-down fs-4 animate-bounce"></i>
+            </div>
+            </a>
+    </div>
+    </section> -->
+
+    <!-- Como Participar Section -->
+    <section id="como-participar" class="py-5 bg-light">
+        <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-5" data-aos="fade-up">
+                <h2 class="display-5 fw-bold text-dark mb-3">Como Participar</h2>
+                <p class="lead text-muted">Em apenas 4 passos simples você pode concorrer a prêmios incríveis!</p>
+            </div>
+            </div>
+
+            <div class="row g-4">
+            <!-- Step 1 -->
+            <div class="col-12 col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="step-icon mb-4">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
+                                <i class="fas fa-shopping-cart text-primary fs-2"></i>
+                            </div>
+                            </div>
+                        <h4 class="fw-bold text-dark mb-3">1. Compre</h4>
+                            <p class="text-muted mb-0">
+                                Faça suas compras nas lojas participantes entre <b>10/12/2025 e 24/12/2025</b>. Guarde a nota fiscal e o comprovante do cartão.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- Step 2 -->
+            <div class="col-12 col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="step-icon mb-4">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
+                                <i class="fas fa-user-plus text-success fs-2"></i>
+                            </div>
+                            </div>
+                        <h4 class="fw-bold text-dark mb-3">2. Cadastre-se</h4>
+                            <p class="text-muted mb-3">
+                                Crie sua conta gratuita em poucos minutos! Preencha os campos obrigatórios (marcados com <b>*</b>) e comece a participar.
+                            </p>
+                            <!-- Call to Action -->
+                            <a href="{% url 'participante:register' %}" class="btn btn-success px-4 py-2 fw-semibold">
+                                <i class="fas fa-user-plus me-2"></i>Cadastre-se Agora
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- Step 3 -->
+            <div class="col-12 col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="300">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="step-icon mb-4">
+                            <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
+                                <i class="fas fa-ticket-alt text-info fs-2"></i>
+                            </div>
+                            </div>
+                        <h4 class="fw-bold text-dark mb-3">3. Envie as notas</h4>
+                            <p class="text-muted mb-3">
+                                Envie as notas fiscais e os comprovantes do cartão pelo site. <b>Cada R${{ campanha.valor|floatformat:0 }} em compras = 1 cupom.</b>
+                            </p>
+                            <p class="text-muted mb-0">
+                                <b>Dica:</b> Se pagou com a maquininha <b>Cielo</b>, você ganha <b>3 cupons</b>! Não esqueça de anexar o comprovante da Cielo também.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- Step 4 -->
+            <div class="col-12 col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="400">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4">
+                        <div class="step-icon mb-4">
+                            <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
+                                <i class="fas fa-gift text-warning fs-2"></i>
+                            </div>
+                            </div>
+                        <h4 class="fw-bold text-dark mb-3">4. Concorra</h4>
+                            <p class="text-muted mb-3">
+                                Acompanhe a validação das suas notas no seu perfil. Veja o status e a quantidade de cupons gerados automaticamente.
+                            </p>
+                            <p class="text-muted mb-0">
+                                Depois é só torcer no sorteio do dia <b>14 de janeiro de 2026</b>!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+<!-- Prêmios Section -->
+<section id="premios" class="py-5">
+        <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-5" data-aos="fade-up">
+                <h2 class="display-5 fw-bold text-dark mb-3">Prêmios Incríveis</h2>
+                <p class="lead text-muted">Confira os prêmios que você pode ganhar na Natal de Luz e Prêmios</p>
+            </div>
+            </div>
+
+        <!-- Main Prize -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-10 col-md-12" data-aos="zoom-in">
+                <div class="card border-0 shadow-lg overflow-hidden" style="background: linear-gradient(135deg, #0d6efd 100%);">
+                    <div class="card-body p-4 p-md-5 text-center text-white">
+                        <div class="row align-items-center">
+                            <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
+                                <h3 class="display-6 fw-bold mb-3">1 Citroën C3 Live 1.0 MT</h3>
+                                <p class="lead mb-4 opacity-90">
+                                Imagine você dirigindo um Citroën C3 Live 1.0 MT 0km! Este super prêmio pode ser seu.
+                            </p>
+                                <div class="d-inline-block bg-white text-primary px-3 px-md-4 py-2 py-md-3 rounded-pill fw-bold shadow-sm">
+                                    <i class="fas fa-trophy me-2 text-warning"></i>
+                                PRÊMIO PRINCIPAL
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-12">
+                                <img src="{% static 'img/2023/citroen-c3.png' %}" 
+                                     alt="Citroën C3 Live 1.0 MT - Prêmio Principal" 
+                                     class="img-fluid rounded-4 shadow-sm"
+                                     style="max-height: 300px;">
+                            </div>
+                        </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Prizes -->
+        <div class="row g-4">
+            <div class="col-12 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4 p-md-5">
+                        <div class="bg-light rounded-4 d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                            <i class="fas fa-television text-primary fs-2"></i>
+                            </div>
+                        <h4 class="fw-bold text-dark mb-3">05 Smart TVs de 50 polegadas</h4>
+                            <p class="text-muted mb-0">
+                                Do 6º ao 10º prêmio: 5 Smart TVs Philips 50 polegadas para renovar sua sala!
+                            </p>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="col-12 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                <div class="card h-100 border-0 shadow-sm hover-lift">
+                    <div class="card-body text-center p-4 p-md-5">
+                        <div class="bg-light rounded-4 d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                            <i class="fas fa-ticket text-success fs-2"></i>
+                            </div>
+                        <h4 class="fw-bold text-dark mb-3">5 VALES COMPRAS</h4>
+                            <p class="text-muted mb-0">
+                            5 vales-compras de RS 1.000,00 para você concorrer!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+<!-- Como Funciona Section -->
+<section class="py-5 bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-5" data-aos="fade-up">
+                <h2 class="display-5 fw-bold text-dark mb-3">Como Funciona</h2>
+                <p class="lead text-muted">Entenda o processo da Natal de Luz e Prêmios de forma simples e rápida</p>
+                                    </div>
+                                </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10" data-aos="zoom-in">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <img src="{% static 'img/2023/maquineta.png' %}" 
+                             alt="Máquina Cielo - Como funciona" 
+                             class="img-fluid rounded-4 mx-auto d-block"
+                             loading="lazy">
+                                    </div>
+                                </div>
+                                    </div>
+                                </div>
+                                    </div>
+</section>
+
+
+<!-- FAQ Section -->
+<section id="faq" class="py-5 bg-light">
+  <div class="container">
+    <div class="row justify-content-center mb-4">
+      <div class="col-lg-8 text-center">
+        <h2 class="display-6 fw-bold text-dark mb-2">FAQ - Natal de Luz e Prêmios</h2>
+        <p class="lead text-muted">Tire suas dúvidas sobre a maior promoção da cidade</p>
+      </div>
+    </div>
+
+    <div class="accordion" id="accordionFaq">
+
+      <!-- Q1 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="faqHeading1">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse1" aria-expanded="true" aria-controls="faqCollapse1">
+            O que é a Natal de Luz e Prêmios?
+          </button>
+        </h2>
+        <div id="faqCollapse1" class="accordion-collapse collapse show" aria-labelledby="faqHeading1" data-bs-parent="#accordionFaq">
+          <div class="accordion-body">
+            A Natal de Luz e Prêmios é a maior promoção da cidade de Teresina. Os participantes podem comprar nas lojas parceiras, cadastrar suas notas fiscais e concorrer a prêmios como um <b>Citroën C3 Live 1.0 MT 0km</b>, 05 <b>TVs Philips 50" Smart.</b> e <b>vales-compras de R$ 1.000</b>.
+          </div>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="faqHeading2">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse2" aria-expanded="false" aria-controls="faqCollapse2">
+            Como posso participar da Natal de Luz e Prêmios?
+          </button>
+        </h2>
+        <div id="faqCollapse2" class="accordion-collapse collapse" aria-labelledby="faqHeading2" data-bs-parent="#accordionFaq">
+          <div class="accordion-body">
+            Para participar, siga estes quatro passos simples:
+            <ol class="mb-0">
+              <li><b>Compre</b>: Faça suas compras nas lojas parceiras entre <b>10/12/2025 e 24/12/2025</b>. Cada R${{ campanha.valor|floatformat:0 }} em compras = 1 cupom.</li>
+              <li><b>Cadastre-se</b>: Crie sua conta gratuita no site <b>www.nataldeluzepremios2025.com.br</b> (leva menos de 2 minutos).</li>
+              <li><b>Envie</b>: Cadastre as notas fiscais e os comprovantes do cartão. Compras nas maquininhas <b>Cielo</b> valem <b>3 cupons</b> (anexe o canhoto da Cielo).</li>
+              <li><b>Concorra</b>: Acompanhe seus cupons no painel e torça no sorteio do dia <b>14 de janeiro de 2026</b>.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="faqHeading3">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse3" aria-expanded="false" aria-controls="faqCollapse3">
+            Quais são os prêmios da Natal de Luz e Prêmios?
+          </button>
+        </h2>
+        <div id="faqCollapse3" class="accordion-collapse collapse" aria-labelledby="faqHeading3" data-bs-parent="#accordionFaq">
+          <div class="accordion-body">
+            <ul class="mb-0">
+              <li><b>Prêmio Principal:</b> Citroën C3 Live 1.0 MT 0km.</li>
+              <li><b>05 TVs Philips 50" Smart:</b> Cinco Smart TVs de 50 polegadas.</li>
+              <li><b>5 Vales-Compras:</b> R$ 1.000 cada.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q4 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="faqHeading4">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse4" aria-expanded="false" aria-controls="faqCollapse4">
+            Quais são as lojas parceiras?
+          </button>
+        </h2>
+        <div id="faqCollapse4" class="accordion-collapse collapse" aria-labelledby="faqHeading4" data-bs-parent="#accordionFaq">
+          <div class="accordion-body">
+            As lojas parceiras são empresas de Teresina que aderiram à campanha. A lista completa está disponível no site oficial. Faça suas compras entre <b>10/12/2025 e 24/12/2025</b> para participar.
+          </div>
+        </div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="faqHeading5">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse5" aria-expanded="false" aria-controls="faqCollapse5">
+            Como envio minhas notas fiscais?
+          </button>
+        </h2>
+        <div id="faqCollapse5" class="accordion-collapse collapse" aria-labelledby="faqHeading5" data-bs-parent="#accordionFaq">
+          <div class="accordion-body">
+            Envie suas notas fiscais e os comprovantes do cartão pelo site oficial. Após o envio e validação, seus cupons digitais são gerados automaticamente no seu perfil. <b>Dica:</b> Se pagou com a maquininha Cielo, você ganha 3 cupons! Não esqueça de anexar o comprovante da Cielo.
+          </div>
+        </div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="faqHeading6">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse6" aria-expanded="false" aria-controls="faqCollapse6">
+            Há algum custo para participar?
+          </button>
+        </h2>
+        <div id="faqCollapse6" class="accordion-collapse collapse" aria-labelledby="faqHeading6" data-bs-parent="#accordionFaq">
+          <div class="accordion-body">
+            Não. O cadastro e a participação são gratuitos. Basta comprar nas lojas parceiras e cadastrar suas notas para receber cupons.
+          </div>
+        </div>
+      </div>
+
+      <!-- Q7 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="faqHeading7">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse7" aria-expanded="false" aria-controls="faqCollapse7">
+            Como os ganhadores são selecionados?
+          </button>
+        </h2>
+        <div id="faqCollapse7" class="accordion-collapse collapse" aria-labelledby="faqHeading7" data-bs-parent="#accordionFaq">
+          <div class="accordion-body">
+            Os ganhadores são definidos por sorteio no dia <b>14 de janeiro de 2026</b>. Você pode acompanhar os resultados pelo site oficial e canais de comunicação da campanha.
+          </div>
+        </div>
+      </div>
+
+      <!-- Q8 -->
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="faqHeading8">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse8" aria-expanded="false" aria-controls="faqCollapse8">
+            Onde posso encontrar mais informações?
+          </button>
+        </h2>
+        <div id="faqCollapse8" class="accordion-collapse collapse" aria-labelledby="faqHeading8" data-bs-parent="#accordionFaq">
+          <div class="accordion-body">
+            Consulte o Regulamento da campanha para detalhes, regras e atualizações:
+            <a href="{% static 'docs/regulamento.pdf' %}" target="_blank" rel="noopener">Regulamento</a>.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+<!-- fim faq-->
+
+
+<!-- Patrocinadores Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center mb-5" data-aos="fade-up">
+                <h2 class="display-5 fw-bold text-dark mb-3">Nossos Parceiros</h2>
+                <p class="lead text-muted"></p>
+                                    </div>
+                                </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10" data-aos="zoom-in">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <img src="{% static 'img/2023/patron.png' %}" 
+                             alt="Patrocinadores da Natal de Luz e Prêmios" 
+                             class="img-fluid mx-auto d-block"
+                             loading="lazy">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+<!-- CTA Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #0d6efd 100%);">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center text-white" data-aos="fade-up">
+                <h2 class="display-5 fw-bold mb-4">Pronto para Participar?</h2>
+                <p class="lead mb-4 opacity-90">
+                    Não perca essa oportunidade única! Cadastre-se agora e comece a concorrer aos prêmios incríveis da Natal de Luz e Prêmios.
+                </p>
+                <div class="d-flex flex-column flex-md-row flex-wrap justify-content-center gap-3">
+                    <!-- <a href="{% url 'participante:register' %}" class="btn btn-light px-4 px-md-5 py-3 fw-semibold">
+                        <i class="fas fa-user-plus me-2"></i>Cadastre-se Agora
+                    </a> -->
+                    <a href="#como-participar" class="btn btn-outline-light px-4 px-md-5 py-3 fw-semibold">
+                        <i class="fas fa-info-circle me-2"></i>Saiba Mais
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    /* Otimizações para touch devices */
+    @media (hover: none) and (pointer: coarse) {
+        .hover-lift:hover {
+            transform: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .card:hover .step-icon {
+            transform: none;
+        }
+    }
+
+    .step-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover .step-icon {
+        transform: scale(1.1);
+    }
+
+    .animate-bounce {
+        animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-10px);
+        }
+        60% {
+            transform: translateY(-5px);
+        }
+    }
+
+    .transition {
+        transition: all 0.3s ease;
+    }
+
+    .hover-opacity-100:hover {
+        opacity: 1 !important;
+    }
+
+    /* Banner Responsivo */
+    .banner-responsive {
+        min-height: 100vh;
+        background-position: center center;
+        background-repeat: no-repeat;
+        padding-top: 80px; /* Margem para o header fixo */
+    }
+    
+    /* Desktop: Banner principal - mostra imagem inteira sem cortar */
+    @media (min-width: 769px) {
+        .banner-responsive {
+            background-image: url('{% static 'img/2023/banner-princial-1444.png' %}');
+            background-size: 100% auto; /* Largura 100%, altura proporcional - não corta */
+            background-position: center top; /* Centraliza horizontalmente, alinha no topo */
+        }
+    }
+    
+    /* Desktop muito largo (ultrawide) - usa contain para não esticar */
+    @media (min-width: 1920px) {
+        .banner-responsive {
+            background-size: contain; /* Mostra imagem inteira sem esticar */
+            background-position: center center;
+        }
+    }
+    
+    /* Mobile: Imagem específica - largura 100%, altura proporcional */
+    @media (max-width: 768px) {
+        .banner-responsive {
+            background-image: url('{% static 'img/2023/banner-420x654.png' %}');
+            background-size: 100% auto; /* Largura 100%, altura proporcional - ocupa toda largura */
+            background-position: center top; /* Centraliza horizontalmente, alinha no topo */
+            background-origin: padding-box; /* Background começa após o padding-top */
+            padding-top: 70px; /* Espaço para o header fixo */
+            margin-top: 4rem; /* Espaço no topo */
+            /* Altura: calcula baseado na proporção da imagem (654/420 = 1.557) */
+            /* Inclui todos os espaços: padding-top, margin-top e padding-bottom */
+            height: calc(calc(100vw * 1.5));
+            min-height: calc(100vw * 1.557 + 70px + 4rem + 10rem); /* Altura mínima igual à altura */
+           /* Espaço na parte inferior para garantir que não corte */
+            background-color: #f8f9fa; /* Cor de fundo neutra caso a imagem não cubra tudo */
+            overflow: visible; /* Garante que o conteúdo não seja cortado */
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            min-height: 80vh;
+            padding: 2rem 0;
+        }
+        
+        .display-4 {
+            font-size: 2rem;
+            line-height: 1.2;
+        }
+        
+        .display-5 {
+            font-size: 1.75rem;
+            line-height: 1.3;
+        }
+        
+        .hero-content {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .hero-image {
+            margin-top: 1rem;
+        }
+        
+        .hero-image img {
+            max-height: 250px;
+        }
+        
+        .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .step-icon {
+            width: 60px !important;
+            height: 60px !important;
+        }
+        
+        .step-icon i {
+            font-size: 1.5rem !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .hero-section {
+            min-height: 70vh;
+            padding: 1.5rem 0;
+        }
+        
+        .display-4 {
+            font-size: 1.75rem;
+        }
+        
+        .display-5 {
+            font-size: 1.5rem;
+        }
+        
+        .lead {
+            font-size: 1rem;
+        }
+        
+        .hero-image img {
+            max-height: 200px;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        
+        .py-5 {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+        }
+        
+        .mb-5 {
+            margin-bottom: 2rem !important;
+        }
+        
+        .step-icon {
+            width: 50px !important;
+            height: 50px !important;
+        }
+        
+        .step-icon i {
+            font-size: 1.25rem !important;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .hero-section {
+            min-height: 60vh;
+        }
+        
+        .display-4 {
+            font-size: 1.5rem;
+        }
+        
+        .display-5 {
+            font-size: 1.25rem;
+        }
+        
+        .hero-image img {
+            max-height: 150px;
+        }
+        
+        .btn {
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .card-body {
+            padding: 0.75rem;
+        }
+        
+        .py-5 {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1.5rem !important;
+        }
+        
+        /* Otimizações para telas muito pequenas */
+        .container {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+        
+        .lead {
+            font-size: 0.95rem;
+        }
+        
+        .step-icon {
+            width: 45px !important;
+            height: 45px !important;
+        }
+        
+        .step-icon i {
+            font-size: 1.1rem !important;
+        }
+    }
+    
+    /* Otimizações para landscape mobile */
+    @media (max-width: 768px) and (orientation: landscape) {
+        .hero-section {
+            min-height: 50vh;
+        }
+        
+        .hero-image img {
+            max-height: 120px;
+        }
+        
+        .py-5 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}

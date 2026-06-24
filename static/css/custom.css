@@ -1,0 +1,198 @@
+:root {
+    
+	/* --primary-color:  var(--primary-color); */
+	--primary-color: #12c064;
+    --secondary-color: #eb3812;
+	/* --secondary-color: #eb3812; */
+    --text-color: #777;
+    --background-color: #fff;
+    --light-text-color: rgba(255, 255, 255, 0.7);
+    --dark-text-color: #222;
+    --border-color: rgba(34, 34, 34, 0.05);
+    --christmas-darkRed: #8B0000;
+    --christmas-red: #FF0000;
+    --christmas-green: #006400;
+    --christmas-gold: #FFD700;
+}
+ 
+body {
+	font-family: 'Barlow Semi Condensed', sans-serif;
+}
+
+/* Base Styles */
+body {
+    font-family: 'Barlow Semi Condensed', sans-serif;
+}
+
+/* Modal Animations */
+.modal.fade .modal-dialog {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Shake Animation */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.animate-shake {
+    animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Form Styles */
+.form-control {
+    height: 3.5rem;
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.form-control:focus {
+    border-color: var(--christmas-green);
+    box-shadow: 0 0 0 3px rgba(0, 100, 0, 0.1);
+    outline: none;
+}
+
+.form-control.is-invalid {
+    border-color: var(--christmas-red);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%23dc3545' viewBox='0 0 12 12'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+/* Button Styles */
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 100, 0, 0.1);
+}
+
+/* Loading Animation */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Gradient Background Animation */
+@keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.bg-gradient-animate {
+    background-size: 200% 200%;
+    animation: gradient 15s ease infinite;
+}
+
+/* Input Icons */
+.input-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+    transition: color 0.3s ease;
+}
+
+.form-control:focus + .input-icon {
+    color: var(--christmas-green);
+}
+
+/* Toast Notifications */
+.toast-notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background: white;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.toast-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+/* Error Messages */
+.error-message {
+    color: var(--christmas-red);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.error-message.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Focus Ring */
+.focus-ring {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    bottom: -2px;
+    left: -2px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.2s ease;
+}
+
+.form-control:focus ~ .focus-ring {
+    opacity: 1;
+    transform: scale(1);
+    border: 2px solid var(--christmas-green);
+}
+
+/* Input Validation States */
+.cpf-mask {
+    transition: all 0.3s ease-in-out;
+}
+
+.cpf-mask.border-green-500 {
+    background-color: rgba(0, 255, 0, 0.05);
+}
+
+.cpf-mask.border-red-500 {
+    background-color: rgba(255, 0, 0, 0.05);
+}
+
+/* Shake Animation for Invalid Input */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+    animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+
+
+

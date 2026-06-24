@@ -1,0 +1,189 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Documentos Suspeitos (Equivalentes){% endblock %}
+
+{% block content %}
+<main class="pt-5 mt-5">
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="mb-1">Possíveis duplicidades por equivalência</h4>
+                <div class="text-muted small">Visível apenas para superusuário</div>
+            </div>
+            <div>
+                <a href="{% url 'participante:backoffice' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+            </div>
+        </div>
+
+        <form method="get" class="row g-2 mb-3">
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="date" name="data_inicio" value="{{ data_inicio|default:'' }}" class="form-control">
+                    <label>Data início</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="date" name="data_fim" value="{{ data_fim|default:'' }}" class="form-control">
+                    <label>Data fim</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="text" name="q" value="{{ q|default:'' }}" class="form-control" placeholder="CPF ou nome do participante">
+                    <label>Participante (CPF/Nome)</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="text" name="lojista_cnpj" value="{{ lojista_cnpj|default:'' }}" class="form-control" placeholder="CNPJ">
+                    <label>CNPJ Lojista</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <input type="text" name="lojista_nome" value="{{ lojista_nome|default:'' }}" class="form-control" placeholder="Fantasia">
+                    <label>Nome Lojista</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" name="origem">
+                        <option value="">Todas as origens</option>
+                        <option value="participante" {% if origem == 'participante' %}selected{% endif %}>Cadastrado por participante</option>
+                        <option value="operador" {% if origem == 'operador' %}selected{% endif %}>Cadastrado por operador</option>
+                    </select>
+                    <label>Origem do cadastro</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" name="status">
+                        <option value="">Todos os status</option>
+                        <option value="pendente" {% if status == 'pendente' %}selected{% endif %}>Pendente</option>
+                        <option value="validado" {% if status == 'validado' %}selected{% endif %}>Validado</option>
+                        <option value="inconsistente" {% if status == 'inconsistente' %}selected{% endif %}>Inconsistente</option>
+                    </select>
+                    <label>Status</label>
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-primary flex-fill" type="submit"><i class="fas fa-search me-2"></i>Filtrar</button>
+                <a href="{% url 'participante:documentos_suspeitos' %}" class="btn btn-outline-secondary"><i class="fas fa-times"></i></a>
+                <a href="?export=csv&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&q={{ q }}&lojista_cnpj={{ lojista_cnpj }}&lojista_nome={{ lojista_nome }}&origem={{ origem }}&status={{ status }}&cadastrado_por={{ cadastrado_por }}" class="btn btn-outline-success"><i class="fas fa-file-csv me-2"></i>CSV</a>
+            </div>
+        </form>
+
+        <div class="mb-3 text-muted small">
+            <span class="me-3">Grupos: <strong>{{ total_groups }}</strong></span>
+            <span>Documentos nos grupos: <strong>{{ total_docs }}</strong></span>
+        </div>
+
+        {% if groups %}
+        <div class="table-modern">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Participante</th>
+                            <th>CPF</th>
+                            <th>Lojista</th>
+                            <th>Número normalizado</th>
+                            <th>Originais</th>
+                            <th>Qtd</th>
+                            <th>Janela</th>
+                            <th>Sev.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in groups %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ g.profile.nome|default:g.user.username }}</div>
+                            </td>
+                            <td class="text-muted small">{{ g.profile.CPF|default:'-' }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ g.lojista.fantasiaLojista }}</div>
+                                <div class="text-muted small">{{ g.lojista.CNPJLojista }}</div>
+                            </td>
+                            <td class="text-monospace">{{ g.normalized }}</td>
+                            <td>
+                                <div class="text-muted small">{{ g.originals|join:', ' }}</div>
+                            </td>
+                            <td>{{ g.count }}</td>
+                            <td class="text-muted small">{% if g.janela_dias is not None %}{{ g.janela_dias }} dia(s){% else %}-{% endif %}</td>
+                            <td>{{ g.severity }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="8">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Documento</th>
+                                                <th>Data</th>
+                                                <th>Status</th>
+                                                <th>Total</th>
+                                                <th>Cielo</th>
+                                                <th>Outros</th>
+                                                <th>Enviado por</th>
+                                                <th>Cadastrado por</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for d in g.docs %}
+                                            <tr>
+                                                <td>{{ d.numeroDocumento }}</td>
+                                                <td>{{ d.dataDocumento|date:'d/m/Y' }}</td>
+                                                <td>{{ d.status }}</td>
+                                                <td>R$ {{ d.valorDocumento|floatformat:2 }}</td>
+                                                <td>R$ {{ d.valorCielo|default:0|floatformat:2 }}</td>
+                                                <td>R$ {{ d.valorOutros|default:0|floatformat:2 }}</td>
+                                                <td>{% if d.enviado_por_operador %}Operador{% else %}Participante{% endif %}</td>
+                                                <td>{{ d.cadastrado_por.username|default:'-' }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if groups.has_other_pages %}
+        <nav class="mt-3" aria-label="Paginação">
+            <ul class="pagination justify-content-center">
+                {% if groups.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ groups.previous_page_number }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&apenas_participantes={{ apenas_participantes }}">Anterior</a></li>
+                {% endif %}
+                {% for num in groups.paginator.page_range %}
+                    {% if groups.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > groups.number|add:'-3' and num < groups.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&apenas_participantes={{ apenas_participantes }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if groups.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ groups.next_page_number }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&apenas_participantes={{ apenas_participantes }}">Próxima</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="fas fa-shield-alt"></i></div>
+            <h4 class="text-muted mb-2">Nenhum grupo suspeito encontrado</h4>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+

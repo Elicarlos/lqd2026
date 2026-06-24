@@ -1,0 +1,340 @@
+{% extends "base-dashboard.html" %}
+
+{% block title %}Auditoria do Sistema - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .audit-table {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .audit-table .table {
+        margin-bottom: 0;
+    }
+    
+    .audit-table .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .audit-table .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .audit-table .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+    
+    .audit-table .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    .badge-audit {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-reversao { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+    .badge-impressao { background: rgba(25, 135, 84, 0.1); color: #198754; }
+    .badge-validacao { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
+    .badge-edicao { background: rgba(108, 117, 125, 0.1); color: #6c757d; }
+    .badge-login { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    
+    .filters-card {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% if request.user.is_authenticated %}{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}{% else %}{% url 'participante:homepage' %}{% endif %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <i class="fas fa-shield-alt me-1"></i>Auditoria do Sistema
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">
+                        <i class="fas fa-shield-alt me-2"></i>Auditoria do Sistema
+                    </h1>
+                    <p class="text-muted mb-0">Registro completo de todas as ações realizadas no sistema</p>
+                </div>
+                <div class="text-end">
+                    <a href="{% url 'participante:auditoria' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-sync-alt me-1"></i>Limpar Filtros
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="fas fa-database fa-2x"></i>
+                        </div>
+                        <div>
+                            <div class="h4 mb-0">{{ total_registros }}</div>
+                            <div class="small">Total de Registros</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="fas fa-calendar-day fa-2x"></i>
+                        </div>
+                        <div>
+                            <div class="h4 mb-0">{{ registros_hoje }}</div>
+                            <div class="small">Registros Hoje</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-card">
+            <h5 class="mb-3">
+                <i class="fas fa-filter me-2"></i>Filtros
+            </h5>
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="usuario" class="form-label">Usuário</label>
+                    <input type="text" class="form-control" id="usuario" name="usuario" value="{{ filtros.usuario }}" placeholder="Nome do usuário">
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo_acao" class="form-label">Tipo de Ação</label>
+                    <select class="form-select" id="tipo_acao" name="tipo_acao">
+                        <option value="">Todos os tipos</option>
+                        {% for value, label in tipos_acao %}
+                            <option value="{{ value }}" {% if filtros.tipo_acao == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ filtros.data_inicio }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ filtros.data_fim }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="documento" class="form-label">Documento</label>
+                    <input type="text" class="form-control" id="documento" name="documento" value="{{ filtros.documento }}" placeholder="Número do documento">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tabela de Auditoria -->
+        {% if page_obj %}
+            <div class="audit-table">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-user me-2"></i>Usuário
+                                </th>
+                                <th>
+                                    <i class="fas fa-calendar me-2"></i>Data/Hora
+                                </th>
+                                <th>
+                                    <i class="fas fa-tag me-2"></i>Tipo de Ação
+                                </th>
+                                <th>
+                                    <i class="fas fa-file-invoice me-2"></i>Documento
+                                </th>
+                                <th>
+                                    <i class="fas fa-info-circle me-2"></i>Descrição
+                                </th>
+                                <th>
+                                    <i class="fas fa-comment me-2"></i>Justificativa
+                                </th>
+                                <th>
+                                    <i class="fas fa-network-wired me-2"></i>IP
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for registro in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ registro.usuario.username }}</div>
+                                    <div class="text-muted small">{{ registro.usuario.get_full_name|default:"-" }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ registro.data_hora|date:"d/m/Y" }}</div>
+                                    <div class="text-muted small">{{ registro.data_hora|date:"H:i:s" }}</div>
+                                </td>
+                                <td>
+                                    {% if registro.tipo_acao == 'reversao_impressao' %}
+                                        <span class="badge-audit badge-reversao">
+                                            <i class="fas fa-undo me-1"></i>{{ registro.get_tipo_acao_display }}
+                                        </span>
+                                    {% elif registro.tipo_acao == 'impressao_cupons' %}
+                                        <span class="badge-audit badge-impressao">
+                                            <i class="fas fa-print me-1"></i>{{ registro.get_tipo_acao_display }}
+                                        </span>
+                                    {% elif registro.tipo_acao == 'validacao_documento' %}
+                                        <span class="badge-audit badge-validacao">
+                                            <i class="fas fa-check me-1"></i>{{ registro.get_tipo_acao_display }}
+                                        </span>
+                                    {% elif registro.tipo_acao == 'edicao_documento' %}
+                                        <span class="badge-audit badge-edicao">
+                                            <i class="fas fa-edit me-1"></i>{{ registro.get_tipo_acao_display }}
+                                        </span>
+                                    {% elif registro.tipo_acao == 'login' %}
+                                        <span class="badge-audit badge-login">
+                                            <i class="fas fa-sign-in-alt me-1"></i>{{ registro.get_tipo_acao_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge-audit badge-edicao">
+                                            <i class="fas fa-cog me-1"></i>{{ registro.get_tipo_acao_display }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if registro.documento_fiscal %}
+                                        <div class="fw-semibold text-dark">{{ registro.documento_fiscal.numeroDocumento }}</div>
+                                        <div class="text-muted small">{{ registro.documento_fiscal.tipoDocumento }}</div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-dark">{{ registro.descricao|truncatechars:100 }}</div>
+                                </td>
+                                <td>
+                                    {% if registro.justificativa %}
+                                        <div class="text-dark">{{ registro.justificativa|truncatechars:80 }}</div>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-muted small">{{ registro.ip_address|default:"-" }}</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Paginação de auditoria">
+                    <ul class="pagination pagination-sm">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Primeira">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Anterior">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Próxima">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Última">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            
+            <!-- Informações da paginação -->
+            <div class="text-center text-muted small mt-2">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} 
+                ({{ page_obj.paginator.count }} registro{{ page_obj.paginator.count|pluralize:"s" }} no total)
+            </div>
+            {% endif %}
+        {% else %}
+            <!-- Estado vazio -->
+            <div class="text-center py-5">
+                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center p-4 mb-3">
+                    <i class="fas fa-shield-alt text-muted fa-2x"></i>
+                </div>
+                <h4 class="text-muted mb-2">Nenhum registro encontrado</h4>
+                <p class="text-muted mb-4">Não há registros de auditoria para os filtros selecionados</p>
+            </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

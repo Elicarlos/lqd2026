@@ -1,0 +1,72 @@
+{% extends "base-dashboard.html" %}
+{% block title %}Organização - Pessoas{% endblock %}
+{% block content %}
+<main class="pt-5 mt-5">
+  <div class="container py-4">
+    <nav class="mb-3">
+      <ol class="breadcrumb breadcrumb-standard">
+        <li class="breadcrumb-item"><a href="{% url 'lojista:homepage' %}" class="text-decoration-none"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item active">Organização</li>
+      </ol>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0">Pessoas da Organização</h5>
+      <a href="{% url 'organizacao:pessoa_create' %}" class="btn btn-primary">Nova pessoa</a>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+      <div class="col-md-6">
+        <div class="form-floating">
+          <input type="text" name="q" class="form-control" value="{{ q|default:'' }}" placeholder="Buscar por nome ou CPF">
+          <label>Buscar por nome ou CPF</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select name="origem" class="form-select">
+            <option value="">Todas as origens</option>
+            <option value="CDL" {% if origem == 'CDL' %}selected{% endif %}>CDL</option>
+            <option value="SOLVE" {% if origem == 'SOLVE' %}selected{% endif %}>Solve</option>
+            <option value="OUTROS" {% if origem == 'OUTROS' %}selected{% endif %}>Outros</option>
+          </select>
+          <label>Origem</label>
+        </div>
+      </div>
+      <div class="col-md-3 d-flex gap-2 align-items-stretch">
+        <button class="btn btn-gradient flex-fill" type="submit"><i class="fas fa-search me-1"></i>Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'organizacao:pessoas_list' %}"><i class="fas fa-times"></i></a>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>Origem</th>
+            <th class="text-end">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in pessoas %}
+          <tr>
+            <td>{{ p.nome }}</td>
+            <td>{{ p.cpf }}</td>
+            <td>{{ p.get_origem_display }}</td>
+            <td class="text-end">
+              <a href="{% url 'organizacao:pessoa_update' p.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+              <a href="{% url 'organizacao:pessoa_delete' p.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center text-muted">Nenhum cadastro</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+

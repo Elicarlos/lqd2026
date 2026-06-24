@@ -1,0 +1,546 @@
+{% extends "mobile.html" %}
+{% load static %}
+{% block title %}Validar Documento Fiscal{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header com breadcrumb e título -->
+        <div class="mb-8">
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-2">
+                    <li><a href="{% url 'lojista:homepage' %}" class="text-gray-500 hover:text-gray-700"><i class="fas fa-home"></i></a></li>
+                    <li><span class="text-gray-400">/</span></li>
+                    <li><a href="{% url 'participante:user_detail' doc.user.id %}" class="text-gray-500 hover:text-gray-700">Participante</a></li>
+                    <li><span class="text-gray-400">/</span></li>
+                    <li class="text-gray-900 font-medium">Validar Documento</li>
+                </ol>
+            </nav>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Validar Documento Fiscal</h1>
+                <p class="text-gray-600">Revise as informações do documento e proceda com a validação.</p>
+            </div>
+        </div>
+
+        <!-- Cards com informações principais do documento -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Lojista -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+            <div>
+                        <p class="text-sm font-medium text-gray-600">Lojista</p>
+                        <p class="text-lg font-bold text-gray-900">{{ doc.lojista }}</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-store text-xl text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Número do Documento -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+            <div>
+                        <p class="text-sm font-medium text-gray-600">Nº Documento</p>
+                        <p class="text-lg font-bold text-gray-900">{{ doc.numeroDocumento }}</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-receipt text-xl text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Valor -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+            <div>
+                        <p class="text-sm font-medium text-gray-600">Valor</p>
+                        <p class="text-lg font-bold text-gray-900">R$ {{ doc.valorDocumento|floatformat:2 }}</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ doc.dataDocumento|date:"d/m/Y" }}</p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-dollar-sign text-xl text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Cielo -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+            <div>
+                        <p class="text-sm font-medium text-gray-600">Pagamento Cielo</p>
+                        <p class="text-lg font-bold {% if doc.compradoCielo %}text-green-600{% else %}text-red-600{% endif %}">
+                            {% if doc.compradoCielo %}Sim{% else %}Não{% endif %}
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 {% if doc.compradoCielo %}bg-green-100{% else %}bg-red-100{% endif %} rounded-lg flex items-center justify-center">
+                            <i class="fas {% if doc.compradoCielo %}fa-credit-card{% else %}fa-times{% endif %} text-xl {% if doc.compradoCielo %}text-green-600{% else %}text-red-600{% endif %}"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            {% if doc.observacao and doc.observacao != "Nenhuma" %}
+        <!-- Observação -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+            <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-sticky-note text-yellow-600"></i>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Observação</h3>
+                    <p class="text-gray-600">{{ doc.observacao }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Seção de Imagens -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Documento Fiscal -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Documento Fiscal</h3>
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-invoice text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+                {% if doc.photo %}
+                    <div class="relative">
+                        <img src="{{ doc.photo.url }}" alt="Documento Fiscal" class="w-full h-64 object-cover rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow" onclick="openModal('modal-fiscal')">
+                        <div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                            <i class="fas fa-expand-alt mr-1"></i>Clique para ampliar
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="w-full h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-500">Nenhuma foto disponível</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Comprovante do Cartão -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Comprovante do Cartão</h3>
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-credit-card text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+                {% if doc.photo2 %}
+                    <div class="relative">
+                        <img src="{{ doc.photo2.url }}" alt="Comprovante Cartão" class="w-full h-64 object-cover rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md transition-shadow" onclick="openModal('modal-cartao')">
+                        <div class="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                            <i class="fas fa-expand-alt mr-1"></i>Clique para ampliar
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="w-full h-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-500">Nenhuma foto disponível</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Formulário de Validação -->
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Formulário de Validação</h2>
+            <p class="text-gray-600 mb-6">Revise e confirme os dados do documento antes da validação</p>
+            
+        <form action="." method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+                {% if documentofiscal_form.non_field_errors %}
+                    <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+                        {% for error in documentofiscal_form.non_field_errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- CNPJ da Loja -->
+                    {% if documentofiscal_form.lojista %}
+                    <div>
+                        <label for="{{ documentofiscal_form.lojista.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1 text-left">{{ documentofiscal_form.lojista.label }}{% if documentofiscal_form.lojista.field.required %}*{% endif %}</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-building text-gray-400"></i>
+                            </div>
+                            <select name="{{ documentofiscal_form.lojista.name }}" id="{{ documentofiscal_form.lojista.id_for_label }}" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900">
+                                {% for value, text in documentofiscal_form.lojista.field.choices %}
+                                    <option value="{{ value }}" {% if value == documentofiscal_form.lojista.value %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if documentofiscal_form.lojista.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ documentofiscal_form.lojista.errors }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Número do Documento -->
+                    {% if documentofiscal_form.numeroDocumento %}
+                    <div>
+                        <label for="{{ documentofiscal_form.numeroDocumento.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1 text-left">{{ documentofiscal_form.numeroDocumento.label }}{% if documentofiscal_form.numeroDocumento.field.required %}*{% endif %}</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-file-invoice text-gray-400"></i>
+                            </div>
+                            <input type="text" name="{{ documentofiscal_form.numeroDocumento.name }}" id="{{ documentofiscal_form.numeroDocumento.id_for_label }}" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900" placeholder="Número da nota fiscal" value="{{ documentofiscal_form.numeroDocumento.value|default:'' }}">
+                        </div>
+                        {% if documentofiscal_form.numeroDocumento.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ documentofiscal_form.numeroDocumento.errors }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Data da Compra -->
+                    {% if documentofiscal_form.dataDocumento %}
+                    <div>
+                        <label for="{{ documentofiscal_form.dataDocumento.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1 text-left">Data do Documento{% if documentofiscal_form.dataDocumento.field.required %}*{% endif %}</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-calendar-alt text-gray-400"></i>
+                            </div>
+                            <input type="text" name="{{ documentofiscal_form.dataDocumento.name }}" id="{{ documentofiscal_form.dataDocumento.id_for_label }}" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 date-mask" placeholder="dd/mm/aaaa" value="{{ documentofiscal_form.dataDocumento.value|date:'d/m/Y' }}">
+                        </div>
+                        {% if documentofiscal_form.dataDocumento.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ documentofiscal_form.dataDocumento.errors }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Valor Cielo -->
+                    {% if documentofiscal_form.valorCielo %}
+                    <div>
+                        <label for="{{ documentofiscal_form.valorCielo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1 text-left">Valor pago na Cielo</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-credit-card text-gray-400"></i>
+                            </div>
+                            <input type="text" id="valorCielo_display" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 money-mask" placeholder="R$ 0,00" value="{{ documentofiscal_form.valorCielo.value|default:'' }}">
+                        </div>
+                        {% if documentofiscal_form.valorCielo.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ documentofiscal_form.valorCielo.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-blue-600">💡 A cada R$ 50,00 pagos na Cielo = 3 cupons</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Valor pago em outros métodos -->
+                    <div>
+                        <label for="id_valorOutros" class="block text-sm font-medium text-gray-700 mb-1 text-left">Valor pago em dinheiro ou outros métodos</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-money-bill text-gray-400"></i>
+                            </div>
+                            <input type="text" id="valorOutros_display" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 money-mask" placeholder="R$ 0,00" value="{{ documentofiscal_form.valorOutros.value|default:'' }}">
+                        </div>
+                        <p class="mt-1 text-xs text-blue-600">💡 A cada R$ 50,00 pagos em outros métodos = 1 cupom</p>
+                    </div>
+
+                    <!-- Valor Total do Documento (calculado) -->
+                    {% if documentofiscal_form.valorDocumento %}
+                    <div class="col-span-full">
+                        <label for="{{ documentofiscal_form.valorDocumento.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1 text-left">Valor Total do Documento*</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-calculator text-gray-400"></i>
+                            </div>
+                            <!-- Campo oculto para o valor real -->
+                            <input type="hidden" name="{{ documentofiscal_form.valorDocumento.name }}" id="{{ documentofiscal_form.valorDocumento.id_for_label }}" value="{{ documentofiscal_form.valorDocumento.value|default:'0.00' }}">
+                            <!-- Campo de exibição formatado -->
+                            <input type="text" id="valor_total_formatado" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-gray-100" placeholder="R$ 0,00" readonly>
+                        </div>
+                        {% if documentofiscal_form.valorDocumento.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ documentofiscal_form.valorDocumento.errors }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Campos hidden para valores limpos (enviados ao backend) -->
+                    <input type="hidden" name="valorCielo" id="valorCielo_hidden" value="{{ documentofiscal_form.valorCielo.value|default:'' }}">
+                    <input type="hidden" name="valorOutros" id="valorOutros_hidden" value="{{ documentofiscal_form.valorOutros.value|default:'' }}">
+                    <input type="hidden" name="compradoCielo" id="id_compradoCielo" value="{{ documentofiscal_form.compradoCielo.value|yesno:'true,false' }}">
+
+                    <!-- Observação -->
+                    {% if documentofiscal_form.observacao %}
+                    <div class="md:col-span-2">
+                        <label for="{{ documentofiscal_form.observacao.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1 text-left">{{ documentofiscal_form.observacao.label }}</label>
+                        <div class="relative">
+                            <div class="absolute top-3 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-sticky-note text-gray-400"></i>
+                            </div>
+                            <textarea name="{{ documentofiscal_form.observacao.name }}" id="{{ documentofiscal_form.observacao.id_for_label }}" rows="3" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900" placeholder="Observações adicionais (opcional)">{{ documentofiscal_form.observacao.value|default:'' }}</textarea>
+                        </div>
+                        {% if documentofiscal_form.observacao.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ documentofiscal_form.observacao.errors }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                </div>
+
+                <!-- Preview dos Cupons -->
+                <div class="col-span-full">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">📋 Preview dos Cupons</h3>
+                        <div id="cuponsPreview" class="space-y-2">
+                            <div class="text-sm text-blue-800">
+                                <span class="font-medium">Cupons da Cielo:</span> 
+                                <span id="cuponsCielo">0</span>
+                            </div>
+                            <div class="text-sm text-blue-800">
+                                <span class="font-medium">Cupons de outros métodos:</span> 
+                                <span id="cuponsOutros">0</span>
+                            </div>
+                            <div class="border-t border-blue-200 pt-2">
+                                <div class="text-base font-bold text-blue-900">
+                                    <span class="font-medium">Total de Cupons:</span> 
+                                    <span id="totalCupons">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                            <div class="flex justify-end space-x-4 mt-6">
+                <a href="{% url 'participante:user_detail' doc.user.id %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-times-circle mr-2"></i> Cancelar
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-check mr-2"></i> Validar
+                </button>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Documento Fiscal -->
+<div id="modal-fiscal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800">Documento Fiscal {{ doc.numeroDocumento }}</h2>
+            <button type="button" class="text-gray-400 hover:text-gray-600 p-2 rounded-md hover:bg-gray-100 transition-colors" onclick="closeModal('modal-fiscal')">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        <div class="p-4 flex-grow overflow-auto flex justify-center items-center bg-gray-100">
+            {% if doc.photo %}
+            <img src="{{ doc.photo.url }}" alt="Documento Fiscal" class="max-w-full max-h-full object-contain rounded-md shadow-sm" id="img-fiscal">
+            {% else %}
+            <p class="text-gray-500">Nenhuma imagem disponível.</p>
+            {% endif %}
+        </div>
+        <div class="flex justify-end p-4 border-t border-gray-200 space-x-2">
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="rotateImage('img-fiscal')">
+                <i class="fas fa-sync-alt mr-2"></i>Girar
+            </button>
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="closeModal('modal-fiscal')">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Comprovante Cartão -->
+<div id="modal-cartao" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800">Comprovante do Cartão {{ doc.numeroDocumento }}</h2>
+            <button type="button" class="text-gray-400 hover:text-gray-600 p-2 rounded-md hover:bg-gray-100 transition-colors" onclick="closeModal('modal-cartao')">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        <div class="p-4 flex-grow overflow-auto flex justify-center items-center bg-gray-100">
+            {% if doc.photo2 %}
+            <img src="{{ doc.photo2.url }}" alt="Comprovante Cartão" class="max-w-full max-h-full object-contain rounded-md shadow-sm" id="img-cartao">
+            {% else %}
+            <p class="text-gray-500">Nenhuma imagem disponível.</p>
+            {% endif %}
+        </div>
+        <div class="flex justify-end p-4 border-t border-gray-200 space-x-2">
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="rotateImage('img-cartao')">
+                <i class="fas fa-sync-alt mr-2"></i>Girar
+            </button>
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" onclick="closeModal('modal-cartao')">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- jQuery Mask Plugin -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscaras usando cleave.js para melhor formatação monetária (igual ao formulário de referência)
+    $('.date-mask').mask('00/00/0000');
+            $('.money-mask').mask('#.##0.##0,00', {
+        reverse: true,
+        placeholder: "R$ 0,00",
+        translation: {
+            '0': {pattern: /[0-9]/},
+            '#': {pattern: /[0-9]/, optional: true}
+        }
+    });
+
+    // Elementos dos valores
+    // Campos visíveis (com máscara)
+    const valorCieloInput = document.getElementById('valorCielo_display');
+    const valorOutrosInput = document.getElementById('valorOutros_display');
+    // Campos hidden (valores limpos enviados ao backend)
+    const valorCieloHidden = document.getElementById('valorCielo_hidden');
+    const valorOutrosHidden = document.getElementById('valorOutros_hidden');
+    // Outros campos
+    const valorTotalDisplay = document.getElementById('valor_total_formatado');
+    const valorTotalHidden = document.querySelector('[name="valorDocumento"]');
+
+    // Função para converter valor monetário para número
+    function parseMoneyValue(value) {
+        if (!value) return 0;
+        const cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.');
+        return parseFloat(cleanValue) || 0;
+    }
+
+    // Função para formatar valor monetário
+    function formatMoneyValue(value) {
+        return `R$ ${value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+    }
+
+    // Função para calcular cupons baseado no valor
+    function calcularCupons(valor, isCielo = false) {
+        if (valor <= 0) return 0;
+        
+        // Regra: R$ 50,00 = 1 cupom (outros métodos) ou 3 cupons (Cielo)
+        const valorPorCupom = 50;
+        const cuponsBase = Math.floor(valor / valorPorCupom);
+        
+        if (isCielo) {
+            // Cielo triplica os cupons
+            return cuponsBase * 3;
+        } else {
+            // Outros métodos: cupons normais
+            return cuponsBase;
+        }
+    }
+
+    // Função para atualizar valores
+    function atualizarValores() {
+        const valorCielo = parseMoneyValue(valorCieloInput?.value || '0');
+        const valorOutros = parseMoneyValue(valorOutrosInput?.value || '0');
+        const valorTotal = valorCielo + valorOutros;
+
+        // Atualizar campos hidden com valores limpos (enviados ao backend)
+        if (valorCieloHidden) {
+            valorCieloHidden.value = valorCielo > 0 ? valorCielo.toFixed(2) : '';
+        }
+        if (valorOutrosHidden) {
+            valorOutrosHidden.value = valorOutros > 0 ? valorOutros.toFixed(2) : '';
+        }
+
+        // Atualizar valor total (campo hidden com valor puro)
+        if (valorTotalHidden) {
+            valorTotalHidden.value = valorTotal.toFixed(2);
+        }
+
+        // Atualizar campo de exibição formatado
+        if (valorTotalDisplay) {
+            valorTotalDisplay.value = formatMoneyValue(valorTotal);
+        }
+
+        // Atualizar campo hidden do compradoCielo (igual ao doc_fiscal_add_op.html)
+        const compradoCieloHidden = document.getElementById('id_compradoCielo');
+        if (compradoCieloHidden) {
+            compradoCieloHidden.value = valorCielo > 0 ? 'true' : 'false';
+        }
+
+        // Calcular e atualizar preview dos cupons
+        const cuponsCielo = calcularCupons(valorCielo, true); // Cielo triplica
+        const cuponsOutros = calcularCupons(valorOutros, false); // Outros métodos normais
+        const totalCupons = cuponsCielo + cuponsOutros;
+        
+        const cuponsCieloElement = document.getElementById('cuponsCielo');
+        const cuponsOutrosElement = document.getElementById('cuponsOutros');
+        const totalCuponsElement = document.getElementById('totalCupons');
+        
+        if (cuponsCieloElement) cuponsCieloElement.textContent = cuponsCielo;
+        if (cuponsOutrosElement) cuponsOutrosElement.textContent = cuponsOutros;
+        if (totalCuponsElement) totalCuponsElement.textContent = totalCupons;
+    }
+
+    // Event listeners para atualizar valores
+    if (valorCieloInput) {
+        valorCieloInput.addEventListener('input', atualizarValores);
+    }
+    if (valorOutrosInput) {
+        valorOutrosInput.addEventListener('input', atualizarValores);
+    }
+
+    // Inicializar valores
+    atualizarValores();
+    
+    // Se há valores iniciais no formulário, formatá-los corretamente
+    if (valorCieloInput?.value) {
+        const valorCielo = parseMoneyValue(valorCieloInput.value);
+        valorCieloInput.value = formatMoneyValue(valorCielo);
+    }
+    
+    if (valorOutrosInput?.value) {
+        const valorOutros = parseMoneyValue(valorOutrosInput.value);
+        valorOutrosInput.value = formatMoneyValue(valorOutros);
+    }
+    
+    // Recalcular após formatar
+    atualizarValores();
+
+    // Os campos hidden estão sempre atualizados em tempo real
+    // Não precisa mais de limpeza no submit!
+});
+
+let currentRotation = {};
+
+function openModal(modalId) {
+    document.getElementById(modalId).classList.remove('hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+function rotateImage(imgId) {
+    const img = document.getElementById(imgId);
+    if (!currentRotation[imgId]) {
+        currentRotation[imgId] = 0;
+    }
+    currentRotation[imgId] = (currentRotation[imgId] + 90) % 360;
+    img.style.transform = `rotate(${currentRotation[imgId]}deg)`;
+}
+</script>
+{% endblock %}
+

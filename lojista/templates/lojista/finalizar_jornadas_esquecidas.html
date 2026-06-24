@@ -1,0 +1,241 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Finalizar Jornadas Esquecidas - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    .warning-card {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        color: white;
+    }
+    
+    .table-responsive {
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .btn-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        border-radius: 0.5rem;
+    }
+    
+    .alert-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #ffc107;
+        color: #856404;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_registros_jornada' %}" class="text-decoration-none">
+                            Registros de Jornada
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Finalizar Esquecidas</li>
+                </ol>
+            </nav>
+            
+            <div class="card warning-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-white mb-1">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Finalizar Jornadas Esquecidas
+                            </h1>
+                            <p class="text-white mb-0">Finalize automaticamente jornadas que foram esquecidas há mais de 24 horas</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:gestao_registros_jornada' %}" class="btn btn-outline-light">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerta de Informação -->
+        <div class="alert alert-warning mb-4" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle fa-2x me-3"></i>
+                <div>
+                    <h5 class="alert-heading mb-2">⚠️ Atenção!</h5>
+                    <p class="mb-2">Esta ação irá finalizar automaticamente todas as jornadas que estão ativas há mais de 24 horas.</p>
+                    <p class="mb-0"><strong>Importante:</strong> Os colaboradores serão automaticamente deslogados do sistema após a finalização de suas jornadas por questões de segurança.</p>
+                </div>
+            </div>
+        </div>
+                <div>
+                    <h5 class="alert-heading fw-bold mb-2">Atenção!</h5>
+                    <p class="mb-2">Esta funcionalidade irá finalizar automaticamente todas as jornadas que estão ativas há mais de 24 horas.</p>
+                    <p class="mb-0"><strong>Total de jornadas esquecidas encontradas: {{ count }}</strong></p>
+                </div>
+            </div>
+        </div>
+
+        {% if count > 0 %}
+        <!-- Preview das Jornadas -->
+        <div class="card card-standard mb-4">
+            <div class="card-header bg-white border-0 p-4">
+                <h5 class="fw-bold mb-0">
+                    <i class="fas fa-eye text-info me-2"></i>Preview das Jornadas que Serão Finalizadas
+                </h5>
+            </div>
+            
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Posto</th>
+                                <th>Início</th>
+                                <th>Duração Atual</th>
+                                <th>Última Atualização</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for jornada in jornadas_esquecidas %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-user text-warning"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ jornada.user.get_full_name|default:jornada.user.username }}</div>
+                                            <div class="small text-muted">@{{ jornada.user.username }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if jornada.posto_trabalho %}
+                                    <span class="badge bg-light text-dark">{{ jornada.posto_trabalho.nome }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ jornada.horario_inicio|date:"d/m/Y" }}</div>
+                                    <div class="small text-muted">{{ jornada.horario_inicio|date:"H:i" }}</div>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-warning">{{ jornada.get_duracao_formatada }}</span>
+                                </td>
+                                <td>
+                                    <div class="small text-muted">{{ jornada.ultimo_update|date:"d/m/Y H:i" }}</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão de Confirmação -->
+        <div class="card card-standard">
+            <div class="card-body p-4 text-center">
+                <div class="mb-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h4 class="fw-bold text-dark mb-3">Confirmar Finalização</h4>
+                    <p class="text-muted mb-4">
+                        Você está prestes a finalizar <strong>{{ count }} jornada(s)</strong> que foram esquecidas há mais de 24 horas.
+                        <br>Esta ação não pode ser desfeita.
+                    </p>
+                </div>
+                
+                <form method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning btn-lg me-3" onclick="return confirm('Tem certeza que deseja finalizar {{ count }} jornada(s)? Esta ação não pode ser desfeita.')">
+                        <i class="fas fa-check me-2"></i>Confirmar Finalização
+                    </button>
+                </form>
+                
+                <a href="{% url 'lojista:gestao_registros_jornada' %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+        
+        {% else %}
+        <!-- Nenhuma Jornada Encontrada -->
+        <div class="card card-standard">
+            <div class="card-body p-5 text-center">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4 class="fw-bold text-dark mb-3">Nenhuma Jornada Esquecida</h4>
+                    <p class="text-muted mb-4">
+                        Não foram encontradas jornadas ativas há mais de 24 horas.
+                        <br>Todos os registros estão atualizados!
+                    </p>
+                </div>
+                
+                <a href="{% url 'lojista:gestao_registros_jornada' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar aos Registros
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar confirmação extra para o botão de finalização
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const count = {{ count }};
+            const confirmed = confirm(`Tem certeza que deseja finalizar ${count} jornada(s)?\n\nEsta ação irá:\n- Finalizar todas as jornadas esquecidas\n- Registrar você como responsável pela finalização\n- Não poderá ser desfeita\n\nDeseja continuar?`);
+            
+            if (!confirmed) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

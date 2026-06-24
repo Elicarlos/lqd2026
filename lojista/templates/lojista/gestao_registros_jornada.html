@@ -1,0 +1,533 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Gestão de Registros de Jornada - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+    }
+    
+    .status-ativa { background-color: #d1e7dd; color: #0f5132; }
+    .status-finalizada { background-color: #cfe2ff; color: #084298; }
+    .status-pausa { background-color: #fff3cd; color: #664d03; }
+    .status-cancelada { background-color: #f8d7da; color: #721c24; }
+    
+    .table-responsive {
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .btn-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        border-radius: 0.5rem;
+    }
+    
+    .filters-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .stats-card {
+        border-left: 4px solid;
+    }
+    
+    .stats-card.ativas { border-left-color: #198754; }
+    .stats-card.finalizadas { border-left-color: #0d6efd; }
+    .stats-card.pausadas { border-left-color: #ffc107; }
+    .stats-card.total { border-left-color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Registros de Jornada</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">
+                                <i class="fas fa-clock text-primary me-2"></i>Gestão de Registros de Jornada
+                            </h1>
+                            <p class="text-muted mb-0">Gerencie, edite e finalize registros de jornada dos colaboradores (equipe interna)</p>
+                            <div class="alert alert-info mt-2 mb-0 py-2 px-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <small><strong>Nota:</strong> Ao finalizar uma jornada, o colaborador será automaticamente deslogado do sistema por questões de segurança.</small>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:finalizar_jornadas_esquecidas' %}" class="btn btn-warning me-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Finalizar Esquecidas
+                            </a>
+                            <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card total bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Total</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ total_registros }}</h3>
+                                <p class="small text-muted mb-0">
+                                    <i class="fas fa-list me-1"></i>Registros
+                                </p>
+                            </div>
+                            <div class="bg-secondary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-list text-xl text-secondary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stats-card ativas bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Ativas</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ registros_ativos }}</h3>
+                                <p class="small text-success mb-0">
+                                    <i class="fas fa-play me-1"></i>Em andamento
+                                </p>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-play text-xl text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stats-card finalizadas bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Finalizadas</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ registros_finalizados }}</h3>
+                                <p class="small text-primary mb-0">
+                                    <i class="fas fa-check me-1"></i>Concluídas
+                                </p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-check text-xl text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stats-card pausadas bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Pausadas</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ registros_pausados }}</h3>
+                                <p class="small text-warning mb-0">
+                                    <i class="fas fa-pause me-1"></i>Em pausa
+                                </p>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-pause text-xl text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card filters-card mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-filter me-2"></i>Filtros de Busca
+                </h5>
+                
+                <form method="GET" class="row g-3">
+                    <div class="col-md-2">
+                        <label for="status" class="form-label text-white fw-semibold">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="ATIVA" {% if status_filter == 'ATIVA' %}selected{% endif %}>Ativa</option>
+                            <option value="FINALIZADA" {% if status_filter == 'FINALIZADA' %}selected{% endif %}>Finalizada</option>
+                            <option value="PAUSA" {% if status_filter == 'PAUSA' %}selected{% endif %}>Pausada</option>
+                            <option value="CANCELADA" {% if status_filter == 'CANCELADA' %}selected{% endif %}>Cancelada</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="colaborador" class="form-label text-white fw-semibold">Colaborador</label>
+                        <input type="text" 
+                               name="colaborador" 
+                               id="colaborador"
+                               value="{{ colaborador_filter }}"
+                               class="form-control"
+                               placeholder="Nome, usuário ou CPF">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="posto" class="form-label text-white fw-semibold">Posto</label>
+                        <select name="posto" id="posto" class="form-select">
+                            <option value="">Todos</option>
+                            {% for posto in postos %}
+                            <option value="{{ posto.id }}" {% if posto_filter == posto.id|stringformat:"s" %}selected{% endif %}>
+                                {{ posto.nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="data_inicio" class="form-label text-white fw-semibold">Data Início</label>
+                        <input type="date" 
+                               name="data_inicio" 
+                               id="data_inicio"
+                               value="{{ data_inicio }}"
+                               class="form-control">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="data_fim" class="form-label text-white fw-semibold">Data Fim</label>
+                        <input type="date" 
+                               name="data_fim" 
+                               id="data_fim"
+                               value="{{ data_fim }}"
+                               class="form-control">
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <label class="form-label text-white fw-semibold">&nbsp;</label>
+                        <div class="form-check">
+                            <input type="checkbox" 
+                                   name="apenas_ativas" 
+                                   id="apenas_ativas"
+                                   class="form-check-input"
+                                   {% if apenas_ativas %}checked{% endif %}>
+                            <label for="apenas_ativas" class="form-check-label text-white small">
+                                Apenas ativas
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-light me-2">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                        <a href="{% url 'lojista:gestao_registros_jornada' %}" class="btn btn-outline-light">
+                            <i class="fas fa-times me-2"></i>Limpar
+                        </a>
+                    </div>
+                </form>
+                
+                {% if has_filters %}
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark me-2">
+                        <i class="fas fa-filter me-1"></i>Filtros ativos
+                    </span>
+                    {% if status_filter %}
+                    <span class="badge bg-info me-1">Status: {{ status_filter }}</span>
+                    {% endif %}
+                    {% if colaborador_filter %}
+                    <span class="badge bg-info me-1">Colaborador: {{ colaborador_filter }}</span>
+                    {% endif %}
+                    {% if posto_filter %}
+                    <span class="badge bg-info me-1">Posto: {{ posto_filter }}</span>
+                    {% endif %}
+                    {% if data_inicio %}
+                    <span class="badge bg-info me-1">De: {{ data_inicio }}</span>
+                    {% endif %}
+                    {% if data_fim %}
+                    <span class="badge bg-info me-1">Até: {{ data_fim }}</span>
+                    {% endif %}
+                    {% if apenas_ativas %}
+                    <span class="badge bg-info me-1">Apenas ativas</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tabela de Registros -->
+        <div class="card card-standard">
+            <div class="card-header bg-white border-0 p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-table me-2"></i>Registros de Jornada
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="text-muted small">
+                            Mostrando {{ page_obj.start_index }} a {{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros
+                        </div>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'lojista:exportar_registros_jornada_pdf' %}?status={{ status_filter }}&colaborador={{ colaborador_filter }}&posto={{ posto_filter }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}{% if apenas_ativas %}&apenas_ativas=on{% endif %}" target="_blank">
+                            <i class="fas fa-file-pdf me-2"></i>Imprimir em PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Colaborador / CPF</th>
+                                <th>Posto</th>
+                                <th>Início</th>
+                                <th>Fim</th>
+                                <th>Duração</th>
+                                <th>Status</th>
+                                <th>Última Atualização</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for registro in page_obj %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <div class="fw-semibold">
+                                            {% if registro.user.profile.nome %}
+                                                {{ registro.user.profile.nome }}
+                                            {% elif registro.user.get_full_name %}
+                                                {{ registro.user.get_full_name }}
+                                            {% else %}
+                                                {{ registro.user.username }}
+                                            {% endif %}
+                                        </div>
+                                        {% if registro.user.profile.CPF %}
+                                        <div class="small text-muted">{{ registro.user.profile.CPF }}</div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if registro.posto_trabalho %}
+                                    <span class="badge bg-light text-dark">{{ registro.posto_trabalho.nome }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ registro.horario_inicio|date:"d/m/Y" }}</div>
+                                    <div class="small text-muted">{{ registro.horario_inicio|date:"H:i" }}</div>
+                                </td>
+                                <td>
+                                    {% if registro.horario_fim %}
+                                    <div class="fw-semibold">{{ registro.horario_fim|date:"d/m/Y" }}</div>
+                                    <div class="small text-muted">{{ registro.horario_fim|date:"H:i" }}</div>
+                                    {% else %}
+                                    <span class="text-warning">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-semibold">{{ registro.get_duracao_formatada }}</span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ registro.status|lower }}">
+                                        {% if registro.status == 'ATIVA' %}
+                                        <i class="fas fa-play me-1"></i>Ativa
+                                        {% elif registro.status == 'FINALIZADA' %}
+                                        <i class="fas fa-check me-1"></i>Finalizada
+                                        {% elif registro.status == 'PAUSA' %}
+                                        <i class="fas fa-pause me-1"></i>Pausada
+                                        {% elif registro.status == 'CANCELADA' %}
+                                        <i class="fas fa-times me-1"></i>Cancelada
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="small text-muted">{{ registro.ultimo_update|date:"d/m/Y H:i" }}</div>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'lojista:editar_registro_jornada' registro.id %}" 
+                                           class="btn btn-outline-primary btn-action" 
+                                           title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        {% if registro.status == 'ATIVA' %}
+                                        <button type="button" 
+                                                class="btn btn-outline-warning btn-action" 
+                                                title="Pausar"
+                                                onclick="pausarJornada({{ registro.id }})">
+                                            <i class="fas fa-pause"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-outline-success btn-action" 
+                                                title="Finalizar"
+                                                onclick="finalizarJornada({{ registro.id }})">
+                                            <i class="fas fa-stop"></i>
+                                        </button>
+                                        {% elif registro.status == 'PAUSA' %}
+                                        <button type="button" 
+                                                class="btn btn-outline-primary btn-action" 
+                                                title="Retomar"
+                                                onclick="retomarJornada({{ registro.id }})">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <h5>Nenhum registro encontrado</h5>
+                                        <p>Tente ajustar os filtros de busca</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer bg-white border-0 p-4">
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if has_filters %}&status={{ status_filter }}&colaborador={{ colaborador_filter }}&posto={{ posto_filter }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&apenas_ativas={{ apenas_ativas }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if has_filters %}&status={{ status_filter }}&colaborador={{ colaborador_filter }}&posto={{ posto_filter }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&apenas_ativas={{ apenas_ativas }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if has_filters %}&status={{ status_filter }}&colaborador={{ colaborador_filter }}&posto={{ posto_filter }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&apenas_ativas={{ apenas_ativas }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if has_filters %}&status={{ status_filter }}&colaborador={{ colaborador_filter }}&posto={{ posto_filter }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&apenas_ativas={{ apenas_ativas }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if has_filters %}&status={{ status_filter }}&colaborador={{ colaborador_filter }}&posto={{ posto_filter }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&apenas_ativas={{ apenas_ativas }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function pausarJornada(registroId) {
+    if (confirm('Deseja pausar esta jornada?')) {
+        window.location.href = `/lojista/jornadas/registros/${registroId}/editar/?action=pausar`;
+    }
+}
+
+function finalizarJornada(registroId) {
+    if (confirm('Deseja finalizar esta jornada?')) {
+        window.location.href = `/lojista/jornadas/registros/${registroId}/editar/?action=finalizar`;
+    }
+}
+
+function retomarJornada(registroId) {
+    if (confirm('Deseja retomar esta jornada?')) {
+        window.location.href = `/lojista/jornadas/registros/${registroId}/editar/?action=retomar`;
+    }
+}
+
+// Auto-submit form when filters change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterInputs = document.querySelectorAll('select[name], input[name="colaborador"], input[name="data_inicio"], input[name="data_fim"]');
+    
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            this.closest('form').submit();
+        });
+    });
+    
+    // Checkbox doesn't auto-submit, user needs to click search
+    const checkbox = document.querySelector('input[name="apenas_ativas"]');
+    if (checkbox) {
+        checkbox.addEventListener('change', function() {
+            // Optional: auto-submit for checkbox too
+            // this.closest('form').submit();
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,304 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Relatório de Jornada Geral - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    .table-modern {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .table-modern .table {
+        margin-bottom: 0;
+    }
+    
+    .table-modern .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-modern .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .table-modern .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+    
+    .table-modern .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .table-modern .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    .badge-status {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-status.ativa {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .badge-status.finalizada {
+        background-color: #d4edda;
+        color: #155724;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Relatório de Jornada Geral</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-chart-line me-2 text-primary"></i>
+                    Relatório de Jornada Geral
+                </h1>
+                <div>
+                    <a href="{% url 'participante:relatorio_jornada' %}?tipo=individual" class="btn btn-outline-primary">
+                        <i class="fas fa-user me-1"></i>Meu Relatório
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="tipo" class="form-label">Tipo de Relatório</label>
+                        <select class="form-select" id="tipo" name="tipo">
+                            <option value="todos" {% if tipo_relatorio == 'todos' %}selected{% endif %}>Todos os Colaboradores</option>
+                            <option value="individual" {% if tipo_relatorio == 'individual' %}selected{% endif %}>Individual</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="data_inicio" class="form-label">Data Início</label>
+                        <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                               value="{{ data_inicio }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="data_fim" class="form-label">Data Fim</label>
+                        <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                               value="{{ data_fim }}" required>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-1"></i>Filtrar
+                        </button>
+                        <a href="{% url 'participante:relatorio_jornada' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-undo me-1"></i>Limpar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-primary bg-opacity-10 text-primary rounded-3 p-3 me-3">
+                            <i class="fas fa-calendar-check fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">{{ total_jornadas }}</h3>
+                            <p class="text-muted mb-0">Total de Jornadas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success bg-opacity-10 text-success rounded-3 p-3 me-3">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">{{ jornadas_finalizadas }}</h3>
+                            <p class="text-muted mb-0">Jornadas Finalizadas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-info bg-opacity-10 text-info rounded-3 p-3 me-3">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">{{ usuarios_ativos }}</h3>
+                            <p class="text-muted mb-0">Usuários Ativos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning bg-opacity-10 text-warning rounded-3 p-3 me-3">
+                            <i class="fas fa-percentage fa-2x"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">
+                                {% if total_jornadas > 0 %}
+                                    {{ jornadas_finalizadas|floatformat:0 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted mb-0">Taxa de Finalização</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Jornadas -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Jornadas de Todos os Colaboradores
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-modern">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Colaborador</th>
+                                <th>Data</th>
+                                <th>Início</th>
+                                <th>Fim</th>
+                                <th>Duração</th>
+                                <th>Posto</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for jornada in jornadas %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>{{ jornada.nome }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ jornada.usuario }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ jornada.inicio|date:"d/m/Y" }}</strong>
+                                </td>
+                                <td>
+                                    <i class="fas fa-play-circle text-success me-1"></i>
+                                    {{ jornada.inicio|time:"H:i" }}
+                                </td>
+                                <td>
+                                    {% if jornada.fim %}
+                                        <i class="fas fa-stop-circle text-danger me-1"></i>
+                                        {{ jornada.fim|time:"H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if jornada.fim %}
+                                        <span class="badge bg-light text-dark">
+                                            {{ jornada.duracao_formatada }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Em andamento</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if jornada.posto %}
+                                        <span class="badge bg-primary">{{ jornada.posto }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Não definido</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if jornada.status == 'ATIVA' %}
+                                        <span class="badge-status ativa">
+                                            <i class="fas fa-play me-1"></i>Ativa
+                                        </span>
+                                    {% elif jornada.status == 'FINALIZADA' %}
+                                        <span class="badge-status finalizada">
+                                            <i class="fas fa-check me-1"></i>Finalizada
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ jornada.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <p class="mb-0">Nenhuma jornada encontrada no período selecionado.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

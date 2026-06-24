@@ -1,0 +1,444 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+{% block title %}Dashboard - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+
+
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Breadcrumb -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item active">
+                        <i class="fas fa-home me-1"></i>Dashboard
+                    </li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Mensagens -->
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-standard alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Welcome Section -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+            <div>
+                <h1 class="h3 fw-bold text-dark mb-1 d-flex align-items-center">
+                    Bem vindo(a), {{ request.user.first_name|default:request.user.username }}!
+                    </h1>
+                <p class="text-muted mb-0">Gerencie sua conta e acompanhe seus documentos fiscais.</p>
+            </div>
+            <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-md-auto">
+                <a href="{% url 'participante:edit' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-user-edit me-2"></i>Editar Perfil
+                </a>
+                {% comment %}
+                 <a href="{% url 'participante:adddocfiscal' %}" class="btn" style="background-color: #0d6efd; border-color: #0d6efd; color: white;">
+                     <i class="fas fa-plus-circle me-2"></i>Novo Documento
+                 </a>
+                {% endcomment %}
+                
+            </div>
+        </div>
+
+        <!-- Status da Jornada (apenas para colaboradores) -->
+        {% if request.user.profile.is_colaborador and request.user.profile.requer_controle_jornada %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-standard">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; min-width: 50px;">
+                                    <i class="fas fa-clock text-primary fs-5"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1">Status da Jornada</h5>
+                                    {% if request.user.profile.tem_jornada_ativa %}
+                                        {% with jornada=request.user.profile.get_jornada_ativa %}
+                                        <p class="text-success mb-1">
+                                            <i class="fas fa-check-circle me-2"></i>
+                                            <strong>Jornada Ativa</strong>
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            Início: {{ jornada.horario_inicio|date:"d/m/Y H:i" }} | 
+                                            Posto: {{ jornada.posto_trabalho.nome }}
+                                        </p>
+                                        {% endwith %}
+                                    {% else %}
+                                        <p class="text-warning mb-1">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Nenhuma jornada ativa</strong>
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            Clique em "Iniciar Jornada" para começar
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 w-100">
+                                {% if request.user.profile.tem_jornada_ativa %}
+                                    <a href="{% url 'participante:finalizar_jornada' %}" class="btn btn-danger flex-fill">
+                                        <i class="fas fa-stop me-2"></i>Finalizar Jornada
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'participante:selecionar_posto' %}" class="btn btn-success flex-fill">
+                                        <i class="fas fa-play me-2"></i>Iniciar Jornada
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Histórico de Jornadas do Dia (apenas para colaboradores) -->
+        {% if request.user.profile.is_colaborador and request.user.profile.requer_controle_jornada %}
+        {% with jornadas_hoje=request.user.registros_jornada.all %}
+        {% if jornadas_hoje %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card card-standard">
+                    <div class="card-header p-3 p-md-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="fas fa-history text-info"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">Jornadas de Hoje</h5>
+                                <p class="text-muted small mb-0">Histórico de jornadas registradas hoje</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-modern mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Turno</th>
+                                        <th>Início</th>
+                                        <th>Fim</th>
+                                        <th>Duração</th>
+                                        <th>Posto</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for jornada in jornadas_hoje %}
+                                    {% if jornada.horario_inicio|date:"Y-m-d" == "now"|date:"Y-m-d" %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-semibold text-dark">
+                                                {% if jornada.horario_inicio|date:"H" < "12" %}
+                                                    Manhã
+                                                {% elif jornada.horario_inicio|date:"H" < "18" %}
+                                                    Tarde
+                                                {% else %}
+                                                    Noite
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="text-dark">{{ jornada.horario_inicio|date:"H:i" }}</span>
+                                        </td>
+                                        <td>
+                                            {% if jornada.horario_fim %}
+                                                <span class="text-dark">{{ jornada.horario_fim|date:"H:i" }}</span>
+                                            {% else %}
+                                                <span class="text-warning">Em andamento</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if jornada.horario_fim %}
+                                                <span class="text-success">{{ jornada.get_duracao_formatada }}</span>
+                                            {% else %}
+                                                <span class="text-warning">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">{{ jornada.posto_trabalho.nome|default:"-" }}</span>
+                                        </td>
+                                        <td>
+                                            {% if jornada.status == 'ATIVA' %}
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-play me-1"></i>Ativa
+                                                </span>
+                                            {% elif jornada.status == 'FINALIZADA' %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="fas fa-check me-1"></i>Finalizada
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-pause me-1"></i>{{ jornada.status }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+
+        <!-- Documents List Section -->
+        {% if docs %}
+        <div class="card-standard">
+            <div class="card-header p-3 p-md-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">                    
+                        <div>
+                            <h5 class="fw-bold text-dark mb-1">Meus Documentos</h5>
+                            <p class="text-muted small mb-0">
+                                {{ docs.count }} documento{{ docs.count|pluralize }} registrado{{ docs.count|pluralize }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                                 <div class="table-responsive">
+                     <table class="table table-modern mb-0">
+                                                  <thead>
+                             <tr>
+                                 <th>Nº Doc</th>
+                                 <th>Loja</th>
+                                 <th>Data Compra</th>
+                                 <th class="text-center">Cielo</th>
+                                 <th class="text-center">Outros</th>
+                                 <th>Valor Total</th>
+                                 <th>Status</th>
+                                 <th>Cupons</th>
+                                 <th>Ações</th>
+                             </tr>
+                         </thead>
+                        <tbody>
+                            {% for doc in docs %}
+                            <tr>
+                                <td>
+                                    <span class="fw-semibold text-dark">{{ doc.numeroDocumento }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        
+                                        <div class="flex-grow-1 min-w-0">
+                                            <div class="fw-semibold text-dark text-truncate">{{ doc.lojista.fantasiaLojista|default:"Loja não informada" }}</div>
+                                            {% if doc.lojista.fantasiaLojista %}
+                                            <div class="text-muted small text-truncate">{{ doc.lojista.razaoLojista }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ doc.dataDocumento|date:"d/m/Y" }}</div>
+                                </td>
+                                <!-- Valor Cielo -->
+                                <td class="text-center">
+                                    <div class="fw-semibold text-dark">R$ {{ doc.valorCielo|floatformat:2|default:"0.00" }}</div>
+                                    {% if doc.valorCielo and doc.valorCielo > 0 %}
+                                    <div class="small text-success">
+                                        <i class="fas fa-check-circle me-1"></i>Cielo
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <!-- Valor Outros -->
+                                <td class="text-center">
+                                    <div class="fw-semibold text-dark">R$ {{ doc.valorOutros|floatformat:2|default:"0.00" }}</div>
+                                    {% if doc.valorOutros and doc.valorOutros > 0 %}
+                                    <div class="small text-info">
+                                        <i class="fas fa-money-bill-wave me-1"></i>Outros
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <!-- Valor Total -->
+                                <td>
+                                    <div class="fw-bold text-success fs-6">R$ {{ doc.valorDocumento|floatformat:2 }}</div>
+                                </td>
+                                <!-- Status -->
+                                <td>
+                                    {% if doc.status == 'validado' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Validado
+                                        </span>
+                                    {% elif doc.status == 'pendente' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-clock me-1"></i>Pendente
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Rejeitado
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <!-- Cupons -->
+                                <td>
+                                    {% if doc.status == 'validado' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-ticket-alt me-1"></i>{{ doc.get_cupons }} cupom{{ doc.get_cupons|pluralize }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <!-- Ações -->
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        {% if doc.status != 'validado' %} 
+                                        {% comment %}                                      
+                                         <a href="{% url 'participante:editdocfiscal' doc.id %}" 
+                                            class="btn btn-sm btn-outline-secondary"
+                                            title="Editar documento">
+                                             <i class="fas fa-edit"></i>
+                                         </a>
+                                        {% endcomment %}
+                                         {% endif %}
+                                     </div>
+                                </td>
+                            </tr>
+                             {% empty %}
+                             <tr>
+                                 <td colspan="9" class="empty-state">
+                                     <div>
+                                         <i class="fas fa-file-alt"></i>
+                                         <h5 class="fw-semibold text-dark mb-2">Nenhum documento encontrado</h5>
+                                         <p class="mb-0">Adicione seu primeiro documento fiscal para começar!</p>
+                                         {% comment %}
+                                         <a href="{% url 'participante:adddocfiscal' %}" class="btn mt-3" style="background-color: #0d6efd; border-color: #0d6efd; color: white;">
+                                             <i class="fas fa-plus me-2"></i>Adicionar Documento
+                                         </a>
+                                         {% endcomment %}
+                                     </div>
+                                 </td>
+                             </tr>
+                             {% endfor %}
+                         </tbody>
+                     </table>
+                 </div>
+             </div>
+         </div>
+         {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+    .card-dashboard .card-body {
+        padding: 1rem !important;
+    }
+    
+    .card-dashboard h3 {
+        font-size: 1.5rem !important;
+    }
+    
+    .table-modern th,
+    .table-modern td {
+        padding: 0.5rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .table-modern .btn-sm {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .badge {
+        font-size: 0.75rem !important;
+    }
+    
+    .empty-state {
+        padding: 2rem 1rem !important;
+    }
+    
+    .empty-state i {
+        font-size: 3rem !important;
+    }
+    
+    .empty-state h5 {
+        font-size: 1.1rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-dashboard .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    .card-dashboard h3 {
+        font-size: 1.25rem !important;
+    }
+    
+    .table-modern {
+        font-size: 0.8rem !important;
+    }
+    
+    .table-modern th,
+    .table-modern td {
+        padding: 0.375rem !important;
+    }
+    
+    .btn {
+        font-size: 0.875rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.75rem !important;
+    }
+}
+
+/* Melhorias para tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .card-dashboard .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    .table-modern th,
+    .table-modern td {
+        padding: 0.75rem !important;
+    }
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // Adicionar efeitos de hover nos cards
+    $('.card').hover(
+        function() {
+            $(this).addClass('shadow');
+        },
+        function() {
+            $(this).removeClass('shadow');
+        }
+    );
+
+    // Tooltips para botões
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "mobile.html" %}
+{% load static %}
+{% block title %}Lojistas - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-store text-xl text-white"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h1 class="text-2xl font-bold text-gray-900">
+                                Lojistas
+                                <span class="inline-block w-3 h-3 bg-red-500 rounded-full ml-2"></span>
+                            </h1>
+                            <p class="text-gray-600">Gerencie lojistas e ramos de atividade</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Informação do usuário logado -->
+                    <div class="flex-shrink-0">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                            <div class="text-sm text-center">
+                                <p class="text-blue-900 font-medium">{{ request.user.username }}</p>
+                                <p class="text-blue-700">
+                                    {% if request.user.is_superuser %}
+                                        <i class="fas fa-crown text-yellow-500 mr-1"></i>Superusuário
+                                    {% elif request.user.is_staff %}
+                                        <i class="fas fa-user-tag text-blue-500 mr-1"></i>Staff
+                                    {% else %}
+                                        <i class="fas fa-user text-gray-500 mr-1"></i>Usuário
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards de Ação -->
+        <div class="space-y-4">
+            <!-- Cadastrar Lojista -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="window.location.href='{% url 'lojista:cadastro_lojista' %}'">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-store text-xl text-white"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Cadastrar Lojista</h3>
+                            <p class="text-gray-600">Adicionar novo lojista</p>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listar Lojistas -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="window.location.href='{% url 'lojista:gerenciar_lojistas' %}'">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-list text-xl text-white"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Listar Lojistas</h3>
+                            <p class="text-gray-600">Ver todos os lojistas</p>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cadastrar Ramo -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="window.location.href='{% url 'lojista:registeratividade' %}'">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-briefcase text-xl text-white"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Cadastrar Ramo</h3>
+                            <p class="text-gray-600">Adicionar novo ramo de atividade</p>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listar Ramos -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer" onclick="window.location.href='{% url 'lojista:listatividade' %}'">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clipboard-list text-xl text-white"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Listar Ramos</h3>
+                            <p class="text-gray-600">Ver todos os ramos de atividade</p>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-chevron-right text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão Voltar -->
+        <div class="mt-8 text-center">
+            <a href="{% url 'lojista:homepage' %}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-150">
+                <i class="fas fa-arrow-left mr-2"></i>Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

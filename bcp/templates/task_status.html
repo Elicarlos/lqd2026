@@ -1,0 +1,95 @@
+{% extends "mobile.html" %}
+
+{% block title %}Verificação de Status{% endblock %}
+
+{% block content %}
+    <h1>Aguarde enquanto seu PDF é gerado...</h1>
+    <div id="status">Status: PENDING</div>
+    <div id="pdf-link" style="display:none;">
+        <a id="download-link" href="#" download="documento.pdf">Baixar PDF</a>
+    </div>
+
+    <script>
+        function downloadAndPrintPDF(url) {
+            // Fazer download do PDF como blob
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro ao baixar PDF');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Criar URL do blob
+                    const blobUrl = URL.createObjectURL(blob);
+                    
+                    // Criar um iframe temporário para impressão
+                    const printFrame = document.createElement('iframe');
+                    printFrame.style.display = 'none';
+                    printFrame.src = blobUrl;
+                    
+                    document.body.appendChild(printFrame);
+                    
+                    // Aguardar o carregamento e imprimir
+                    printFrame.onload = function() {
+                        setTimeout(() => {
+                            try {
+                                printFrame.contentWindow.focus();
+                                printFrame.contentWindow.print();
+                                
+                                // Limpar após impressão
+                                setTimeout(() => {
+                                    document.body.removeChild(printFrame);
+                                    URL.revokeObjectURL(blobUrl);
+                                }, 2000);
+                            } catch (error) {
+                                console.error('Erro ao imprimir:', error);
+                                // Mostrar botão de impressão manual
+                                showManualPrintButton(blobUrl);
+                            }
+                        }, 2000);
+                    };
+                })
+                .catch(error => {
+                    console.error('Erro ao processar PDF:', error);
+                });
+        }
+
+        function showManualPrintButton(blobUrl) {
+            const manualBtn = document.createElement('button');
+            manualBtn.textContent = 'Clique aqui para imprimir manualmente';
+            manualBtn.onclick = function() {
+                const newWindow = window.open(blobUrl);
+                if (newWindow) {
+                    newWindow.onload = function() {
+                        newWindow.print();
+                    };
+                }
+            };
+            
+            document.body.appendChild(manualBtn);
+        }
+
+        function checkStatus(taskId) {
+            fetch(`/check_task_status/${taskId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status').innerText = `Status: ${data.status}`;
+                    if (data.status === 'SUCCESS') {
+                        const link = document.getElementById('download-link');
+                        link.href = 'data:application/pdf;base64,' + data.pdf_base64;
+                        document.getElementById('pdf-link').style.display = 'block';
+                        // Usar nova função para download e impressão
+                        downloadAndPrintPDF(link.href);
+                    } else {
+                        setTimeout(() => checkStatus(taskId), 2000);
+                    }
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskId = "{{ task_id }}";
+            checkStatus(taskId);
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registro de Ponto</title>
+    <style>
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+body {
+    line-height: 1.5;
+}
+ol, ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+    content: '';
+    content: none;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+
+
+}
+        
+@page {
+            size: A4;
+            margin: 20mm 10mm 20mm 10mm;
+            @frame footer_frame { /* Rodapé */
+                -pdf-frame-content: footer_content;
+                bottom: 10mm;
+                height: 10mm;
+                left: 10mm;
+                right: 10mm;
+            }
+        }
+
+
+
+
+body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+     /* Reduz o espaçamento */
+        h1 { text-align: center; font-size: 1.5rem;}
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 10px; text-align: center; }
+        td {
+            padding: 5px;
+        }
+        th { background-color: #f0f0f0; }
+        .header { margin-bottom: 10px; } /* Espaço após o cabeçalho */
+        .right-align { text-align: right; font-size: 0.9em; }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 0.8em;
+            border-top: 1px solid #000;
+            padding: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="align-items: center;">Registro de Ponto</h1>
+    <div class="header">
+        <hr>
+        <p><strong>Campanha: </strong>Natal de Luz e Prêmios</p>
+        <p><strong>Funcionário: </strong>{{ user_name }}</p>
+        <p><strong>CPF: </strong>{{ cpf }}</p>
+        <p><strong>Data de Cadastro: </strong> {{ data_cadastro }}</p>
+        <p class="right-align"><strong>Total de Horas Trabalhadas: </strong>{{ total_trabalhadas }}</p>       
+   
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Horário de Início</th>
+                <th>Horário de Fim</th>
+                <th>Posto de Trabalho</th>
+                <th>Duração</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reg in registros %}
+            <tr>
+                <td>{{ reg.horario_inicio|date:"d/m/Y H:i:s" }}</td>
+                <td>
+                    {% if reg.horario_fim %}
+                        {{ reg.horario_fim|date:"d/m/Y H:i:s" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ reg.posto_trabalho.nome }}</td>
+                <td>
+                    {% if reg.horario_fim %}
+                        {{ reg.duracao_formatada }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div id="footer_content">
+        <p style="text-align: center; font-size: 0.8rem;">
+            Data de Impressão: {{ data_impressao }}
+        </p>
+    </div>
+</body>
+
+</html>

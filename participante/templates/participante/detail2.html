@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+{% block title %}{{ user.profile.nome }}{% endblock %}
+
+{% block content %}
+    <h1>{{ user.nome }}</h1>
+    <div class="profile-info">
+      {% thumbnail user.photo "100x100" crop="center" as im %}
+      <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}">
+  {% endthumbnail %}
+    </div>
+
+{% endblock %}

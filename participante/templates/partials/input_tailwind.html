@@ -1,0 +1,26 @@
+{% comment %}
+Partial para input padronizado com Tailwind.
+Parâmetros esperados:
+- type: tipo do input (ex: text, email, password)
+- name: nome do campo
+- id: id do campo
+- placeholder: texto do placeholder
+- icon_class: classe do ícone FontAwesome
+- value: valor inicial (opcional)
+- required: se o campo é obrigatório (opcional)
+- class: classes adicionais (opcional)
+{% endcomment %}
+<div class="relative">
+    <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+        <i class="{{ icon_class }} text-gray-400"></i>
+    </span>
+    <input
+        type="{{ type|default:'text' }}"
+        name="{{ name }}"
+        id="{{ id }}"
+        placeholder="{{ placeholder }}"
+        {% if value %}value="{{ value }}"{% endif %}
+        class="block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-gray-900 placeholder:text-gray-500 focus:border-brand-secondary focus:ring-brand-secondary pl-12 {{ class }}"
+        {% if required %}required{% endif %}
+    >
+</div> 

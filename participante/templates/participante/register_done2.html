@@ -1,0 +1,9 @@
+{% extends "mobile.html" %}
+
+{% block title %}Conta participante criada{% endblock %}
+
+{% block content %}
+    <h1 style="margin-top: 70px;">O participante {{ new_user.nome }} foi adicionado com sucesso!</h1>
+    <!-- <p>O perfil foi criado com sucesso. Agora você pode <a href="{% url "participante:adddocfiscalbyop" new_user.user.id %}">adicionar os documentos deste participante</a>.</p> -->
+    <p>Ou <a href="{% url 'lojista:homepage' %}">voltar a tela de operação</a> </p>
+{% endblock %}

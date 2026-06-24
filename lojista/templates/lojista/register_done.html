@@ -1,0 +1,14 @@
+{% extends "mobile.html" %}
+
+{% block title %}Lojista Adicionado{% endblock %}
+
+{% block content %}
+    <h1 style="margin-top: 70px;">Lojista {{ new_lojista.fantasiaLojista }} adicionado com sucesso!</h1>
+    <p>Perfil criado. Aguardando autorização da CDL para permitir o envio de documentos.</p>
+    <p>
+        <a type="button" id="mymodal" class="btn btn-primary btn-lg" data-toggle="modal" href="{% url 'lojista:cadastro_lojista' %}">
+            Adicionar outro lojista
+        </a>
+        <a type="button" class="btn" href="{% url 'lojista:homepage' %}">Voltar</a>
+    </p>
+{% endblock %}

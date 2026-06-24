@@ -1,0 +1,308 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Cadastro em Massa - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for colaborador cadastro massa - same as dashboard */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+                <div class="mb-4">
+                    <nav class="mb-3">
+                        <ol class="breadcrumb breadcrumb-standard">
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                                    <i class="fas fa-home me-1"></i>Dashboard
+                                </a>
+                            </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active">Cadastro em Massa</li>
+                        </ol>
+                    </nav>
+                    
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">
+                                <i class="fas fa-users text-primary me-2"></i>Cadastro em Massa
+                            </h1>
+                            <p class="text-muted mb-0">Cadastre múltiplos colaboradores durante treinamentos e eventos</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="d-flex gap-2">
+                            <a href="{% url 'lojista:gestao_colaborador_cadastrar' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-user-plus me-1"></i>Cadastro Individual
+                            </a>
+                            <a href="{% url 'lojista:gestao_colaboradores_upload' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-upload me-1"></i>Upload em Lote
+                            </a>
+                            </div>
+                        </div>
+                    </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hash URL Info -->
+                {% if hash_url %}
+                <div class="alert alert-info">
+            <i class="fas fa-link me-2"></i>
+                    <strong>URL de Acesso Direto:</strong> Esta sessão foi acessada via link direto.
+                    <small class="d-block mt-1">Hash: {{ hash_url }}</small>
+                </div>
+                {% endif %}
+
+                <!-- Formulário -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                        <form action="." method="post" id="colaboradorForm" class="form-standard">
+                        {% csrf_token %}
+
+                        <!-- Dados Pessoais -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-primary bg-opacity-10 me-3">
+                                <i class="fas fa-user text-primary"></i>
+                                </div>
+                                <div>
+                                    <h4 class="h5 fw-bold text-dark mb-1">Dados Pessoais</h4>
+                                    <p class="text-muted mb-0">Informações pessoais do colaborador</p>
+                                </div>
+                            </div>
+
+                        <div class="row g-3">
+                                <div class="col-md-6">
+                                <div class="form-floating">
+                                        <input type="text" 
+                                               name="{{ user_form.username.name }}"
+                                               id="{{ user_form.username.id_for_label }}" 
+                                               value="{{ user_form.username.value|default_if_none:'' }}"
+                                               class="form-control cpf-mask" 
+                                               placeholder="000.000.000-00" 
+                                               required>
+                                        <label for="{{ user_form.username.id_for_label }}">CPF <span class="text-danger">*</span></label>
+                                        {% if user_form.username.errors %}
+                                            <div class="invalid-feedback d-block">{{ user_form.username.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                <div class="form-floating">
+                                        <input type="text" 
+                                               name="{{ profile_form.nome.name }}"
+                                               id="{{ profile_form.nome.id_for_label }}" 
+                                               value="{{ profile_form.nome.value|default_if_none:'' }}"
+                                               class="form-control" 
+                                               placeholder="Nome completo" 
+                                               required>
+                                        <label for="{{ profile_form.nome.id_for_label }}">Nome Completo <span class="text-danger">*</span></label>
+                                        {% if profile_form.nome.errors %}
+                                            <div class="invalid-feedback d-block">{{ profile_form.nome.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                <div class="form-floating">
+                                        <input type="email" 
+                                               name="{{ user_form.email.name }}"
+                                               id="{{ user_form.email.id_for_label }}" 
+                                               value="{{ user_form.email.value|default_if_none:'' }}"
+                                               class="form-control" 
+                                               placeholder="email@exemplo.com" 
+                                               required>
+                                        <label for="{{ user_form.email.id_for_label }}">E-mail <span class="text-danger">*</span></label>
+                                        {% if user_form.email.errors %}
+                                            <div class="invalid-feedback d-block">{{ user_form.email.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="tel" 
+                                               name="{{ profile_form.whatsapp.name }}"
+                                               id="{{ profile_form.whatsapp.id_for_label }}" 
+                                               value="{{ profile_form.whatsapp.value|default_if_none:'' }}"
+                                               class="form-control phone-mask" 
+                                           placeholder="(00) 00000-0000" 
+                                           required>
+                                    <label for="{{ profile_form.whatsapp.id_for_label }}">Telefone <span class="text-danger">*</span></label>
+                                        {% if profile_form.whatsapp.errors %}
+                                            <div class="invalid-feedback d-block">{{ profile_form.whatsapp.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Senha -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-success bg-opacity-10 me-3">
+                                <i class="fas fa-lock text-success"></i>
+                                </div>
+                                <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Senha de Acesso</h4>
+                                <p class="text-muted mb-0">Defina a senha para acesso ao sistema</p>
+                                </div>
+                            </div>
+
+                        <div class="row g-3">
+                                <div class="col-md-6">
+                                <div class="form-floating">
+                                        <input type="password" 
+                                               name="{{ user_form.password.name }}"
+                                               id="{{ user_form.password.id_for_label }}" 
+                                               class="form-control" 
+                                               placeholder="Senha" 
+                                               required>
+                                        <label for="{{ user_form.password.id_for_label }}">Senha <span class="text-danger">*</span></label>
+                                        {% if user_form.password.errors %}
+                                            <div class="invalid-feedback d-block">{{ user_form.password.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                <div class="form-floating">
+                                        <input type="password" 
+                                           name="password_confirm"
+                                           id="password_confirm" 
+                                               class="form-control" 
+                                               placeholder="Confirmar senha" 
+                                               required>
+                                    <label for="password_confirm">Confirmar Senha <span class="text-danger">*</span></label>
+                                    <div id="password-confirm-error" class="invalid-feedback d-none"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="card card-standard">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                                </a>
+                                <div class="d-flex gap-2">
+                                    <button type="reset" class="btn btn-outline-warning">
+                                        <i class="fas fa-undo me-2"></i>Limpar
+                                    </button>
+                                    <button type="submit" class="btn btn-gradient">
+                                        <i class="fas fa-save me-2"></i>Cadastrar Colaborador
+                            </button>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+$(document).ready(function() {
+    // Initialize masks
+    $('.cpf-mask').mask('000.000.000-00');
+    $('.phone-mask').mask('(00) 00000-0000');
+    
+    // Password confirmation validation
+    $('#password_confirm').on('input', function() {
+        var password = $('#{{ user_form.password.id_for_label }}').val();
+        var confirmPassword = $(this).val();
+        
+        if (confirmPassword && password !== confirmPassword) {
+            $(this).addClass('is-invalid');
+            $('#password-confirm-error').removeClass('d-none').text('As senhas não coincidem');
+                } else {
+            $(this).removeClass('is-invalid');
+            $('#password-confirm-error').addClass('d-none');
+        }
+    });
+    
+    // Form validation
+    $('#colaboradorForm').on('submit', function(e) {
+        var password = $('#{{ user_form.password.id_for_label }}').val();
+        var confirmPassword = $('#password_confirm').val();
+        
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            showToast('As senhas não coincidem', 'error');
+            return false;
+        }
+        
+        // Garantir que os campos obrigatórios tenham valores padrão
+        if (!$('input[name="sexo"]').length) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'sexo',
+                value: 'P'
+            }).appendTo('#colaboradorForm');
+        }
+        
+        if (!$('input[name="pergunta"]').length) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'pergunta',
+                value: 'liquida_teresina_2025'
+            }).appendTo('#colaboradorForm');
+        }
+    });
+});
+</script>
+{% endblock %}

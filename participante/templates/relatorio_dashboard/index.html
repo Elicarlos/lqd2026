@@ -1,0 +1,353 @@
+{% extends "mobile.html" %}
+{% load static %}
+
+{% block title %}Dashboard da Campanha{% endblock %}
+
+                  {% block content %}
+<div class="min-h-screen bg-gray-50 py-6">
+    <!-- Header Bar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-chart-line text-red-600"></i>
+                    <span class="text-gray-600">Faturamento Total: <span class="font-semibold">R$ {{ faturamento_total }}</span></span>
+                                        </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-receipt text-red-600"></i>
+                    <span class="text-gray-600">Ticket Médio: <span class="font-semibold">R$ {{ ticket_medio }}</span></span>
+                                        </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-ticket-alt text-red-600"></i>
+                    <span class="text-gray-600">Cupons Impressos: <span class="font-semibold">{{ quant_cupons }}</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+    <!-- Indicadores Principais -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Participantes -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total de Participantes</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ quant_usuario }}</p>
+                        </div>
+                        <div class="rounded-full p-3 bg-red-50">
+                            <i class="fas fa-users text-xl text-red-600"></i>
+                        </div>
+                                        </div>
+                                    </div>
+                <div class="bg-gray-50 px-4 py-2">
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-file text-blue-500"></i>
+                        <span>Média de {{ media_docs_por_participante }} docs/participante</span>
+                                </div>
+                            </div>
+                        </div>
+
+            <!-- Lojistas -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Lojistas Ativos</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ quant_lojistas }}</p>
+                                        </div>
+                        <div class="rounded-full p-3 bg-red-50">
+                            <i class="fas fa-store text-xl text-red-600"></i>
+                                        </div>
+                                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-2">
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-chart-pie text-green-500"></i>
+                        <span>{{ taxa_conversao }}% taxa de conversão</span>
+                                </div>
+                            </div>
+                        </div>
+
+            <!-- Documentos -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Docs. Validados</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ quant_documentos }}</p>
+                                            </div>
+                        <div class="rounded-full p-3 bg-red-50">
+                            <i class="fas fa-file-check text-xl text-red-600"></i>
+                                                    </div>
+                                            </div>
+                                        </div>
+                <div class="bg-gray-50 px-4 py-2">
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-clock text-yellow-500"></i>
+                        <span>{{ cupons_por_hora }} cupons/hora hoje</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+            <!-- Métodos de Pagamento -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Pagamentos</p>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">REDE {{ perc_rede }}%</span>
+                                <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">MC {{ perc_mastercard }}%</span>
+                                <span class="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full">Cielo {{ perc_cielo }}%</span>
+                            </div>
+                        </div>
+                        <div class="rounded-full p-3 bg-red-50">
+                            <i class="fas fa-credit-card text-xl text-red-600"></i>
+                        </div>
+                    </div>
+                                        </div>
+                <div class="bg-gray-50 px-4 py-2">
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-chart-line text-indigo-500"></i>
+                        <span>Distribuição de pagamentos</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>                       
+                        
+    <!-- Gráficos -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Cupons por Dia -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Cupons Gerados por Dia</h3>
+                        <div class="rounded-full p-2 bg-red-50">
+                            <i class="fas fa-ticket-alt text-red-600"></i>
+                        </div>
+                    </div>
+                                        </div>
+                <div class="p-4">
+                    <div class="h-80">
+                        <canvas id="cuponsChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+            <!-- Faturamento por Dia -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Faturamento Diário</h3>
+                        <div class="rounded-full p-2 bg-red-50">
+                            <i class="fas fa-chart-line text-red-600"></i>
+                                    </div>
+                                </div>
+                            </div>
+                <div class="p-4">
+                    <div class="h-80">
+                        <canvas id="faturamentoChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+
+            <!-- Top 5 Lojistas -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Top 5 Lojistas</h3>
+                        <div class="rounded-full p-2 bg-red-50">
+                            <i class="fas fa-store text-red-600"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                <div class="p-4">
+                    <div class="h-80">
+                        <canvas id="lojistasChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+
+            <!-- Distribuição por Bairro -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Distribuição por Bairro</h3>
+                        <div class="rounded-full p-2 bg-red-50">
+                            <i class="fas fa-map-marker-alt text-red-600"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                <div class="p-4">
+                    <div class="h-80">
+                        <canvas id="bairrosChart"></canvas>
+                                        </div>
+                                    </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+<script>
+// Configuração dos gráficos
+const ctx1 = document.getElementById('cuponsChart').getContext('2d');
+const ctx2 = document.getElementById('faturamentoChart').getContext('2d');
+const ctx3 = document.getElementById('lojistasChart').getContext('2d');
+const ctx4 = document.getElementById('bairrosChart').getContext('2d');
+
+// Gráfico de Cupons por Dia
+new Chart(ctx1, {
+    type: 'line',
+    data: {
+        labels: {{ labels|safe }},
+        datasets: [{
+            label: 'Cupons',
+            data: {{ data|safe }},
+            borderColor: '#DC2626',
+            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Faturamento por Dia
+new Chart(ctx2, {
+    type: 'line',
+    data: {
+        labels: {{ data_faturamento|safe }},
+        datasets: [{
+            label: 'Faturamento',
+            data: {{ valor_faturamento|safe }},
+            borderColor: '#DC2626',
+            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR');
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Top 5 Lojistas
+new Chart(ctx3, {
+    type: 'bar',
+    data: {
+        labels: {{ nomes_lojistas|safe }},
+        datasets: [{
+            label: 'Valor Total',
+            data: {{ valores_lojistas|safe }},
+            backgroundColor: '#DC2626',
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toLocaleString('pt-BR');
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Distribuição por Bairro
+new Chart(ctx4, {
+    type: 'doughnut',
+    data: {
+        labels: {{ nomes_bairros|safe }},
+        datasets: [{
+            data: {{ total_bairros|safe }},
+            backgroundColor: [
+                '#DC2626',
+                '#EA580C',
+                '#D97706',
+                '#CA8A04',
+                '#65A30D'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right'
+            }
+        }
+    }
+});
+</script>
+                 {% endblock %}   
+               

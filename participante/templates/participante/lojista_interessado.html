@@ -1,0 +1,627 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<title data-react-helmet="true">Natal de Luz e Prêmios - A maior Campanha do Varejo Piauiense</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Começou a maior campanha do varejo Piauiense! Natal de Luz e Prêmios traz grandes descontos e prêmios para você. CLIQUE e participe">
+<meta name="author" content="Marko Solution">
+<title>Natal de Luz e Prêmios</title>
+<link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/2023/favicon.ico' %}">
+<!-- Bootstrap Core CSS -->
+<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" type="text/css">
+<!-- Custom Fonts -->
+<link href='https://fonts.googleapis.com/css?family=Mrs+Sheppards%7CDosis:300,400,700%7COpen+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800;' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}" type="text/css">
+
+<!-- Plugin CSS -->
+<link rel="stylesheet" href="{% static 'css/animate.min.css' %}" type="text/css">
+<!-- Custom CSS -->
+<link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'css/custom.css' %}" type="text/css">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-B58RJJBCY3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-B58RJJBCY3');
+</script>
+
+<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+
+{% block css %}
+	
+<style>
+	#maquineta {
+		margin-top: 0px;
+		margin-left: auto;
+		margin-right: auto;
+		/* width: 750px; */
+		width: 600px;
+	}
+	.tline-item-content{
+		margin-bottom: 40px;
+	}
+	.modal-dialog {
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+	}
+
+
+	@media screen and (max-width: 768px){
+		body > p {
+			font-size: 100px;
+		}
+		.patrocinador > img {
+			width: 460px;
+			
+		}
+		#maquineta {
+			margin-top: 0px;		
+			margin-left: auto;
+			margin-right: auto;
+		}
+		.logo-banner-prin {
+			margin-top: 30px;
+		}
+		
+}
+	.background-div {
+		background: linear-gradient(-45deg, #E8F8FF, #B3D8F1, #6EAAE6, #3B81D9);
+	  background-size: 400% 400%;
+	  animation: gradient 15s ease infinite;
+	  height: 100vh;
+	  display: flex;
+	  flex-direction: column;
+	  justify-content: center;
+	  align-items: center;
+	}
+  
+	@keyframes gradient {
+	  0% {
+		  background-position: 0% 50%;
+	  }
+	  50% {
+		  background-position: 100% 50%;
+	  }
+	  100% {
+		  background-position: 0% 50%;
+	  }
+	}
+	.background-orange {
+		background-color: orange;
+		padding-top: 8rem;
+    	padding-bottom: 8rem;
+	  }
+	  .img-premios-mobile2 {
+		max-width: 100%; /* Garante que a imagem não exceda a largura da div */
+		height: auto; /* Mantém a proporção da imagem */
+	  }
+	
+	  @media (max-width: 768px) {
+		.img-premios-mobile2 {
+		  /* Ajuste o estilo da imagem para telas menores */
+		}
+	  }
+
+	  .background-banner-liso {
+		background: linear-gradient(45deg, #ff8c00, #ffdd24);
+		height: 100vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	  }
+	  .bg-dark {
+		padding: 40px 0;
+		color: white; 
+	  }
+  
+</style>
+
+{% endblock %}
+</head>
+<body id="page-top">
+<nav id="mainNav" class="navbar navbar-default navbar-fixed-top">
+<div class="container">
+	<!-- Brand and toggle get grouped for better mobile display -->
+	<div class="navbar-header">
+		<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+		<span class="sr-only">Toggle navigation</span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+		<span class="icon-bar"></span>
+		</button>
+		
+		<a class="navbar-brand page-scroll" href="#page-top"><img src="{% static 'img/2023/logo.png' %}" alt="Logo Natal de Luz e Prêmios" id="logo" class="img-responsive" style="width:65px; margin-top: -2px;"></a>
+	</div>
+	<!-- Collect the nav links, forms, and other content for toggling -->
+	<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		<ul class="nav navbar-nav navbar-right">
+			<li>
+			<a class="page-scroll" href="#page-top">Inicio</a>
+			</li>
+			<li>
+			<a class="page-scroll" href="#about">Como funciona</a>
+			</li>
+			<li>
+			<a class="page-scroll" href="#portfolio">Prêmios</a>
+			</li>
+			<li>
+			<a class="page-scroll" href="{% static 'docs/regulamento.pdf' %}" target="_blank">Regulamento</a>
+			</li>
+			{% comment %} <li>
+			<a class="page-scroll" href="{% url 'participante:register' %}">Cadastre-se</a>
+			</li> {% endcomment %}
+			<li>
+			<a class="page-scroll" href="https://api.whatsapp.com/send/?phone=558699285100&text=Ola+preciso+de+suporte&app_absent=0">Suporte</a>
+			</li>
+			{% if request.user.is_authenticated and request.user.is_superuser %}
+			<li >
+				<a style="color: #FBB65C" href="{% url 'lojista:homepage' %}">{{ request.user.username }} <span style="color: #30C778" class="glyphicon glyphicon-log-in"> </span></a>
+			</li id="entrar">
+			<li>
+				<form method="post" action="{% url 'participante:logout' %}" style="display: inline;">
+					{% csrf_token %}
+					<button type="submit" style="background: none; border: none; color: inherit; padding: 0; cursor: pointer; text-decoration: none;">Sair</button>
+				</form>
+			</li>
+
+			{% elif user.is_authenticated %}
+			<li style="color: #FBB65C">
+				<a  href="{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}">{{ request.user.username }} <span style="color: #30C778" class="glyphicon glyphicon-user"></span></a>
+			</li id="entrar">
+
+			<li>
+				<form method="post" action="{% url 'participante:logout' %}" style="display: inline;">
+					{% csrf_token %}
+					<button type="submit" style="background: none; border: none; color: inherit; padding: 0; cursor: pointer; text-decoration: none;">Sair</button>
+				</form>
+			</li>
+			{% else %}
+			<li>
+				<a data-toggle="modal" href="#myModal">Entrar <span style="color: #30C778" class="glyphicon glyphicon-log-in"></a>
+			</li id="entrar">
+			{% endif %}
+		</ul>
+	</div>
+	<!-- /.navbar-collapse -->
+</div>
+<!-- /.container -->
+</nav>
+
+<!-- Modal Login -->
+<div class="container">
+	<!-- Login -->
+	{% include 'participante/login_form.html' %}
+	<!-- Fim login-->
+</div>
+<!-- Modal Login end -->
+
+<!-- Section Intro Slider
+================================================== -->
+<div id="carousel-example-generic" class="carousel intro slide container">
+	
+	
+</div>
+<!-- /.carousel -->
+
+<!--Maquineta da rede -->
+
+  
+{% comment %} <div class="container">
+	
+	<div class="row">		
+		<div class="col-md-12">			
+			<div class="maquineta text-center">
+				
+				<!-- <img src="{% static 'img/2023/maq.png'%}" alt="Maquininha da rede" class="img-responsive" style=" width: 600px; margin: 100px auto 100px auto;" alt="logo-banner"> -->
+				
+			</div>
+		</div>
+	</div>
+</div > {% endcomment %}
+<div class="background-div" >
+	<img src="{% static 'img/2023/maq.png'%}" alt="Maquininha da rede" class="img-responsive"  alt="logo-banner" id="maquineta" >
+</div>
+
+
+<section id="tline">
+<section id="about" style="padding-bottom: 0px;">
+<div class="container">
+<div class="row">
+	<div class="col-lg-12 text-center">
+		<h2 class="section-heading"><b>Como participar</b></h2>
+		<br><br><br>
+		<!-- <video autobuffer controls autoplay style="max-width: 100%; ">
+	  		<source id="mp4" src="https://liquida2023.s3.us-east-2.amazonaws.com/videos/liquida2023.mp4">
+		</video> -->
+	</div>
+</div>
+<br><br><br>
+</div>
+<br/>
+<div class="container">
+<div class="row">
+	<div class="col-md-12">
+		<ul class="tline-holder">
+			<!-- tline ITEM-->
+			<li class="tline-item-left wow fadeInLeft">
+			<div class="tline-item-content">
+				<div class="date-icon fa fa-shopping-cart">
+				</div>
+				<div class="tline-item-txt text-right">
+					<div class="meta">
+						 Passo 1
+					</div>
+					
+					<p>
+						Separe as notas fiscais e os comprovantes dos cartões das compras
+						 realizadas nas lojas participantes durante o Natal de Luz e Prêmios, 
+						 no período de 25/08/2023 a 03/09/2023.
+					</p>
+					<!-- <a data-toggle="modal" href="#exampleModalLong">
+  Lojas Parceiras
+</a> -->
+				</div>
+			</div>
+			</li>
+			<!-- /tline-->
+			<!-- Modal -->
+			<div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+			  <div class="modal-dialog" role="document">
+			    <div class="modal-content">
+			      <div class="modal-header">
+			        <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+			        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			          <span aria-hidden="true">&times;</span>
+			        </button>
+			      </div>
+			      <div class="modal-body">
+			        ...
+			      </div>
+			      <div class="modal-footer">
+			        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+			        <button type="button" class="btn btn-primary">Save changes</button>
+			      </div>
+			    </div>
+			  </div>
+			</div>
+			<!-- tline-->
+			<li class="tline-item-right wow fadeInRight">
+			<div class="tline-item-content">
+				<div class="date-icon fa fa-user">
+				</div>
+				<div class="tline-item-txt text-left">
+					<div class="meta">
+						 Passo 2
+					</div>
+				
+					<p>
+						 Utilize qualquer equipamento como acesso a internet
+						 (smartphone, tablet, ou computador) para entrar no site
+						 da campanha
+						 www.liquidateresina.com.br
+					</p>
+				</div>
+			</div>
+			</li>
+			<!-- /tline-->
+			<!-- tline-->
+			<li class="tline-item-left wow fadeInLeft">
+			<div class="tline-item-content">
+				<div class="date-icon fa fa-car">
+				</div>
+				<div class="tline-item-txt text-right">
+					<div class="meta">
+						 Passo 3
+					</div>
+					<h3><a href="{% url "participante:register" %}"></a>Agora faça o seu cadastro</a></h3>
+					<p>
+						Os itens marcados com asteriscos são de preenchimento obrigatório 
+						para a validação do cupom. Os dados informados serão utilizados 
+						para entrar em contato com os contemplados, portanto, preste 
+						muita atenção ao cadastrar seus telefones, endereço e e-mail.
+
+					</p>
+				</div>
+			</div>
+			</li>
+			<!-- /tline-->
+			<!-- tline-->
+			<li class="tline-item-right wow fadeInRight">
+			<div class="tline-item-content">
+				<div class="date-icon fa fa-bullhorn">
+				</div>
+				<div class="tline-item-txt text-left">
+					<div class="meta">
+						 Passo 4
+					</div>
+					
+					<p>
+						
+					Após seu cadastro, registre suas notas e comprovantes. 
+					A cada R$ 100,00 em compras, ganhe 1 cupom. 
+					Pagando com a maquininha da Rede, obtenha 3 cupons. 		
+
+
+					</p>
+				</div>
+			</div>
+			</li>
+			<!-- /tline-->
+			<!-- tline-->
+			<li class="tline-item-left wow fadeInRight">
+			<div class="tline-item-content">
+				<div class="date-icon fa fa-bullhorn">
+				</div>
+				<div class="tline-item-txt text-left">
+					<div class="meta">
+						 Passo 5
+					</div>
+					
+					<p>
+						Agora, basta fotografar ou escanear a nota fiscal e o comprovante
+						do cartão (caso a compra tenha sido realizada nas máquinas da REDE) 
+						e anexar a imagem no ícone.						
+					</p>
+				</div>
+			</div>
+			</li>
+			<!-- /tline-->
+			<!-- tline-->
+			<li class="tline-item-right wow fadeInRight">
+			<div class="tline-item-content">
+				<div class="date-icon fa fa-bullhorn">
+				</div>
+				<div class="tline-item-txt text-left">
+					<div class="meta">
+						 Passo 6
+					</div>
+					<h3> Pronto! Repita quantas vezes quiser </h3>
+					<p>
+						Quanto mais notas cadastradas, mais chances de ser sorteado. As notas
+						fiscais cadastradas, serão analizadas por um backoffice da campanha
+						e o status de validação e a quantidade de cupons e a quantidade de
+						cupons gerados ficará disponível no proprio site para consulta.
+						Caso haja alguma dúvida ou erro no envio, nossa equipe entrará em contato.
+					</p>
+				</div>
+			</div>
+			</li>
+			<!-- /tline-->
+			<li class="tline-start">
+			<div class="tline-start-content">
+				<div class="tline-start-icon">
+				</div>
+				<a href="{% url 'participante:register' %}" class="btn btn-primary bgn-xl wow zoomIn page-scroll">CADASTRE-SE</a>
+			</div>
+			</li>
+		</ul>
+	</div>
+</div>
+</div>
+</section>
+</section>
+
+
+<!-- Section Awards
+================================================== -->
+<section class="imagem-premios" style="margin-bottom: -7%;">
+<div class="container-fluid">
+<div class="row">
+	<div class="col-lg-12 text-center">
+		<h2 class="section-heading" id="premio"><b>PRÊMIOS</b>
+		<hr class="primary">
+	</div>
+</div>
+</div>
+
+
+<div class="background-orange">
+	<div class="row no-gutter">
+		<div class="col-12 text-center">
+		  <img class="img-premios-mobile2" src="{% static 'img/2023/premios.png' %}" id="portfolio" class="img-responsive" style="display: inline-block;">
+		</div>
+	  </div>
+</div>
+
+  
+  
+
+</section>
+
+
+
+<!-- Section Social
+================================================== -->
+<section id="social" class="parallax parallax-image"  style="background-color:#61adff">
+	<!-- <img src="" alt=""> -->
+<div class="overlay" style="background:#222;opacity:0.0;">
+</div>
+<div class="wrapsection">
+<div class="container">
+	<div class="parallax-content">
+		<div class="row wow fadeInLeft">
+			<div class="col-md-3">
+				<div class="funfacts text-center">
+					<div class="icon">
+						<a href="https://www.instagram.com/cdlteresina/"target="_blank"><i class="fa fa-instagram"></i></a>
+					</div>
+					<h4>Instagram</h4>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="funfacts text-center">
+					<div class="icon">
+						<a href="https://www.facebook.com/cdlteresina/" target="_blank"><i class="fa fa-facebook"></i></a>
+					</div>
+					<h4>Facebook</h4>
+				</div>
+			</div>
+
+			<div class="col-md-3">
+				<div class="funfacts text-center">
+					<div class="icon">
+						<a href="http://www.cdlteresina.com.br/" target="_blank"><i class="fa fa-building"></i></a>
+					</div>
+					<h4>CDL Teresina</h4>
+				</div>
+			</div>
+
+			<div class="col-md-3">
+				<div class="funfacts text-center">
+					<div class="icon" id="suporte">
+						<a href="https://wa.me/5586999285100?text=Ola%20preciso%20de%20suporte" target="_blank"><i class="fa fa-whatsapp" aria-hidden="true"></i></a>
+					</div>
+					<h4>Suporte</h4>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</div>
+</section>
+<div class="clearfix">
+</div>
+
+<!-- Section Contact
+==================================================
+<section id="contact">
+<div class="container">
+<div class="row">
+	<div class="col-md-8 col-md-offset-2 text-center">
+		<h2 class="section-heading">CADASTRE-SE</b></h2>
+		<hr class="primary">
+
+		<div class="regularform">
+			<div class="done">
+				<div class="alert alert-success">
+					<button type="button" class="close" data-dismiss="alert">×</button>
+					Your message has been sent. Thank you!
+				</div>
+			</div>
+			<form method="post" action="contact.php" id="contactform" class="text-left">
+				<input name="name" type="text" class="col-md-6 norightborder" placeholder="Seu nome *">
+				<input name="email" type="email" class="col-md-6" placeholder="Seu email *">
+				<input name="rg" type="text" class="col-md-6 norightborder" placeholder="RG *">
+				<input name="cpf" type="text" class="col-md-6" placeholder="CPF *">
+				<input name="adress" type="text" class="col-md-12" placeholder="Endereço *">
+				<h3>Qual é a maior promoção de comércio de Teresina?</h3>
+				<input name="answer" type="text" class="col-md-12" placeholder="Sua resposta *">
+				<input type="submit" id="submit" class="contact submit btn btn-primary btn-xl" value="Cadastrar">
+			</form>
+		</div>
+	</div>
+</div>
+</div>
+</section>-->
+
+<!-- Section Footer
+================================================== -->
+<div class="img-patrocinio" style="width: 100%; text-align: center;">
+	<img src="{% static 'img/2023/patron.png' %}" style="max-width: 100%;" class="patrocinador">
+  </div>
+<section class="bg-dark" >
+<div class="container">
+<div class="row">
+	<div class="col-md-12 text-center">
+		<!-- <span><a href="#page-top"><img src="{% static 'img/2023/logo.png' %}" alt="liquida" id="logo" align="center" class="img-responsive" style="width:65px; ma"></a></span>-->
+		<p> 
+			<span>Copyright &copy; <a href="http://www.markosolution.com.br/" target="_blank">Marko Solution</a></span>
+		</p>
+	</div>
+</div>
+</div>
+</section>
+
+<script>
+	var video = document.getElementById("mp4");
+  
+	// Evento para iniciar a reprodução do vídeo quando a página for carregada
+	video.addEventListener("loadedmetadata", function() {
+	  video.play();
+	});
+</script>
+
+{% comment %} <script>
+	console.log("estou aqui no index.html")
+	$ ( documento ). ready ( function () {              
+		$ ( '#myModal' ). modal ( 'show' ); 
+		  $ ( function () { 
+			$ ( '[data-toggle="tooltip"]' ). dica de ferramenta () }) });   
+		  
+		
+</script> {% endcomment %}
+
+
+<script src="{% static 'js/jquery.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+<script src="{% static 'js/parallax.js' %}"></script>
+<script src="{% static 'js/contact.js' %}"></script>
+<script src="{% static 'js/countto.js' %}"></script>
+<script src="{% static 'js/jquery.easing.min.js' %}"></script>
+<script src="{% static 'js/wow.min.js' %}"></script>
+<script src="{% static 'js/common.js' %}"></script>
+<script src="{% static 'js/jquery.mask.min.js' %}"></script>
+<script src="{% static 'js/jquery.mask.js' %}"></script>
+<script src="{% static 'js/masks.js' %}"></script>
+<noscript>Seu navegador não suporta JavaScript!</noscript>
+<script>
+	$(document).ready(function() {
+		$('#loginForm').on('submit', function(event) {
+			event.preventDefault();
+			$.ajax({
+				url: "{% url 'participante:homepage' %}",
+				type: "POST",
+				data: $(this).serialize(),
+				success: function(response) {
+					if (response.login_error) {
+						$('#password-errors').html(response.errors.password);
+						$('#myModal').modal('show');
+					} else {
+						window.location.href = response.redirect_url;
+					}
+				},
+				error: function(xhr, errmsg, err) {
+					console.log(xhr.status + ": " + xhr.responseText);
+				}
+			});
+		});
+
+		$('#formAdesao').on('submit', function(event) {
+        event.preventDefault();
+
+        $.ajax({
+            url: "{% url 'participante:homepage' %}",
+            type: "POST",
+            data: $(this).serialize(),
+            dataType: "json",
+            success: function(response) {
+                if (response.message) {
+                    $('#adesao-message').html('<div class="alert alert-success">' + response.message + '</div>');
+                }
+            },
+            error: function(xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText);
+            }
+        });
+    });
+});
+	
+
+	
+</script>
+
+</body>
+</html>

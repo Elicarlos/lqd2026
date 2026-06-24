@@ -1,0 +1,41 @@
+{% extends "mobile.html" %}
+{% block title %}Ramos de Atividade{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Ramos de Atividade</h1>
+        <p class="mt-2 text-sm text-gray-600">
+          Lista de ramos de atividade cadastrados
+        </p>
+      </div>
+
+      <!-- Lista de Atividades -->
+      <div class="space-y-4">
+        {% for atividade in atividades %}
+          <div class="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition duration-150">
+            <h2 class="text-lg font-medium text-gray-900">{{ atividade.nome }}</h2>
+          </div>
+        {% empty %}
+          <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">Nenhum ramo de atividade cadastrado</h3>
+            <p class="mt-1 text-sm text-gray-500">Comece adicionando um novo ramo de atividade.</p>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Botão Adicionar -->
+      <div class="mt-8 flex justify-end">
+        <a href="{% url 'lojista:registeratividade' %}" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Adicionar Ramo de Atividade
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

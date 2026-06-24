@@ -1,0 +1,69 @@
+<!-- Modal de Confirmação -->
+<div id="confirmationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <!-- Cabeçalho -->
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Confirmação</h3>
+                <button type="button" onclick="closeConfirmationModal()" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Fechar</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Conteúdo -->
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500" id="modal-message"></p>
+            </div>
+            
+            <!-- Botões -->
+            <div class="flex justify-center gap-4 mt-4">
+                <button id="confirmBtn" 
+                        class="px-4 py-2 bg-primary text-white text-base font-medium rounded-md shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary-light">
+                    OK
+                </button>
+                <button onclick="closeConfirmationModal()" 
+                        class="px-4 py-2 bg-gray-100 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let confirmCallback = null;
+
+function showConfirmationModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirmationModal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalMessage = document.getElementById('modal-message');
+    
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    confirmCallback = onConfirm;
+    
+    modal.classList.remove('hidden');
+    
+    // Fechar modal ao clicar fora
+    modal.onclick = function(event) {
+        if (event.target === modal) {
+            closeConfirmationModal();
+        }
+    };
+    
+    // Configurar botão de confirmação
+    document.getElementById('confirmBtn').onclick = function() {
+        if (confirmCallback) confirmCallback();
+        closeConfirmationModal();
+    };
+}
+
+function closeConfirmationModal() {
+    const modal = document.getElementById('confirmationModal');
+    modal.classList.add('hidden');
+    confirmCallback = null;
+}
+</script> 

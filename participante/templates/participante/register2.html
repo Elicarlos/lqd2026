@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+{% load static %}
+{% load auth_extras %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-neutral-50 to-white py-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-2xl mx-auto">
+            <!-- Progress Bar -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-[#8e005c] text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                        <span class="text-sm font-medium text-neutral-900">Informações da Conta</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-neutral-200 text-neutral-600 rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                        <span class="text-sm font-medium text-neutral-600">Dados Pessoais</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-neutral-200 text-neutral-600 rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                        <span class="text-sm font-medium text-neutral-600">Redes Sociais</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-neutral-200 text-neutral-600 rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                        <span class="text-sm font-medium text-neutral-600">Endereço</span>
+                    </div>
+                </div>
+                <div class="w-full bg-neutral-200 rounded-full h-2">
+                    <div class="bg-[#8e005c] h-2 rounded-full transition-all duration-300" style="width: 25%"></div>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            {% if profile_form.non_field_errors %}
+                <div class="mb-6">
+                    <ul class="space-y-2">
+                        {% for error in user_form.non_field_errors %}
+                            <li class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                                {{ error|safe }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <!-- Multistep Form -->
+            <form id="msform" action="." method="post" class="ws-validate">
+                <!-- Fieldset 1: Criar conta -->
+                <fieldset class="bg-white rounded-2xl shadow-lg p-8 border border-neutral-200">
+                    <h2 class="text-2xl font-bold text-neutral-900 mb-2">Criar sua conta</h2>
+                    
+                    {% if messages %}
+                        <div class="mb-6">
+                            <ul class="space-y-2">
+                                {% for message in messages %}
+                                    <li class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+                                        {{ message|safe }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <p class="text-neutral-600 mb-8">Esse é o passo 1</p>
+                    
+                    {{ user_form.non_field_errors }}
+                    
+                    <!-- Username Field -->
+                    <div class="mb-6">
+                        {{ user_form.username.errors }}
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            CPF <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-id-card text-neutral-400"></i>
+                            </div>
+                            {{ user_form.username }}
+                        </div>
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="mb-6">
+                        {{ user_form.email.errors }}
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Email <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-envelope text-neutral-400"></i>
+                            </div>
+                            {{ user_form.email }}
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="mb-6">
+                        {{ user_form.password.errors }}
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Senha <span class="text-red-500">*</span> (mínimo 8 caracteres)
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-neutral-400"></i>
+                            </div>
+                            {{ user_form.password }}
+                        </div>
+                        <div class="mt-2 flex items-center space-x-2">
+                            <span class="text-xs text-neutral-600">Força da senha:</span>
+                            <span class="text-xs text-red-500 font-medium">Fraca</span>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password Field -->
+                    <div class="mb-8">
+                        {{ user_form.password2.errors }}
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Confirmar Senha <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                <i class="fas fa-lock text-neutral-400"></i>
+                            </div>
+                            {{ user_form.password2 }}
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="button" name="next" class="next action-button bg-[#8e005c] hover:bg-[#7a004f] text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
+                            Próximo <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </fieldset>
+
+                <!-- Fieldset 2: Dados Pessoais -->
+                <fieldset class="hidden bg-white rounded-2xl shadow-lg p-8 border border-neutral-200">
+                    <h2 class="text-2xl font-bold text-neutral-900 mb-2">Dados Pessoais</h2>
+                    <p class="text-neutral-600 mb-8">Precisamos de suas informações pessoais</p>
+                    
+                    <!-- Nome Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Nome Completo <span class="text-red-500">*</span>
+                        </label>
+                        {{ profile_form.nome }}
+                    </div>
+
+                    <!-- RG Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            RG
+                        </label>
+                        {{ profile_form.RG }}
+                    </div>
+
+                    <!-- CPF Field -->
+                    <div class="mb-6">
+                        {{ profile_form.CPF.errors }}
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            CPF <span class="text-red-500">*</span>
+                        </label>
+                        {{ profile_form.CPF }}
+                    </div>
+
+                    <!-- Sexo Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Sexo
+                        </label>
+                        {{ profile_form.sexo }}
+                    </div>
+
+                    <!-- Telefone Field -->
+                    <div class="mb-8">
+                        {{ profile_form.foneCelular1.errors }}
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Telefone <span class="text-red-500">*</span>
+                        </label>
+                        {{ profile_form.foneCelular1 }}
+                    </div>
+
+                    <div class="flex justify-between">
+                        <button type="button" name="previous" class="previous action-button bg-neutral-500 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
+                            <i class="fas fa-arrow-left mr-2"></i> Voltar
+                        </button>
+                        <button type="button" name="next" class="next action-button bg-[#8e005c] hover:bg-[#7a004f] text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
+                            Próximo <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </fieldset>
+
+                <!-- Fieldset 3: Redes Sociais -->
+                <fieldset class="hidden bg-white rounded-2xl shadow-lg p-8 border border-neutral-200">
+                    <h2 class="text-2xl font-bold text-neutral-900 mb-2">Redes Sociais</h2>
+                    <p class="text-neutral-600 mb-8">Sua presença nas redes sociais</p>
+                    
+                    <!-- WhatsApp Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            WhatsApp
+                        </label>
+                        {{ profile_form.whatsapp }}
+                    </div>
+
+                    <!-- Twitter Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Twitter
+                        </label>
+                        {{ profile_form.twitter }}
+                    </div>
+
+                    <!-- Facebook Field -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Facebook
+                        </label>
+                        {{ profile_form.facebook }}
+                    </div>
+
+                    <div class="flex justify-between">
+                        <button type="button" name="previous" class="previous action-button bg-neutral-500 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
+                            <i class="fas fa-arrow-left mr-2"></i> Voltar
+                        </button>
+                        <button type="button" name="next" class="next action-button bg-[#8e005c] hover:bg-[#7a004f] text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
+                            Próximo <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </fieldset>
+
+                <!-- Fieldset 4: Endereço -->
+                <fieldset class="hidden bg-white rounded-2xl shadow-lg p-8 border border-neutral-200">
+                    <h2 class="text-2xl font-bold text-neutral-900 mb-2">Endereço Pessoal</h2>
+                    <p class="text-neutral-600 mb-8">Informações sobre sua residência</p>
+                    
+                    <!-- Cidade Field -->
+                    <div class="mb-6">
+                        {{ profile_form.cidade.errors }}
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Cidade <span class="text-red-500">*</span>
+                        </label>
+                        {{ profile_form.cidade }}
+                    </div>
+
+                    <!-- Bairro Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Bairro
+                        </label>
+                        {{ profile_form.bairro }}
+                    </div>
+
+                    <!-- Estado Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Estado
+                        </label>
+                        {{ profile_form.estado }}
+                    </div>
+
+                    <!-- CEP Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            CEP
+                        </label>
+                        {{ profile_form.CEP }}
+                    </div>
+
+                    <!-- Endereço Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Endereço
+                        </label>
+                        {{ profile_form.endereco }}
+                    </div>
+
+                    <!-- Número Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Número
+                        </label>
+                        {{ profile_form.enderecoNumero }}
+                    </div>
+
+                    <!-- Complemento Field -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            Complemento
+                        </label>
+                        {{ profile_form.enderecoComplemento }}
+                    </div>
+
+                    <!-- Pergunta Field -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-medium text-neutral-900 mb-4">Qual a maior liquidação de Teresina? <span class="text-red-500">*</span></h3>
+                        {{ profile_form.pergunta }}
+                    </div>
+
+                    <div class="flex justify-between">
+                        <button type="button" name="previous" class="previous action-button bg-neutral-500 hover:bg-neutral-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
+                            <i class="fas fa-arrow-left mr-2"></i> Voltar
+                        </button>
+                        {% csrf_token %}
+                        <button type="submit" class="submit action-button bg-[#8e005c] hover:bg-[#7a004f] text-white font-bold py-3 px-6 rounded-lg transition-all duration-300">
+                            <i class="fas fa-check mr-2"></i> Cadastrar
+                        </button>
+                    </div>
+                </fieldset>
+            </form>
+
+            <!-- Login Link -->
+            <div class="text-center mt-8">
+                <p class="text-neutral-600 mb-4">Já tem uma conta?</p>
+                <a href="{% url 'login' %}" class="inline-flex items-center bg-[#11B3EE] hover:bg-[#0ea5e9] text-white font-bold py-3 px-8 rounded-lg transition-all duration-300">
+                    <i class="fas fa-arrow-right mr-2"></i> Entrar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Custom styles for form fields to work with Django forms */
+#msform input, #msform textarea, #msform select {
+    @apply w-full px-4 py-3 pl-10 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[#11B3EE] focus:border-[#11B3EE] text-neutral-900 text-sm transition-all duration-200;
+}
+
+#msform input:focus, #msform textarea:focus, #msform select:focus {
+    @apply outline-none;
+}
+
+/* Error styling */
+#msform .errorlist {
+    @apply text-red-600 text-sm mt-1;
+}
+
+/* Progress bar animation */
+#msform fieldset {
+    @apply transition-all duration-300;
+}
+</style>
+
+<script>
+$(document).ready(function(){
+    // Máscaras
+    $('.cpf-mask').mask('000.000.000-00');
+    $('.phone-mask').mask('(00) 00000-0000');
+    $('.cep-mask').mask('00000-000');
+    
+    // Progress bar update
+    function updateProgress(step) {
+        const progress = (step / 4) * 100;
+        $('.bg-\\[\\#8e005c\\]').css('width', progress + '%');
+        
+        // Update step indicators
+        $('.w-8.h-8').removeClass('bg-[#8e005c] text-white').addClass('bg-neutral-200 text-neutral-600');
+        for(let i = 1; i <= step; i++) {
+            $(`.w-8.h-8:eq(${i-1})`).removeClass('bg-neutral-200 text-neutral-600').addClass('bg-[#8e005c] text-white');
+        }
+    }
+    
+    // Next button
+    $('.next').click(function(){
+        const currentFieldset = $(this).closest('fieldset');
+        const nextFieldset = currentFieldset.next('fieldset');
+        const currentStep = currentFieldset.index() + 1;
+        
+        currentFieldset.hide();
+        nextFieldset.show();
+        updateProgress(currentStep + 1);
+    });
+    
+    // Previous button
+    $('.previous').click(function(){
+        const currentFieldset = $(this).closest('fieldset');
+        const prevFieldset = currentFieldset.prev('fieldset');
+        const currentStep = currentFieldset.index();
+        
+        currentFieldset.hide();
+        prevFieldset.show();
+        updateProgress(currentStep);
+    });
+    
+    // Initialize
+    updateProgress(1);
+});
+</script>
+{% endblock %}

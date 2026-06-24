@@ -1,0 +1,437 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Cadastrar Participante - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-6">
+                <!-- Card de Registro -->
+                <div class="card-standard">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <div class="position-relative mb-3 d-inline-block">
+                                <div class="bg-primary bg-opacity-10 rounded-3 d-inline-flex align-items-center justify-content-center p-3">
+                                    <i class="fas fa-user-plus text-primary fs-4"></i>
+                                </div>
+                                <!-- Bola vermelha -->
+                                <div class="position-absolute" style="top: -5px; right: -5px;">
+                                    <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 12px; height: 12px; border: 2px solid white; box-shadow: 0 0 0 1px rgba(0,0,0,0.1);"></div>
+                                </div>
+                            </div>
+                            <h2 class="h3 fw-bold text-dark mb-2">Cadastrar Participante</h2>
+                            <p class="text-muted mb-0">Preencha os dados para criar uma nova conta</p>
+                        </div>
+
+                        {% if messages %}
+                        <div class="mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-standard {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <form method="post" enctype="multipart/form-data" class="form-standard" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- Seção: Dados de Acesso -->
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-user-circle text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="h5 fw-bold text-dark mb-1">Dados de Acesso</h4>
+                                        <p class="text-muted small mb-0">Informações para login no sistema</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" 
+                                           name="{{ user_form.username.name }}"
+                                           id="{{ user_form.username.id_for_label }}" 
+                                           value="{{ user_form.username.value|default_if_none:'' }}"
+                                           class="form-control cpf-mask" 
+                                           placeholder="000.000.000-00" 
+                                           required>
+                                    <label for="{{ user_form.username.id_for_label }}">CPF</label>
+                                    {% if user_form.username.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            Não foi possível criar a conta com este CPF. Se você já possui um cadastro, por favor, faça login ou recupere sua senha.
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="email" 
+                                           name="{{ user_form.email.name }}"
+                                           id="{{ user_form.email.id_for_label }}" 
+                                           value="{{ user_form.email.value|default_if_none:'' }}"
+                                           class="form-control" 
+                                           placeholder="seu@email.com" 
+                                           required>
+                                    <label for="{{ user_form.email.id_for_label }}">E-mail</label>
+                                    {% if user_form.email.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            Não foi possível criar a conta com este e-mail. Se você já possui um cadastro, por favor, faça login ou recupere sua senha.
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="password" 
+                                           name="{{ user_form.password.name }}"
+                                           id="{{ user_form.password.id_for_label }}" 
+                                           value="{{ user_form.password.value|default_if_none:'' }}"
+                                           class="form-control" 
+                                           placeholder="••••••••" 
+                                           required>
+                                    <label for="{{ user_form.password.id_for_label }}">Senha (mínimo 8 caracteres)</label>
+                                    {% if user_form.password.errors %}
+                                        <div class="invalid-feedback d-block">{{ user_form.password.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="password" 
+                                           name="{{ user_form.password2.name }}"
+                                           id="{{ user_form.password2.id_for_label }}" 
+                                           value="{{ user_form.password2.value|default_if_none:'' }}"
+                                           class="form-control" 
+                                           placeholder="••••••••" 
+                                           required>
+                                    <label for="{{ user_form.password2.id_for_label }}">Confirmar Senha</label>
+                                    {% if user_form.password2.errors %}
+                                        <div class="invalid-feedback d-block">{{ user_form.password2.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Seção: Dados Pessoais -->
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-user text-info"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="h5 fw-bold text-dark mb-1">Dados Pessoais</h4>
+                                        <p class="text-muted small mb-0">Informações pessoais do participante</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" 
+                                           name="{{ profile_form.nome.name }}"
+                                           id="{{ profile_form.nome.id_for_label }}" 
+                                           value="{{ profile_form.nome.value|default_if_none:'' }}"
+                                           class="form-control" 
+                                           placeholder="Seu nome completo" 
+                                           required>
+                                    <label for="{{ profile_form.nome.id_for_label }}">Nome Completo</label>
+                                    {% if profile_form.nome.errors %}
+                                        <div class="invalid-feedback d-block">{{ profile_form.nome.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="date" 
+                                           name="{{ profile_form.date_of_birth.name }}"
+                                           id="{{ profile_form.date_of_birth.id_for_label }}" 
+                                           value="{{ profile_form.date_of_birth.value|default_if_none:'' }}"
+                                           class="form-control" 
+                                           required>
+                                    <label for="{{ profile_form.date_of_birth.id_for_label }}">Data de Nascimento</label>
+                                    {% if profile_form.date_of_birth.errors %}
+                                        <div class="invalid-feedback d-block">{{ profile_form.date_of_birth.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <select name="{{ profile_form.sexo.name }}"
+                                            id="{{ profile_form.sexo.id_for_label }}" 
+                                            class="form-select" 
+                                            required>
+                                        <option value="">Selecione o sexo</option>
+                                        {% for choice in profile_form.sexo %}
+                                            {{ choice }}
+                                        {% endfor %}
+                                    </select>
+                                    <label for="{{ profile_form.sexo.id_for_label }}">Sexo</label>
+                                    {% if profile_form.sexo.errors %}
+                                        <div class="invalid-feedback d-block">{{ profile_form.sexo.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="tel" 
+                                           name="{{ profile_form.whatsapp.name }}"
+                                           id="{{ profile_form.whatsapp.id_for_label }}" 
+                                           value="{{ profile_form.whatsapp.value|default_if_none:'' }}"
+                                           class="form-control phone-mask" 
+                                           placeholder="(86) 99999-9999">
+                                    <label for="{{ profile_form.whatsapp.id_for_label }}">WhatsApp</label>
+                                    {% if profile_form.whatsapp.errors %}
+                                        <div class="invalid-feedback d-block">{{ profile_form.whatsapp.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Seção: Endereço -->
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-map-marker-alt text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="h5 fw-bold text-dark mb-1">Endereço</h4>
+                                        <p class="text-muted small mb-0">Localização do participante</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" 
+                                           name="{{ profile_form.CEP.name }}"
+                                           id="{{ profile_form.CEP.id_for_label }}" 
+                                           value="{{ profile_form.CEP.value|default_if_none:'' }}"
+                                           class="form-control cep-mask" 
+                                           placeholder="00000-000">
+                                    <label for="{{ profile_form.CEP.id_for_label }}">CEP</label>
+                                    {% if profile_form.CEP.errors %}
+                                        <div class="invalid-feedback d-block">{{ profile_form.CEP.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" 
+                                           name="{{ profile_form.endereco.name }}"
+                                           id="{{ profile_form.endereco.id_for_label }}" 
+                                           value="{{ profile_form.endereco.value|default_if_none:'' }}"
+                                           class="form-control" 
+                                           placeholder="Rua, número e complemento" 
+                                           required>
+                                    <label for="{{ profile_form.endereco.id_for_label }}">Endereço</label>
+                                    {% if profile_form.endereco.errors %}
+                                        <div class="invalid-feedback d-block">{{ profile_form.endereco.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" 
+                                                   name="{{ profile_form.bairro.name }}"
+                                                   id="{{ profile_form.bairro.id_for_label }}" 
+                                                   value="{{ profile_form.bairro.value|default_if_none:'' }}"
+                                                   class="form-control" 
+                                                   placeholder="Bairro" 
+                                                   required>
+                                            <label for="{{ profile_form.bairro.id_for_label }}">Bairro</label>
+                                            {% if profile_form.bairro.errors %}
+                                                <div class="invalid-feedback d-block">{{ profile_form.bairro.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" 
+                                                   name="{{ profile_form.cidade.name }}"
+                                                   id="{{ profile_form.cidade.id_for_label }}" 
+                                                   value="{{ profile_form.cidade.value|default_if_none:'' }}"
+                                                   class="form-control" 
+                                                   placeholder="Cidade" 
+                                                   required>
+                                            <label for="{{ profile_form.cidade.id_for_label }}">Cidade</label>
+                                            {% if profile_form.cidade.errors %}
+                                                <div class="invalid-feedback d-block">{{ profile_form.cidade.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-floating mt-3">
+                                    <select name="{{ profile_form.estado.name }}"
+                                            id="{{ profile_form.estado.id_for_label }}" 
+                                            class="form-select" 
+                                            required>
+                                        <option value="">Selecione um estado</option>
+                                        {% for choice in profile_form.estado %}
+                                            {{ choice }}
+                                        {% endfor %}
+                                    </select>
+                                    <label for="{{ profile_form.estado.id_for_label }}">Estado</label>
+                                    {% if profile_form.estado.errors %}
+                                        <div class="invalid-feedback d-block">{{ profile_form.estado.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Pergunta de Segurança -->
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-shield-alt text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="h5 fw-bold text-dark mb-1">Pergunta de Segurança</h4>
+                                        <p class="text-muted small mb-0">Confirme sua resposta para validar o cadastro</p>
+                                    </div>
+                                </div>
+
+                                <div class="card border-warning border-opacity-25">
+                                    <div class="card-body">
+                                        <label class="form-label fw-bold text-dark mb-3">
+                                            {{ profile_form.pergunta.label }}
+                                        </label>
+                                        
+                                        <div class="d-flex flex-column gap-2">
+                                            {% for choice in profile_form.pergunta %}
+                                                <div class="form-check">
+                                                    {{ choice.tag }}
+                                                    <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                                        {{ choice.choice_label }}
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        {% if profile_form.pergunta.errors %}
+                                            <div class="invalid-feedback d-block mt-2">
+                                                {{ profile_form.pergunta.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Termos de Aceite -->
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           name="{{ profile_form.termos_de_aceite.name }}"
+                                           id="{{ profile_form.termos_de_aceite.id_for_label }}" 
+                                           value="True"
+                                           {% if profile_form.termos_de_aceite.value %}checked{% endif %}
+                                           class="form-check-input" 
+                                           required>
+                                    <label class="form-check-label" for="{{ profile_form.termos_de_aceite.id_for_label }}">
+                                        {{ profile_form.termos_de_aceite.label }}
+                                    </label>
+                                    {% if profile_form.termos_de_aceite.errors %}
+                                        <div class="invalid-feedback d-block">{{ profile_form.termos_de_aceite.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'participante:search_by_cpf' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-search me-2"></i>Buscar Participante
+                                </a>
+                                <button type="submit" class="btn btn-gradient">
+                                    <i class="fas fa-user-plus me-2"></i>Criar Conta
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+$(document).ready(function() {
+    // Phone mask for dynamic fields
+    var SPMaskBehavior = function (val) {
+        return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+    },
+    spOptions = {
+        onKeyPress: function(val, e, field, options) {
+            field.mask(SPMaskBehavior.apply({}, arguments), options);
+        }
+    };
+    $('.phone-mask').mask(SPMaskBehavior, spOptions);
+    
+    // CEP mask
+    $('.cep-mask').mask('00000-000');
+    
+    // Função para mostrar o estado de carregamento do CEP
+    function showLoadingState(show) {
+        const cepInput = $('#{{ profile_form.CEP.id_for_label }}');
+        const loadingIcon = '<i class="fas fa-spinner fa-spin text-primary"></i>';
+        
+        if (show) {
+            cepInput.addClass('loading');
+            cepInput.parent().append(`<div class="position-absolute end-0 top-50 translate-middle-y pe-4" id="cep-loading">${loadingIcon}</div>`);
+        } else {
+            cepInput.removeClass('loading');
+            $('#cep-loading').remove();
+        }
+    }
+
+    // Função para atualizar campos do endereço
+    function updateAddressFields(data) {
+        $('#{{ profile_form.endereco.id_for_label }}').val(data.logradouro);
+        $('#{{ profile_form.bairro.id_for_label }}').val(data.bairro);
+        $('#{{ profile_form.cidade.id_for_label }}').val(data.localidade);
+        $('#{{ profile_form.estado.id_for_label }}').val(data.uf);
+        
+        // Foca no campo número se o endereço foi preenchido
+        if (data.logradouro) {
+            $('#{{ profile_form.endereco.id_for_label }}').focus();
+        }
+    }
+
+    // Função para buscar CEP via backend Django (com fallback APICEP + ViaCEP)
+    async function fetchCEP(cep) {
+        showLoadingState(true);
+        
+        try {
+            const formData = new FormData();
+            formData.append('cep', cep);
+            
+            // Busca via backend Django (usa brazilcep com múltiplos provedores)
+            const response = await fetch('{% url "participante:consulta_cep" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                throw new Error(result.message || 'CEP não encontrado');
+            }
+            
+            updateAddressFields(result.data);
+        } catch (error) {
+            console.error('Erro ao buscar CEP:', error);
+            // Limpa os campos em caso de erro
+            updateAddressFields({
+                logradouro: '',
+                bairro: '',
+                localidade: '',
+                uf: ''
+            });
+        } finally {
+            showLoadingState(false);
+        }
+    }
+
+    // Evento para buscar CEP ao pressionar Tab
+    $('#{{ profile_form.CEP.id_for_label }}').on('blur', function(e) {
+        const cep = this.value.replace(/\D/g, '');
+        if (cep.length === 8) {
+            fetchCEP(cep);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,456 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}
+    {% if is_edit %}
+        Configurar Colaborador - {{ colaborador.nome }}
+    {% else %}
+        Configurar Novo Colaborador
+    {% endif %}
+    - Natal de Luz e Prêmios
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-step {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .wizard-step.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: scale(1.05);
+    }
+    
+    .wizard-step.completed {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: white;
+    }
+    
+    .wizard-step.pending {
+        background: #f8f9fa;
+        color: #6c757d;
+    }
+    
+    .preview-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .form-section {
+        display: none;
+    }
+    
+    .form-section.active {
+        display: block;
+    }
+    
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        color: #667eea;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-action {
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    @media (max-width: 768px) {
+        .wizard-steps {
+            flex-direction: column;
+        }
+        
+        .wizard-step {
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        {% if is_edit %}
+                            Configurar {{ colaborador.nome }}
+                        {% else %}
+                            Novo Colaborador
+                        {% endif %}
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">
+                                <i class="fas fa-cogs text-primary me-2"></i>
+                                {% if is_edit %}
+                                    Configurar Colaborador
+                                {% else %}
+                                    Configurar Novo Colaborador
+                                {% endif %}
+                            </h1>
+                            <p class="text-muted mb-0">
+                                {% if is_edit %}
+                                    Configure jornada, posto de trabalho e permissões para {{ colaborador.nome }}
+                                {% else %}
+                                    Configure todos os dados do novo colaborador
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wizard Steps -->
+        <div class="card-standard mb-4">
+            <div class="card-body p-4">
+                <div class="wizard-steps d-flex justify-content-between mb-4">
+                    <div class="wizard-step active rounded-pill px-4 py-2 text-center" data-step="1">
+                        <i class="fas fa-user me-2"></i>Dados Básicos
+                    </div>
+                    <div class="wizard-step pending rounded-pill px-4 py-2 text-center" data-step="2">
+                        <i class="fas fa-building me-2"></i>Trabalho
+                    </div>
+                    <div class="wizard-step pending rounded-pill px-4 py-2 text-center" data-step="3">
+                        <i class="fas fa-clock me-2"></i>Jornada
+                    </div>
+                    <div class="wizard-step pending rounded-pill px-4 py-2 text-center" data-step="4">
+                        <i class="fas fa-shield-alt me-2"></i>Permissões
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Formulário -->
+            <div class="col-lg-8">
+                <form method="POST" id="configurarForm">
+                    {% csrf_token %}
+                    
+                    <!-- Step 1: Dados Básicos -->
+                    <div class="form-section active" id="step1">
+                        <div class="card card-standard">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user me-2"></i>Dados Básicos
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control" id="nome" name="nome" 
+                                                   value="{{ colaborador.nome|default:'' }}" required>
+                                            <label for="nome">Nome Completo</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="email" class="form-control" id="email" name="email" 
+                                                   value="{{ colaborador.user.email|default:'' }}" required>
+                                            <label for="email">Email</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control" id="whatsapp" name="whatsapp" 
+                                                   value="{{ colaborador.whatsapp|default:'' }}" 
+                                                   placeholder="(85) 98888-8888">
+                                            <label for="whatsapp">WhatsApp</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control" id="cpf" name="cpf" 
+                                                   value="{{ colaborador.CPF|default:'' }}" readonly>
+                                            <label for="cpf">CPF</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Trabalho -->
+                    <div class="form-section" id="step2">
+                        <div class="card card-standard">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-building me-2"></i>Configuração de Trabalho
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select class="form-select" id="posto_trabalho" name="posto_trabalho">
+                                                <option value="">Selecione um posto</option>
+                                                {% for posto in postos_trabalho %}
+                                                    <option value="{{ posto.id }}" 
+                                                            {% if colaborador.posto_trabalho.id == posto.id %}selected{% endif %}>
+                                                        {{ posto.nome }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            <label for="posto_trabalho">Posto de Trabalho</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select class="form-select" id="tipo_jornada" name="tipo_jornada">
+                                                <option value="">Selecione uma jornada</option>
+                                                {% for jornada in tipos_jornada %}
+                                                    <option value="{{ jornada.id }}">{{ jornada.nome }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <label for="tipo_jornada">Tipo de Jornada</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select class="form-select" id="role" name="role">
+                                                <option value="">Selecione uma função</option>
+                                                {% for role in roles %}
+                                                    <option value="{{ role.id }}">{{ role.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <label for="role">Função/Role</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                                   value="{% now 'Y-m-d' %}">
+                                            <label for="data_inicio">Data de Início</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Jornada -->
+                    <div class="form-section" id="step3">
+                        <div class="card card-standard">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-clock me-2"></i>Configurações de Jornada
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="requer_jornada" 
+                                                   name="requer_jornada" 
+                                                   {% if colaborador.requer_jornada %}checked{% endif %}>
+                                            <label class="form-check-label" for="requer_jornada">
+                                                Requer controle de jornada
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="jornada_flexivel" 
+                                                   name="jornada_flexivel" 
+                                                   {% if colaborador.jornada_flexivel %}checked{% endif %}>
+                                            <label class="form-check-label" for="jornada_flexivel">
+                                                Jornada flexível
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Permissões -->
+                    <div class="form-section" id="step4">
+                        <div class="card card-standard">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-shield-alt me-2"></i>Status e Permissões
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="status_ativo" 
+                                                   name="status_ativo" 
+                                                   {% if colaborador.status_ativo %}checked{% endif %}>
+                                            <label class="form-check-label" for="status_ativo">
+                                                Colaborador ativo
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Navegação -->
+                    <div class="card card-standard mt-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary" id="prevBtn" style="display: none;">
+                                    <i class="fas fa-arrow-left me-2"></i>Anterior
+                                </button>
+                                <div class="ms-auto">
+                                    <button type="button" class="btn btn-primary" id="nextBtn">
+                                        Próximo<i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                    <button type="submit" class="btn btn-success" id="saveBtn" style="display: none;">
+                                        <i class="fas fa-save me-2"></i>Salvar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Preview -->
+            <div class="col-lg-4">
+                <div class="preview-card sticky-top" style="top: 2rem;">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-eye me-2"></i>Preview
+                    </h5>
+                    <div id="previewContent">
+                        <div class="mb-3">
+                            <strong>Nome:</strong> <span id="previewNome">--</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Email:</strong> <span id="previewEmail">--</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Posto:</strong> <span id="previewPosto">--</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Jornada:</strong> <span id="previewJornada">--</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Função:</strong> <span id="previewRole">--</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Status:</strong> <span id="previewStatus">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+let currentStep = 1;
+const totalSteps = 4;
+
+// Navegação do wizard
+function showStep(step) {
+    // Esconder todas as seções
+    document.querySelectorAll('.form-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Mostrar seção atual
+    document.getElementById(`step${step}`).classList.add('active');
+    
+    // Atualizar steps
+    document.querySelectorAll('.wizard-step').forEach((stepEl, index) => {
+        stepEl.classList.remove('active', 'completed', 'pending');
+        if (index + 1 < step) {
+            stepEl.classList.add('completed');
+        } else if (index + 1 === step) {
+            stepEl.classList.add('active');
+        } else {
+            stepEl.classList.add('pending');
+        }
+    });
+    
+    // Atualizar botões
+    document.getElementById('prevBtn').style.display = step > 1 ? 'block' : 'none';
+    document.getElementById('nextBtn').style.display = step < totalSteps ? 'block' : 'none';
+    document.getElementById('saveBtn').style.display = step === totalSteps ? 'block' : 'none';
+}
+
+// Event listeners
+document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentStep < totalSteps) {
+        currentStep++;
+        showStep(currentStep);
+    }
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+    }
+});
+
+// Atualizar preview em tempo real
+function updatePreview() {
+    const nome = document.getElementById('nome').value || '--';
+    const email = document.getElementById('email').value || '--';
+    const posto = document.getElementById('posto_trabalho').options[document.getElementById('posto_trabalho').selectedIndex]?.text || '--';
+    const jornada = document.getElementById('tipo_jornada').options[document.getElementById('tipo_jornada').selectedIndex]?.text || '--';
+    const role = document.getElementById('role').options[document.getElementById('role').selectedIndex]?.text || '--';
+    const status = document.getElementById('status_ativo').checked ? 'Ativo' : 'Inativo';
+    
+    document.getElementById('previewNome').textContent = nome;
+    document.getElementById('previewEmail').textContent = email;
+    document.getElementById('previewPosto').textContent = posto;
+    document.getElementById('previewJornada').textContent = jornada;
+    document.getElementById('previewRole').textContent = role;
+    document.getElementById('previewStatus').textContent = status;
+}
+
+// Event listeners para atualizar preview
+document.querySelectorAll('input, select').forEach(input => {
+    input.addEventListener('input', updatePreview);
+    input.addEventListener('change', updatePreview);
+});
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    showStep(1);
+    updatePreview();
+});
+</script>
+{% endblock %}

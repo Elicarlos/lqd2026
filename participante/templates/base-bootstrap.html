@@ -1,0 +1,468 @@
+{% load static %}
+{% load auth_extras %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Liquida 2025 - A maior campanha de varejo de Teresina">
+    <title>{% block title %}Natal de Luz e Prêmios{% endblock %}</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/2023/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/2023/favicon-16x16.png' %}">
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
+    <meta name="theme-color" content="#0d6efd">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Vendor CSS Files -->
+    <link href="{% static 'bootstrap/assets/vendor/aos/aos.css' %}" rel="stylesheet">
+    <link href="{% static 'bootstrap/assets/vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet">
+    <link href="{% static 'bootstrap/assets/vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="{% static 'bootstrap/assets/css/main.css' %}?v=1.1" rel="stylesheet">
+    
+
+    
+    {% block extra_css %}{% endblock %}
+
+    {% if campanha %}
+    <style>
+        :root {
+            --brand-primary: {{ campanha.cor_primaria }};
+            --brand-primary-dark: {{ campanha.cor_hover }};
+        }
+    </style>
+    {% endif %}
+</head>
+
+<body class="bg-light">
+    <!-- Header -->
+    <header id="header" class="header fixed-top" style="background: linear-gradient(135deg, #0d6efd 100%);">
+        <!-- Top Bar -->
+        <!-- Main Header -->
+        <div class="py-4" style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+            <div class="container position-relative d-flex align-items-center">
+            <!-- Logo -->
+            <a href="{% url 'participante:homepage' %}" class="logo d-flex align-items-center">
+                {% if campanha.logo_principal %}
+                    <img src="{{ campanha.logo_principal.url }}" alt="Logo {{ campanha.nome }}" class="me-2">
+                {% else %}
+                    <img src="{% static 'img/2023/logo.png' %}" alt="Logo Liquida" class="me-2">
+                {% endif %}
+            </a>
+
+            <!-- Navigation Menu - Centralizado -->
+            <nav id="navmenu" class="navmenu mx-auto">
+                <ul class="d-flex align-items-center mb-0 list-unstyled">
+                    <li class="me-4"><a href="{% url 'participante:homepage' %}#inicio" class="{% if request.path == '/' %}active{% endif %} text-white text-decoration-none fw-medium">Início</a></li>
+                    <li class="me-4"><a href="{% url 'participante:homepage' %}#como-participar" class="text-white text-decoration-none fw-medium">Como Participar</a></li>
+                    <li class="me-4"><a href="{% url 'participante:homepage' %}#premios" class="text-white text-decoration-none fw-medium">Prêmios</a></li>
+                    <li class="me-4"><a href="{% static 'docs/regulamento.pdf' %}" target="_blank" class="text-white text-decoration-none fw-medium">Regulamento</a></li>
+                </ul>
+                <i class="mobile-nav-toggle d-xl-none bi bi-list text-white"></i>
+            </nav>
+
+            <!-- Auth Buttons -->
+            {% if request.user.is_authenticated %}
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm rounded-pill px-3 py-2 fw-medium dropdown-toggle" 
+                                type="button" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false">
+                            <i class="bi bi-person-circle me-2"></i>
+                            {{ request.user.username|truncatechars:10 }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% if request.user.is_superuser %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'participante:logout' %}" style="display: inline; width: 100%;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger border-0 bg-transparent w-100 text-start" style="cursor: pointer;">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Sair
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            {% else %}
+                <div class="d-flex gap-3">
+                    <a href="{% url 'participante:register' %}" class="btn btn-light btn-sm rounded-pill px-3 py-2 fw-medium">
+                        <i class="bi bi-person-plus me-2"></i>Cadastre-se
+                    </a>
+                    <button type="button" data-bs-toggle="modal" data-bs-target="#loginModal" 
+                            class="btn btn-outline-light btn-sm rounded-pill px-3 py-2 fw-medium">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- System Messages -->
+    {% if messages %}
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
+        {% for message in messages %}
+        <div class="toast align-items-center text-white bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}times-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Login Modal -->
+    {% include 'components/login-modal.html' %}
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+    <!-- Footer -->
+    <footer id="footer" class="footer position-relative text-white" style="background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%);">
+        <div class="container py-5">
+            <div class="row gy-4">
+                <div class="col-lg-5 col-md-12">
+                    <a href="{% url 'participante:homepage' %}" class="logo d-flex align-items-center mb-4">
+                        <img src="{% static 'img/2023/logo-cdl.png' %}" alt="CDL Teresina" class="me-3" height="48">
+                        <span class="fs-4 fw-bold text-white">Liquida Teresina</span>
+                    </a>
+                    <p class="text-white-50 mb-4">A maior campanha de varejo de Teresina, promovendo o comércio local e premiando os consumidores.</p>
+                    <div class="d-flex gap-3">
+                        <a href="https://www.facebook.com/cdlteresina/" target="_blank" class="social-link">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="https://www.instagram.com/cdlteresina/" target="_blank" class="social-link">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                        <a href="https://www.youtube.com/cdlteresina" target="_blank" class="social-link">
+                            <i class="bi bi-youtube"></i>
+                        </a>
+                        <a href="http://www.cdlteresina.com.br/" target="_blank" class="social-link">
+                            <i class="bi bi-globe"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-6">
+                    <h5 class="text-white mb-4">Links Úteis</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'participante:homepage' %}#inicio" class="text-white-50 text-decoration-none">Home</a></li>
+                        <li class="mb-2"><a href="{% url 'participante:homepage' %}#como-funciona" class="text-white-50 text-decoration-none">Como Funciona</a></li>
+                        <li class="mb-2"><a href="{% url 'participante:homepage' %}#como-participar" class="text-white-50 text-decoration-none">Como Participar</a></li>
+                        <li class="mb-2"><a href="{% url 'participante:homepage' %}#premios" class="text-white-50 text-decoration-none">Prêmios</a></li>
+                        <li class="mb-2"><a href="{% static 'docs/regulamento.pdf' %}" target="_blank" class="text-white-50 text-decoration-none">Regulamento</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-2 col-6">
+                    <h5 class="text-white mb-4">Área do Participante</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'participante:register' %}" class="text-white-50 text-decoration-none">Cadastre-se</a></li>
+                        <li class="mb-2"><a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" class="text-white-50 text-decoration-none">Login</a></li>
+                        <li class="mb-2"><a href="{% url 'participante:cupons' %}" class="text-white-50 text-decoration-none">Meus Cupons</a></li>
+                        <li class="mb-2"><a href="{% url 'participante:doc_fiscal_add' %}" class="text-white-50 text-decoration-none">Cadastrar Nota</a></li>
+                        <li class="mb-2"><a href="{% url 'participante:change_password' %}" class="text-white-50 text-decoration-none">Alterar Senha</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-12">
+                    <h5 class="text-white mb-4">Fale Conosco</h5>
+                    <p class="text-white-50 mb-1">Rua Simplício Mendes, 1585</p>
+                    <p class="text-white-50 mb-1">Centro - Teresina/PI</p>
+                    <p class="text-white-50 mb-4">CEP: 64000-110</p>
+                    <p class="text-white-50 mb-2"><strong class="text-white">Telefone:</strong> (86) 3221-9800</p>
+                    <p class="text-white-50"><strong class="text-white">Email:</strong> contato@cdlteresina.com.br</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-top border-secondary">
+            <div class="container py-4">
+                <div class="text-center text-white-50">
+                    © <span>Copyright</span> <strong class="text-white px-1">Liquida Teresina</strong> <span>{% now "Y" %}</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+    {% endblock %}
+
+    <!-- Scroll Top -->
+    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+    <!-- jQuery e jQuery Mask -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Vendor JS Files -->
+    <script src="{% static 'bootstrap/assets/vendor/aos/aos.js' %}"></script>
+    <script src="{% static 'bootstrap/assets/vendor/glightbox/js/glightbox.min.js' %}"></script>
+    <script src="{% static 'bootstrap/assets/vendor/swiper/swiper-bundle.min.js' %}"></script>
+    <script src="{% static 'bootstrap/assets/vendor/purecounter/purecounter_vanilla.js' %}"></script>
+
+    <!-- Common Scripts -->
+    <script src="{% static 'bootstrap/assets/js/main.js' %}"></script>
+
+    <script>
+        // Inicializar AOS (Animate On Scroll)
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+            mirror: false
+        });
+
+        // Máscaras e funcionalidades do modal de login
+        $(document).ready(function() {
+            // Função para obter token CSRF
+            function getCSRFToken() {
+                // Tentar obter do input hidden
+                let token = $('[name=csrfmiddlewaretoken]').val();
+                if (!token) {
+                    token = $('input[name=csrfmiddlewaretoken]').val();
+                }
+                if (!token) {
+                    token = $('input[type=hidden][name=csrfmiddlewaretoken]').val();
+                }
+                
+                // Se não encontrar no HTML, tentar do cookie
+                if (!token) {
+                    const name = 'csrftoken=';
+                    const decodedCookie = decodeURIComponent(document.cookie);
+                    const cookieArray = decodedCookie.split(';');
+                    for (let i = 0; i < cookieArray.length; i++) {
+                        let cookie = cookieArray[i];
+                        while (cookie.charAt(0) === ' ') {
+                            cookie = cookie.substring(1);
+                        }
+                        if (cookie.indexOf(name) === 0) {
+                            token = cookie.substring(name.length, cookie.length);
+                            break;
+                        }
+                    }
+                }
+                
+                return token;
+            }
+            
+            // Debug do token CSRF no carregamento da página
+            console.log('CSRF tokens encontrados na página:');
+            console.log('$("[name=csrfmiddlewaretoken]").val():', $('[name=csrfmiddlewaretoken]').val());
+            console.log('$("input[name=csrfmiddlewaretoken]").val():', $('input[name=csrfmiddlewaretoken]').val());
+            console.log('$("input[type=hidden][name=csrfmiddlewaretoken]").val():', $('input[type=hidden][name=csrfmiddlewaretoken]').val());
+            console.log('Token do cookie:', getCSRFToken());
+            console.log('HTML do formulário:', $('#loginForm').html());
+            
+            // CPF mask para o modal de login
+            $('.cpf-mask').mask('000.000.000-00', {
+                reverse: false,
+                clearIfNotMatch: true
+            });
+
+            // Formulário de login
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const username = $('#id_username_login').val();
+                const password = $('#id_password_login').val();
+                
+                // Limpar erros anteriores
+                $('.invalid-feedback').addClass('d-none');
+                $('.form-control').removeClass('is-invalid');
+                
+                // Validação básica
+                let isValid = true;
+                
+                if (!username.trim()) {
+                    $('#id_username_login').addClass('is-invalid');
+                    $('#username-login-error').text('CPF é obrigatório').removeClass('d-none');
+                    isValid = false;
+                }
+                
+                if (!password.trim()) {
+                    $('#id_password_login').addClass('is-invalid');
+                    $('#password-login-error').text('Senha é obrigatória').removeClass('d-none');
+                    isValid = false;
+                }
+                
+                if (isValid) {
+                    // Obter token CSRF usando a função
+                    const csrfToken = getCSRFToken();
+                    
+                    console.log('CSRF Token sendo enviado:', csrfToken);
+                    console.log('Form data:', {
+                        username: username,
+                        password: password,
+                        csrfmiddlewaretoken: csrfToken
+                    });
+                    
+                    // Se não encontrar o token, recarregar a página
+                    if (!csrfToken) {
+                        console.log('CSRF token não encontrado, recarregando página...');
+                        window.location.reload();
+                        return;
+                    }
+                    
+                    // Enviar formulário
+                    $.ajax({
+                        url: '{% url "participante:login" %}',
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        data: {
+                            username: username,
+                            password: password,
+                            csrfmiddlewaretoken: csrfToken
+                        },
+                        success: function(response) {
+                            console.log('Login response:', response);
+                            
+                            // Atualizar token CSRF se fornecido na resposta
+                            if (response.csrf_token) {
+                                $('[name=csrfmiddlewaretoken]').val(response.csrf_token);
+                                console.log('CSRF token atualizado');
+                            }
+                            
+                            if (response.success) {
+                                // Redirecionar baseado no tipo de usuário
+                                if (response.redirect_url) {
+                                    window.location.href = response.redirect_url;
+                                } else {
+                                    window.location.reload();
+                                }
+                            } else {
+                                // Mostrar erro
+                                let errorMessage = response.message || 'Erro desconhecido';
+                                console.log('Mostrando erro no modal:', errorMessage);
+                                
+                                // Limpar erros anteriores
+                                $('.invalid-feedback').addClass('d-none');
+                                $('.form-control').removeClass('is-invalid');
+                                
+                                // Mostrar erro no campo username (geral)
+                                $('#id_username_login').addClass('is-invalid');
+                                $('#username-login-error').text(errorMessage).removeClass('d-none');
+                                
+                                // Forçar exibição do erro
+                                $('#username-login-error').show().css('display', 'block');
+                                
+                                // Se houver erros específicos de campos
+                                if (response.errors) {
+                                    if (response.errors.username) {
+                                        $('#username-login-error').text(response.errors.username);
+                                    }
+                                    if (response.errors.password) {
+                                        $('#id_password_login').addClass('is-invalid');
+                                        $('#password-login-error').text(response.errors.password).removeClass('d-none');
+                                        $('#password-login-error').show().css('display', 'block');
+                                    }
+                                }
+                                
+                                // Scroll para o erro se necessário
+                                $('#username-login-error')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                
+                                // Adicionar alert visual temporário
+                                const alertDiv = $('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                                    '<i class="bi bi-exclamation-triangle me-2"></i>' + errorMessage +
+                                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                                    '</div>');
+                                
+                                // Inserir alert no topo do modal
+                                $('#loginForm').prepend(alertDiv);
+                                
+                                // Auto-remover após 5 segundos
+                                setTimeout(() => {
+                                    alertDiv.alert('close');
+                                }, 5000);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.log('Login error:', xhr, status, error);
+                            
+                            let errorMessage = 'Erro ao fazer login. Tente novamente.';
+                            
+                            // Se for erro 403 (CSRF), recarregar a página
+                            if (xhr.status === 403) {
+                                console.log('CSRF error detected, reloading page...');
+                                window.location.reload();
+                                return;
+                            }
+                            
+                            // Tentar extrair mensagem de erro da resposta
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.responseText) {
+                                try {
+                                    const response = JSON.parse(xhr.responseText);
+                                    if (response.message) {
+                                        errorMessage = response.message;
+                                    }
+                                } catch (e) {
+                                    // Se não conseguir parsear JSON, usar texto da resposta
+                                    if (xhr.responseText.includes('Fora do horário')) {
+                                        errorMessage = 'Acesso negado: Fora do horário permitido.';
+                                    }
+                                }
+                            }
+                            
+                            // Limpar erros anteriores
+                            $('.invalid-feedback').addClass('d-none');
+                            $('.form-control').removeClass('is-invalid');
+                            
+                            // Mostrar erro
+                            $('#id_username_login').addClass('is-invalid');
+                            $('#username-login-error').text(errorMessage).removeClass('d-none');
+                        }
+                    });
+                }
+            });
+
+            // Limpar erros quando o modal é fechado
+            $('#loginModal').on('hidden.bs.modal', function() {
+                $('.invalid-feedback').addClass('d-none');
+                $('.form-control').removeClass('is-invalid');
+                $('#loginForm')[0].reset();
+                $('.alert').remove(); // Remover alerts
+            });
+            
+            // Limpar erros quando o modal é aberto
+            $('#loginModal').on('show.bs.modal', function() {
+                $('.invalid-feedback').addClass('d-none');
+                $('.form-control').removeClass('is-invalid');
+                $('.alert').remove(); // Remover alerts anteriores
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

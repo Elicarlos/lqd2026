@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de Status</title>
+</head>
+<body>
+    <h1>Aguarde enquanto seu PDF é gerado...</h1>
+    <div id="status">Status: PENDING</div>
+    <div id="pdf-link" style="display:none;">
+        <iframe id="pdf-frame" style="width: 100%; height: 600px;"></iframe>
+    </div>
+
+    <script>
+        function checkStatus(taskId) {
+            fetch(`/bcp/check_task_status/${taskId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status').innerText = `Status: ${data.status}`;
+                    if (data.status === 'SUCCESS') {
+                        const frame = document.getElementById('pdf-frame');
+                        frame.src = 'data:application/pdf;base64,' + data.pdf_base64;
+                        document.getElementById('pdf-link').style.display = 'block';
+                    } else {
+                        setTimeout(() => checkStatus(taskId), 2000);
+                    }
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskId = "{{ task_id }}";
+            checkStatus(taskId);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+{% extends 'mobile.html' %}
+{% block title %}Detalhes do Cupom{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <!-- Cabeçalho -->
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Detalhes do Cupom</h1>
+        <p class="mt-2 text-sm text-gray-600">
+          Participante: <span class="font-medium">{{ user.nome }}</span>
+        </p>
+      </div>
+
+      <!-- Grid de Informações -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Informações do Cupom -->
+        <div class="bg-gray-50 rounded-lg p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Cupom #{{ cupom.id }}</h2>
+          <dl class="space-y-3">
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Data de Geração</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{ cupom.dataCriacao|date:"d/m/Y H:i" }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Informações do Documento Fiscal -->
+        <div class="bg-gray-50 rounded-lg p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Documento Fiscal</h2>
+          <dl class="space-y-3">
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Número do Documento</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{ cupom.documentoFiscal.numeroDocumento }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Lojista</dt>
+              <dd class="mt-1 text-sm text-gray-900">
+                {{ cupom.documentoFiscal.lojista.fantasiaLojista }} - {{ cupom.documentoFiscal.lojista.razaoLojista }}
+                <br>
+                <span class="text-gray-500">CNPJ: {{ cupom.documentoFiscal.lojista.CNPJLojista }}</span>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Vendedor</dt>
+              <dd class="mt-1 text-sm text-gray-900">
+                {% if cupom.documentoFiscal.vendedor %}
+                  {{ cupom.documentoFiscal.vendedor }}
+                {% else %}
+                  <span class="text-gray-500">Não informado</span>
+                {% endif %}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Data de Emissão</dt>
+              <dd class="mt-1 text-sm text-gray-900">{{ cupom.documentoFiscal.dataDocumento|date:"d/m/Y" }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Valor</dt>
+              <dd class="mt-1 text-sm text-gray-900">R$ {{ cupom.documentoFiscal.valorDocumento }}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Cartão Cielo</dt>
+              <dd class="mt-1">
+                {% if cupom.documentoFiscal.compradoCielo %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Sim
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Não
+                  </span>
+                {% endif %}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Botões -->
+      <div class="mt-8 flex justify-end">
+        <a href="{% url 'lojista:sorteio' %}" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Buscar outro cupom
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

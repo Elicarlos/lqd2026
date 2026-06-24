@@ -1,0 +1,172 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Cadastrar Posto de Trabalho - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for register posto - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:listar_postos' %}" class="text-decoration-none">Postos de Trabalho</a>
+                    </li>
+                    <li class="breadcrumb-item active">Novo Posto</li>
+                </ol>
+            </nav>
+            
+            <div class="card bg-white rounded-4 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Cadastrar Posto de Trabalho</h1>
+                            <p class="text-muted mb-0">Adicione um novo posto de trabalho ao sistema</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                <i class="fas fa-building text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensagens -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Formulário -->
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <form method="POST" class="row g-4">
+                            {% csrf_token %}
+                            
+                            <!-- Nome do Posto -->
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           name="nome" 
+                                           id="nome"
+                                           required
+                                           class="form-control"
+                                           placeholder="Digite o nome do posto">
+                                    <label for="nome" class="fw-semibold">
+                                        <i class="fas fa-building me-1"></i>Nome do Posto *
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Descrição -->
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <textarea name="descricao" 
+                                              id="descricao"
+                                              class="form-control"
+                                              style="height: 100px"
+                                              placeholder="Digite uma descrição do posto"></textarea>
+                                    <label for="descricao" class="fw-semibold">
+                                        <i class="fas fa-align-left me-1"></i>Descrição
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Descreva as responsabilidades e características do posto
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Botões -->
+                            <div class="col-12">
+                                <div class="d-flex gap-3 justify-content-end">
+                                    <a href="{% url 'lojista:listar_postos' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Cadastrar Posto
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Informações -->
+                <div class="card bg-info bg-opacity-10 border border-info border-opacity-20 rounded-4 mt-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0 me-3">
+                                <i class="fas fa-info-circle text-info"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-info mb-2">Sobre Postos de Trabalho</h5>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Use nomes descritivos e claros
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Postos ajudam a organizar os colaboradores
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        Postos com usuários vinculados não podem ser excluídos
+                                    </li>
+                                    <li class="mb-0">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        As descrições facilitam a identificação das responsabilidades
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %} 

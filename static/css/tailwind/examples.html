@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design System - Exemplos</title>
+    <link href="../output.css" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground p-8">
+    <div class="container mx-auto">
+        <h1 class="text-4xl font-display font-bold mb-8">Design System</h1>
+
+        <!-- Buttons -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Botões</h2>
+            <div class="flex flex-wrap gap-4">
+                <button class="btn btn-primary">Botão Primário</button>
+                <button class="btn btn-secondary">Botão Secundário</button>
+                <button class="btn btn-outline">Botão Outline</button>
+                <button class="btn btn-ghost">Botão Ghost</button>
+            </div>
+            <div class="flex flex-wrap gap-4 mt-4">
+                <button class="btn btn-primary btn-sm">Pequeno</button>
+                <button class="btn btn-primary btn-md">Médio</button>
+                <button class="btn btn-primary btn-lg">Grande</button>
+            </div>
+        </section>
+
+        <!-- Form Elements -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Formulários</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+                <!-- Input -->
+                <div>
+                    <label class="form-label">Input Padrão</label>
+                    <input type="text" class="form-input" placeholder="Digite algo...">
+                    <p class="form-helper">Texto de ajuda para o campo</p>
+                </div>
+
+                <!-- Select -->
+                <div>
+                    <label class="form-label">Select</label>
+                    <select class="form-select">
+                        <option>Opção 1</option>
+                        <option>Opção 2</option>
+                        <option>Opção 3</option>
+                    </select>
+                </div>
+
+                <!-- Input com erro -->
+                <div>
+                    <label class="form-label">Input com Erro</label>
+                    <input type="text" class="form-input border-error-500" value="Valor inválido">
+                    <p class="form-error">Mensagem de erro</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cards -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Cards</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Título do Card</h3>
+                        <p class="card-description">Descrição do card vai aqui</p>
+                    </div>
+                    <div class="card-content">
+                        <p>Conteúdo do card...</p>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary">Ação</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Badges -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Badges</h2>
+            <div class="flex flex-wrap gap-4">
+                <span class="badge badge-primary">Primary</span>
+                <span class="badge badge-secondary">Secondary</span>
+                <span class="badge badge-success">Success</span>
+                <span class="badge badge-error">Error</span>
+            </div>
+        </section>
+
+        <!-- Alerts -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Alerts</h2>
+            <div class="space-y-4 max-w-2xl">
+                <div class="alert alert-info">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <div>
+                        <h4 class="font-medium">Informação</h4>
+                        <p class="text-sm">Esta é uma mensagem informativa.</p>
+                    </div>
+                </div>
+                <div class="alert alert-error">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    <div>
+                        <h4 class="font-medium">Erro</h4>
+                        <p class="text-sm">Algo deu errado.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Navigation -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Navegação</h2>
+            <nav class="flex gap-6">
+                <a href="#" class="nav-link nav-link-active">Home</a>
+                <a href="#" class="nav-link">Produtos</a>
+                <a href="#" class="nav-link">Sobre</a>
+                <a href="#" class="nav-link">Contato</a>
+            </nav>
+        </section>
+
+        <!-- Modal Example -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Modal</h2>
+            <button class="btn btn-primary" onclick="document.getElementById('exampleModal').classList.remove('hidden')">
+                Abrir Modal
+            </button>
+
+            <div id="exampleModal" class="hidden modal-backdrop">
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <h2 class="modal-title">Título do Modal</h2>
+                        <p class="modal-description">Descrição ou subtítulo do modal.</p>
+                    </div>
+                    <div class="p-6">
+                        <p>Conteúdo do modal vai aqui...</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-ghost" onclick="document.getElementById('exampleModal').classList.add('hidden')">
+                            Cancelar
+                        </button>
+                        <button class="btn btn-primary">
+                            Confirmar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+</html> 

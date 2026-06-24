@@ -1,0 +1,18 @@
+{% extends "mobile.html" %}
+
+
+{% block title %}Informações do perfil{% endblock %}
+
+{% block content %}
+    <h1 style="margin-top: 70px;">Estamos quase lá</h1>
+    <p>Por favor, preencha os seguintes dados para concluir o seu cadastro:</p>
+    <form action="." method="post">
+
+        {% bootstrap_form profile_form layout='horizontal' %}
+
+        {% csrf_token %}
+        <p><input type="submit" class="btn btn-primary btn-lg" value="Criar minha conta">
+            <a type="button" class="btn" href="{% url 'participante:homepage'%}">Cancelar</button></p>
+
+    </form>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% include 'ticket/parcial/head.html' %}
+
+<body>
+    {% include 'ticket/parcial/header.html' %}
+    <div class="search-container">
+        <div class="container">
+            <form action="" method='GET' class="search-form">
+                <input type="search" class="search-input" name="search" placeholder='CPF' value='{{request.GET.search}}'>
+                <button type="submit" class="search-button"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
+        {% for i in ticket %}
+        <section class="container">
+            <h2>Cupom Natal de Luz e Prêmios</h2>
+              <div class="row">
+                <article class="card fl-left">
+                  <section class="date">
+                    <time>
+                      <h4>{{ticket.ticketUser}}</h4>
+                    </time>
+                  </section>
+                  <section class="card-cont">
+                    <small>CPF: {{cpf}}</small>
+                    <h3>{{nome}}</h3>
+                    <div class="even-date">
+                     <i class="fa fa-calendar"></i>
+                     <time>
+                       <span>sexta-feira 25 de dezembro de 2022</span>
+                       <span>08:55am</span>
+                     </time>
+                    </div>
+                    <div class="even-info">
+                      <i class="fa fa-map-marker"></i>
+                      <p>
+                        {{local}}
+                      </p>
+                    </div>
+                    <a href="#">Validar</a>
+                  </section>
+                </article>
+                <article class="card fl-left">
+                </article>
+              </div>
+            </div>
+        {% endfor %}
+     
+    </div>
+</body>
+
+</html>

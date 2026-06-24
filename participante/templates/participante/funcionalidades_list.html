@@ -1,0 +1,644 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Gerenciar Funcionalidades - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for funcionalidades list - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar tabela */
+    .table-modern {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .table-modern .table {
+        margin-bottom: 0;
+    }
+    
+    .table-modern .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-modern .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .table-modern .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: translateX(4px);
+    }
+    
+    .table-modern .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .table-modern .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    /* Melhorar badges */
+    .badge-modern {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-modern.badge-success {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .badge-modern.badge-danger {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .badge-modern.badge-warning {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+    
+    .badge-modern.badge-primary {
+        background: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+    
+    .badge-modern.badge-secondary {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+    
+    .badge-modern.badge-info {
+        background: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+    }
+    
+    /* Melhorar botões de ação */
+    .btn-action {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Melhorar ícones das funcionalidades */
+    .funcionalidade-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    /* Estado vazio melhorado */
+    .empty-state {
+        padding: 3rem 2rem;
+        text-align: center;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 1rem;
+    }
+    
+    .empty-state .icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(102, 126, 234, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2rem;
+        color: #667eea;
+    }
+    
+    /* Melhorar form controls */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorar cards de estatísticas */
+    .stats-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(0,0,0,.08);
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar alertas */
+    .alert-standard {
+        border-radius: 0.75rem;
+        border: 1px solid rgba(0,0,0,.08);
+        padding: 1rem 1.5rem;
+    }
+    
+    .alert-success {
+        background: rgba(25, 135, 84, 0.1);
+        border-color: rgba(25, 135, 84, 0.2);
+        color: #198754;
+    }
+    
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.1);
+        border-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .table-modern .table thead th,
+        .table-modern .table tbody td {
+            padding: 0.75rem 1rem;
+        }
+        
+        .table-modern .table thead th {
+            font-size: 0.75rem;
+        }
+        
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        
+        .stats-card {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:dashboard' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <i class="fas fa-cogs me-1"></i>Funcionalidades
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-cogs text-xl text-primary"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">Funcionalidades</h1>
+                                <p class="text-muted mb-0">Gerencie as funcionalidades do sistema</p>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 d-flex gap-2">
+                            <a href="{% url 'participante:cards_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-th-large me-2"></i>Gerenciar Cards
+                            </a>
+                            <a href="{% url 'participante:funcionalidade_create' %}" class="btn btn-gradient">
+                                <i class="fas fa-plus me-2"></i>Nova Funcionalidade
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small fw-semibold text-uppercase mb-1">Total</p>
+                            <h3 class="h2 fw-bold text-dark mb-0">{{ total_funcionalidades }}</h3>
+                            <p class="small text-primary mb-0">
+                                <i class="fas fa-cogs me-1"></i>Funcionalidades
+                            </p>
+                        </div>
+                        <div class="stats-icon bg-primary bg-opacity-10">
+                            <i class="fas fa-cogs text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small fw-semibold text-uppercase mb-1">Ativas</p>
+                            <h3 class="h2 fw-bold text-dark mb-0">{{ ativas }}</h3>
+                            <p class="small text-success mb-0">
+                                <i class="fas fa-check me-1"></i>Em funcionamento
+                            </p>
+                        </div>
+                        <div class="stats-icon bg-success bg-opacity-10">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small fw-semibold text-uppercase mb-1">Inativas</p>
+                            <h3 class="h2 fw-bold text-dark mb-0">{{ inativas }}</h3>
+                            <p class="small text-warning mb-0">
+                                <i class="fas fa-pause me-1"></i>Pausadas
+                            </p>
+                        </div>
+                        <div class="stats-icon bg-warning bg-opacity-10">
+                            <i class="fas fa-pause-circle text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small fw-semibold text-uppercase mb-1">Grupos</p>
+                            <h3 class="h2 fw-bold text-dark mb-0">{{ grupos.count }}</h3>
+                            <p class="small text-info mb-0">
+                                <i class="fas fa-users me-1"></i>Disponíveis
+                            </p>
+                        </div>
+                        <div class="stats-icon bg-info bg-opacity-10">
+                            <i class="fas fa-users text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="form-section">
+            <div class="d-flex align-items-center mb-4">
+                <div class="section-icon bg-primary bg-opacity-10 me-3">
+                    <i class="fas fa-filter text-primary"></i>
+                </div>
+                <div>
+                    <h4 class="h5 fw-bold text-dark mb-1">Filtros de Busca</h4>
+                    <p class="text-muted mb-0">Encontre funcionalidades específicas</p>
+                </div>
+            </div>
+            
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="search" name="search" 
+                               placeholder="Buscar..." value="{{ filtros.search|default:'' }}">
+                        <label for="search" class="fw-semibold">
+                            <i class="fas fa-search me-2"></i>Buscar
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="form-floating">
+                        <select class="form-select" id="tipo" name="tipo">
+                            <option value="">Todos</option>
+                            {% for codigo, nome in tipos %}
+                            <option value="{{ codigo }}" {% if filtros.tipo == codigo %}selected{% endif %}>
+                                {{ nome }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <label for="tipo" class="fw-semibold">
+                            <i class="fas fa-tag me-2"></i>Tipo
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="form-floating">
+                        <select class="form-select" id="grupo" name="grupo">
+                            <option value="">Todos</option>
+                            {% for grupo in grupos %}
+                            <option value="{{ grupo.name }}" {% if filtros.grupo == grupo.name %}selected{% endif %}>
+                                {{ grupo.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <label for="grupo" class="fw-semibold">
+                            <i class="fas fa-users me-2"></i>Grupo
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-2">
+                    <div class="form-floating">
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos</option>
+                            <option value="ativo" {% if filtros.status == 'ativo' %}selected{% endif %}>Ativo</option>
+                            <option value="inativo" {% if filtros.status == 'inativo' %}selected{% endif %}>Inativo</option>
+                        </select>
+                        <label for="status" class="fw-semibold">
+                            <i class="fas fa-toggle-on me-2"></i>Status
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="d-flex gap-2 w-100">
+                        <button type="submit" class="btn btn-gradient flex-fill">
+                            <i class="fas fa-filter me-2"></i>Filtrar
+                        </button>
+                        <a href="{% url 'participante:funcionalidades_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de Funcionalidades -->
+        {% if page_obj %}
+            <div class="table-modern">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-cog me-2"></i>Nome
+                                </th>
+                                <th>
+                                    <i class="fas fa-code me-2"></i>Código
+                                </th>
+                                <th>
+                                    <i class="fas fa-tag me-2"></i>Tipo
+                                </th>
+                                <th>
+                                    <i class="fas fa-database me-2"></i>Modelo
+                                </th>
+                                <th>
+                                    <i class="fas fa-toggle-on me-2"></i>Status
+                                </th>
+                                <th>
+                                    <i class="fas fa-users me-2"></i>Grupos
+                                </th>
+                                <th class="text-end">
+                                    <i class="fas fa-cog me-2"></i>Ações
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for funcionalidade in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="funcionalidade-icon me-3 bg-primary bg-opacity-10">
+                                            <i class="fas fa-cog text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ funcionalidade.nome }}</div>
+                                            {% if funcionalidade.descricao %}
+                                            <div class="text-muted small">{{ funcionalidade.descricao|truncatechars:50 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-modern badge-secondary">{{ funcionalidade.codigo }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-modern badge-primary">{{ funcionalidade.get_tipo_display }}</span>
+                                </td>
+                                <td>
+                                    {% if funcionalidade.modelo %}
+                                    <span class="text-muted">{{ funcionalidade.modelo }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if funcionalidade.ativo %}
+                                    <span class="badge badge-modern badge-success">
+                                        <i class="fas fa-check me-1"></i>Ativo
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-modern badge-warning">
+                                        <i class="fas fa-pause me-1"></i>Inativo
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% for grupo in funcionalidade.grupos_permitidos.all|slice:":2" %}
+                                    <span class="badge badge-modern badge-info me-1">{{ grupo.name }}</span>
+                                    {% endfor %}
+                                    {% if funcionalidade.grupos_permitidos.count > 2 %}
+                                    <span class="badge badge-modern badge-secondary">+{{ funcionalidade.grupos_permitidos.count|add:"-2" }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{% url 'participante:funcionalidade_edit' funcionalidade.pk %}" 
+                                           class="btn btn-outline-primary btn-action" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-action" 
+                                                onclick="confirmarExclusao('{{ funcionalidade.nome }}', {{ funcionalidade.pk }})" 
+                                                title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <!-- Estado vazio -->
+            <div class="empty-state">
+                <div class="icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h4 class="text-muted mb-2">Nenhuma funcionalidade encontrada</h4>
+                <p class="text-muted mb-4">Crie sua primeira funcionalidade para começar</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="{% url 'participante:funcionalidades_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Limpar Filtros
+                    </a>
+                    <a href="{% url 'participante:funcionalidade_create' %}" class="btn btn-gradient">
+                        <i class="fas fa-plus me-2"></i>Criar Funcionalidade
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Paginação -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Paginação" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</main>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="modalExclusao" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a funcionalidade <strong id="nomeFuncionalidade"></strong>?</p>
+                <p class="text-muted small">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" id="formExclusao" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Excluir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmarExclusao(nome, id) {
+    document.getElementById('nomeFuncionalidade').textContent = nome;
+    document.getElementById('formExclusao').action = `/funcionalidades/${id}/excluir/`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalExclusao'));
+    modal.show();
+}
+</script>
+{% endblock %}

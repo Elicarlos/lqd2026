@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+echo "Running pre-compile script..."
+echo "Installing npm dependencies..."
+npm install
+
+echo "Building Tailwind CSS..."
+npm run build
+
+echo "Pre-compile script completed."

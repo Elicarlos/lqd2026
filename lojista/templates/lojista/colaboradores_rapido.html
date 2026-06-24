@@ -1,0 +1,365 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Cadastro Rápido - Colaboradores{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-6">
+                <!-- Header simples -->
+                <div class="mb-4">
+                    <nav class="mb-3">
+                        <ol class="breadcrumb breadcrumb-standard">
+                            <li class="breadcrumb-item">
+                                <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                                    <i class="fas fa-home me-1"></i>Dashboard
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active">Cadastro Rápido</li>
+                        </ol>
+                    </nav>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-2">Cadastro Rápido</h1>
+                            <p class="text-muted mb-0">Cadastro simplificado para situações urgentes</p>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{% url 'lojista:gestao_colaborador_cadastrar' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-user-plus"></i> Cadastro Completo
+                            </a>
+                            <a href="{% url 'lojista:gestao_colaboradores_massa' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-users"></i> Cadastro em Massa
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aviso -->
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Atenção:</strong> Este é um cadastro simplificado. Os dados podem ser completados posteriormente na página de gerenciamento de colaboradores.
+                </div>
+
+                <!-- Formulário Simplificado -->
+                <div class="card-standard">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="w-10 h-10 bg-warning bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-bolt text-warning"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Cadastro Rápido</h4>
+                                <p class="text-muted mb-0">Apenas os campos essenciais</p>
+                            </div>
+                        </div>
+                        
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            
+                            <!-- Campos Essenciais -->
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="w-10 h-10 bg-info bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-user text-info"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="h5 fw-bold text-dark mb-1">Dados Essenciais</h4>
+                                        <p class="text-muted mb-0">Informações básicas do colaborador</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" 
+                                                   name="{{ user_form.username.name }}"
+                                                   id="{{ user_form.username.id_for_label }}" 
+                                                   value="{{ user_form.username.value|default_if_none:'' }}"
+                                                   class="form-control cpf-mask" 
+                                                   placeholder="000.000.000-00" 
+                                                   required>
+                                            <label for="{{ user_form.username.id_for_label }}">CPF <span class="text-danger">*</span></label>
+                                            {% if user_form.username.errors %}
+                                                <div class="invalid-feedback d-block">{{ user_form.username.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" 
+                                                   name="nome" 
+                                                   id="nome" 
+                                                   class="form-control" 
+                                                   placeholder="Nome Completo"
+                                                   required>
+                                            <label for="nome">Nome Completo <span class="text-danger">*</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            <input type="email" 
+                                                   name="{{ user_form.email.name }}"
+                                                   id="{{ user_form.email.id_for_label }}" 
+                                                   value="{{ user_form.email.value|default_if_none:'' }}"
+                                                   class="form-control" 
+                                                   placeholder="email@exemplo.com" 
+                                                   required>
+                                            <label for="{{ user_form.email.id_for_label }}">E-mail <span class="text-danger">*</span></label>
+                                            {% if user_form.email.errors %}
+                                                <div class="invalid-feedback d-block">{{ user_form.email.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" 
+                                                   name="whatsapp" 
+                                                   id="whatsapp" 
+                                                   class="form-control phone-mask" 
+                                                   placeholder="(86) 99999-9999">
+                                            <label for="whatsapp">Telefone (opcional)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dados de Acesso -->
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="w-10 h-10 bg-warning bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-lock text-warning"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="h5 fw-bold text-dark mb-1">Dados de Acesso</h4>
+                                        <p class="text-muted mb-0">Credenciais para acesso ao sistema</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            <input type="password" 
+                                                   name="{{ user_form.password.name }}"
+                                                   id="{{ user_form.password.id_for_label }}" 
+                                                   class="form-control" 
+                                                   placeholder="Senha" 
+                                                   required>
+                                            <label for="{{ user_form.password.id_for_label }}">Senha <span class="text-danger">*</span></label>
+                                            {% if user_form.password.errors %}
+                                                <div class="invalid-feedback d-block">{{ user_form.password.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            <input type="password" 
+                                                   name="{{ user_form.password2.name }}"
+                                                   id="{{ user_form.password2.id_for_label }}" 
+                                                   class="form-control" 
+                                                   placeholder="Confirmar senha" 
+                                                   required>
+                                            <label for="{{ user_form.password2.id_for_label }}">Confirmar Senha <span class="text-danger">*</span></label>
+                                            {% if user_form.password2.errors %}
+                                                <div class="invalid-feedback d-block">{{ user_form.password2.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Informações Adicionais -->
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-info-circle"></i> Informações:
+                                </h6>
+                                <ul class="mb-0 small">
+                                    <li>Campos marcados com * são obrigatórios</li>
+                                    <li>Senha padrão sugerida: <code>123456</code></li>
+                                    <li>Dados adicionais podem ser preenchidos posteriormente</li>
+                                    <li>Após o cadastro, você será redirecionado para gerenciar colaboradores</li>
+                                </ul>
+                            </div>
+
+                            <!-- Botões -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-save"></i> Cadastrar Rapidamente
+                                </button>
+                                <a href="{% url 'lojista:homepage' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Informações Laterais -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card-standard">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="w-10 h-10 bg-info bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-lightbulb text-info"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="h5 fw-bold text-dark mb-1">Quando Usar?</h4>
+                                        <p class="text-muted mb-0">Cenários ideais para cadastro rápido</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item px-0">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-clock text-warning"></i> Situações Urgentes
+                                        </h6>
+                                        <small class="text-muted">Quando precisar cadastrar alguém rapidamente</small>
+                                    </div>
+                                    
+                                    <div class="list-group-item px-0">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-mobile-alt text-info"></i> Cadastro Mobile
+                                        </h6>
+                                        <small class="text-muted">Formulário otimizado para dispositivos móveis</small>
+                                    </div>
+                                    
+                                    <div class="list-group-item px-0">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-edit text-success"></i> Edição Posterior
+                                        </h6>
+                                        <small class="text-muted">Complete os dados depois na área de gerenciamento</small>
+                                    </div>
+                                    
+                                    <div class="list-group-item px-0">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-users text-primary"></i> Treinamentos
+                                        </h6>
+                                        <small class="text-muted">Para cadastros rápidos durante treinamentos</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card-standard">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="w-10 h-10 bg-success bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-arrow-right text-success"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h4 class="h5 fw-bold text-dark mb-1">Próximos Passos</h4>
+                                        <p class="text-muted mb-0">O que fazer após o cadastro</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item px-0">
+                                        <small class="text-muted">
+                                            <i class="fas fa-1"></i> Cadastre o colaborador
+                                        </small>
+                                    </div>
+                                    <div class="list-group-item px-0">
+                                        <small class="text-muted">
+                                            <i class="fas fa-2"></i> Complete dados adicionais
+                                        </small>
+                                    </div>
+                                    <div class="list-group-item px-0">
+                                        <small class="text-muted">
+                                            <i class="fas fa-3"></i> Configure permissões
+                                        </small>
+                                    </div>
+                                    <div class="list-group-item px-0">
+                                        <small class="text-muted">
+                                            <i class="fas fa-4"></i> Ative o colaborador
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <a href="{% url 'participante:gestao_colaboradores' %}" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-cog"></i> Gerenciar Colaboradores
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara para CPF
+    const cpfInput = document.querySelector('.cpf-mask');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                e.target.value = value;
+            }
+        });
+    }
+
+    // Máscara para telefone
+    const phoneInput = document.querySelector('.phone-mask');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                if (value.length <= 10) {
+                    value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+                } else {
+                    value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                }
+                e.target.value = value;
+            }
+        });
+    }
+
+    // Sugestão de senha
+    const passwordInput = document.getElementById('{{ user_form.password.id_for_label }}');
+    if (passwordInput) {
+        passwordInput.addEventListener('focus', function() {
+            if (!this.value) {
+                this.value = '123456';
+                // Disparar evento para atualizar o campo de confirmação
+                this.dispatchEvent(new Event('input'));
+            }
+        });
+    }
+
+    // Auto-preenchimento da confirmação de senha
+    const password2Input = document.getElementById('{{ user_form.password2.id_for_label }}');
+    if (password2Input && passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            if (password2Input.value === '') {
+                password2Input.value = this.value;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

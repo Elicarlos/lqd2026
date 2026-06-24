@@ -1,0 +1,83 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Criar URL de Treinamento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'lojista:homepage' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'lojista:gerenciar_urls_treinamento' %}">URLs de Treinamento</a></li>
+                    <li class="breadcrumb-item active">Criar Nova URL</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0">
+                <i class="fas fa-link text-primary"></i>
+                Criar URL de Treinamento
+            </h1>
+            <p class="text-muted">Crie uma URL pública para cadastro de colaboradores durante treinamentos</p>
+        </div>
+        <div>
+            <a href="{% url 'lojista:gerenciar_urls_treinamento' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-list"></i> Gerenciar URLs
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus-circle text-success"></i>
+                        Nova URL de Treinamento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título do Treinamento *</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required 
+                                   placeholder="Ex: Treinamento Operadores 2025">
+                            <div class="form-text">Nome que aparecerá na lista de URLs</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição *</label>
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4" required
+                                      placeholder="Descreva o treinamento, local, horário, etc."></textarea>
+                            <div class="form-text">Informações que aparecerão para os candidatos</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Como funciona:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Uma URL única será gerada automaticamente</li>
+                                <li>QR Code será criado para distribuição</li>
+                                <li>Candidatos poderão se cadastrar sem login</li>
+                                <li>Você pode ativar/desativar quando quiser</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Criar URL de Treinamento
+                            </button>
+                            <a href="{% url 'lojista:gerenciar_urls_treinamento' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

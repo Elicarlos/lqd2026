@@ -1,0 +1,1641 @@
+{% extends "base-dashboard.html" %}
+{% load thumbnail %}
+
+{% block title %}Detalhes do Participante - {{ user.nome }} - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for participant detail - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar tabela */
+    .table-modern {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .table-modern .table {
+        margin-bottom: 0;
+    }
+    
+    .table-modern .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-modern .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .table-modern .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: translateX(4px);
+    }
+    
+    .table-modern .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .table-modern .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    /* Melhorar badges */
+    .badge-standard {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-standard.bg-success-subtle {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .badge-standard.bg-danger-subtle {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .badge-standard.bg-warning-subtle {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+    
+    /* Melhorar botões de ação */
+    .btn-action {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Melhorar alertas */
+    .alert-standard {
+        border-radius: 0.75rem;
+        border: 1px solid rgba(0,0,0,.08);
+        padding: 1rem 1.5rem;
+    }
+    
+    .alert-success {
+        background: rgba(25, 135, 84, 0.1);
+        border-color: rgba(25, 135, 84, 0.2);
+        color: #198754;
+    }
+    
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.1);
+        border-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    .alert-warning {
+        background: rgba(255, 193, 7, 0.1);
+        border-color: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+    }
+    
+    .alert-info {
+        background: rgba(13, 202, 240, 0.1);
+        border-color: rgba(13, 202, 240, 0.2);
+        color: #0dcaf0;
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .table-modern .table thead th,
+        .table-modern .table tbody td {
+            padding: 0.75rem 1rem;
+        }
+        
+        .table-modern .table thead th {
+            font-size: 0.75rem;
+        }
+        
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+    }
+    
+    /* Modal de confirmação de impressão - FIXO NA TELA */
+    #confirmacaoImpressaoModal {
+        z-index: 9999 !important;
+    }
+    
+    #confirmacaoImpressaoModal .modal-backdrop {
+        z-index: 9998 !important;
+    }
+    
+    /* Prevenir fechamento do modal */
+    #confirmacaoImpressaoModal .modal-dialog {
+        pointer-events: auto;
+    }
+    
+    /* Desabilitar clique fora do modal */
+    #confirmacaoImpressaoModal.modal {
+        pointer-events: auto;
+    }
+    
+    /* Proteção adicional para modal fixo */
+    #confirmacaoImpressaoModal.modal.show {
+        display: block !important;
+        background-color: rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    /* Prevenir qualquer interação com o backdrop */
+    #confirmacaoImpressaoModal .modal-backdrop.show {
+        opacity: 0.5 !important;
+        pointer-events: none !important;
+    }
+    
+    /* Garantir que o modal não seja fechado */
+    #confirmacaoImpressaoModal[data-bs-backdrop="static"] {
+        pointer-events: auto !important;
+    }
+    
+    /* Desabilitar botão de fechar se existir */
+    #confirmacaoImpressaoModal .btn-close {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5" 
+      data-documentos-cancelados="{{ documentos_cancelados_ids|safe }}"
+      data-is-suporte="{% if request.user.groups.all.0.name == 'Suporte' %}true{% else %}false{% endif %}"
+      data-is-superuser="{% if request.user.is_superuser %}true{% else %}false{% endif %}">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% if request.user.is_authenticated %}{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}{% else %}{% url 'participante:homepage' %}{% endif %}"" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:search_by_cpf' %}" class="text-decoration-none">
+                            <i class="fas fa-search me-1"></i>Buscar Participante
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <i class="fas fa-user me-1"></i>{{ user.nome }}
+                    </li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">
+                        {{ user.nome }}                                        
+                    </h1>
+                    <p class="text-muted mb-1">CPF: {{ user.CPF }}</p>
+                    
+                </div>
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'participante:user_edit_by_id' user.user.id %}" class="btn btn-outline-secondary btn-action">
+                        <i class="fas fa-pencil-alt me-1"></i>Editar
+                    </a>
+                    <!-- <a href="{% url 'participante:adddocfiscalbyop' user.user.id %}" class="btn btn-gradient btn-action">
+                        <i class="fas fa-plus me-1"></i>Novo Documento
+                    </a> -->
+                </div>
+        </div>
+
+      
+        
+        <!-- Lista de Documentos -->
+        {% if docs %}
+            <div class="table-modern">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-file-invoice me-2"></i>Documento
+                                </th>
+                                <th>
+                                    <i class="fas fa-store me-2"></i>Lojista
+                                </th>
+                                <th>
+                                    <i class="fas fa-calendar me-2"></i>Data
+                                </th>
+                                <th>
+                                    <i class="fas fa-money-bill me-2"></i>Cielo
+                                </th>
+                                <th>
+                                    <i class="fas fa-money-bill me-2"></i>Outros
+                                </th>
+                                <th>
+                                    <i class="fas fa-money-bill me-2"></i>Valor
+                                </th>
+                                <th>
+                                    <i class="fas fa-tag me-2"></i>Status
+                                </th>
+                                <th>
+                                    <i class="fas fa-ticket-alt me-2"></i>Cupons
+                                </th>
+                                <th class="text-end">
+                                    <i class="fas fa-cog me-2"></i>Ações
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in docs %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ doc.numeroDocumento }}</div>
+                                            <div class="text-muted small">{{ doc.tipoDocumento }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ doc.lojista.fantasiaLojista }}</div>
+                                    <div class="text-muted small">{{ doc.lojista.CNPJLojista }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ doc.dataDocumento|date:"d/m/Y" }}</div>
+                                    <div class="text-muted small">{{ doc.dataCadastro|date:"H:i" }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ doc.valorCielo|floatformat:2 }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ doc.valorOutros|floatformat:2 }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-primary">R$ {{ doc.valorDocumento|floatformat:2 }}</div>
+                                </td>
+                                <td>
+                                    {% if doc.status == 'pendente' %}
+                                    <span class="badge-standard bg-warning-subtle">
+                                        <i class="fas fa-clock me-1"></i>Pendente
+                                    </span>
+                                    {% elif doc.status == 'validado' %}
+                                    <span class="badge-standard bg-success-subtle">
+                                        <i class="fas fa-check-circle me-1"></i>Validado
+                                    </span>
+                                    {% elif doc.status == 'inconsistente' %}
+                                    <span class="badge-standard bg-danger-subtle">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Inconsistente
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if doc.status == 'validado' %}
+                                        <span class="badge-standard bg-info-subtle">
+                                            <i class="fas fa-ticket-alt me-1"></i>{{ doc.get_cupons }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-action" data-bs-toggle="modal" data-bs-target="#detailModal{{ doc.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if doc.status == 'pendente' %}
+                                        <a href="{% url 'participante:editdocfiscalbyop' doc.id %}" class="btn btn-outline-primary btn-action">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if doc.status == 'validado' %}
+                                            {% if doc.has_unprinted_cupons %}
+                                            <button type="button" class="btn btn-outline-success btn-action print-btn" data-doc-id="{{ doc.id }}" title="Imprimir Cupons" onclick="printCupons(this, '{{ doc.id }}')">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                            {% else %}
+                                            <button type="button" class="btn btn-outline-secondary btn-action" disabled 
+                                                    title="{% if doc.has_cancelamento %}Impressão cancelada{% else %}Cupons já impressos{% endif %}">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+
+                                            <!-- Botão Reverter: aparece se tem cancelamento -->
+                                            {% if doc.has_cancelamento %}
+                                                {% if request.user.groups.all.0.name in 'Suporte,Operador,Operadores,Backoffice,Supervisor,Recursos Humanos,Gerente Solve' %}
+                                                    {% if request.user.groups.all.0.name == 'Suporte' or request.user.is_superuser %}
+                                                        <!-- Suporte e Superuser podem reverter sempre -->
+                                                        <button type="button" class="btn btn-outline-warning btn-action" title="Reverter" onclick="confirmarReversao('{{ doc.id }}', '{{ doc.numeroDocumento }}')">
+                                                            <i class="fas fa-undo"></i>
+                                                        </button>
+                                                    {% else %}
+                                                        <!-- Outros grupos: verificar se já reverteu -->
+                                                        {% if doc.id in documentos_revertidos_ids %}
+                                                            <!-- Já revertido pelo grupo - NÃO PODE MAIS REVERTER -->
+                                                            <span class="text-muted small" title="Já revertido por um {{ request.user.groups.all.0.name }}">
+                                                                <i class="fas fa-info-circle me-1"></i>Já revertido
+                                                            </span>
+                                                        {% else %}
+                                                            <!-- Pode reverter - PRIMEIRA VEZ -->
+                                                            <button type="button" class="btn btn-outline-warning btn-action" title="Reverter" onclick="confirmarReversao('{{ doc.id }}', '{{ doc.numeroDocumento }}')">
+                                                                <i class="fas fa-undo"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% else %}
+                                                    <!-- Sem permissão - não mostrar botão -->
+                                                    <span class="text-muted small">Sem permissão</span>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% endif %}
+                                        {% elif doc.status == 'pendente' %}
+                                            <button type="button" class="btn btn-outline-warning btn-action" disabled title="Documento pendente - não pode imprimir">
+                                                <i class="fas fa-clock"></i>
+                                            </button>
+                                        {% elif doc.status == 'inconsistente' %}
+                                            <button type="button" class="btn btn-outline-danger btn-action" disabled title="Documento inconsistente - não pode imprimir">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Paginação -->
+            <!-- Debug: page_obj = {{ page_obj }}, has_other_pages = {{ page_obj.has_other_pages }} -->
+            {% if page_obj and page_obj.has_other_pages %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Paginação de documentos">
+                    <ul class="pagination pagination-sm">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?q={{ request.GET.q }}&page=1" aria-label="Primeira">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?q={{ request.GET.q }}&page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?q={{ request.GET.q }}&page={{ page_obj.next_page_number }}" aria-label="Próxima">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?q={{ request.GET.q }}&page={{ page_obj.paginator.num_pages }}" aria-label="Última">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            
+            <!-- Informações da paginação -->
+            <div class="text-center text-muted small mt-2">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }} 
+                ({{ page_obj.paginator.count }} documento{{ page_obj.paginator.count|pluralize:"s" }} no total)
+            </div>
+            {% endif %}
+        {% else %}
+            <!-- Estado vazio -->
+            <div class="text-center py-5">
+                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center p-4 mb-3">
+                    <i class="fas fa-file-invoice text-muted fa-2x"></i>
+                </div>
+                <h4 class="text-muted mb-2">Nenhum documento encontrado</h4>
+                <p class="text-muted mb-4">Este participante ainda não possui documentos cadastrados</p>
+                <a href="{% url 'participante:adddocfiscalbyop' user.user.id %}" class="btn btn-gradient">
+                    <i class="fas fa-plus me-2"></i>Adicionar Primeiro Documento
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</main>
+
+<!-- Modais para Visualizar Detalhes -->
+{% for doc in docs %}
+    <!-- Modal de Detalhes -->
+    <div class="modal fade" id="detailModal{{ doc.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ doc.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalLabel{{ doc.id }}">
+                        <i class="fas fa-file-invoice me-2"></i>Detalhes do Documento
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Informações do Documento -->
+                    <div class="bg-light p-4 border-bottom">
+                        <div class="row g-4">
+                            <!-- Documento -->
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-file-invoice text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Número do Documento</div>
+                                        <div class="fw-semibold">{{ doc.numeroDocumento }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Data -->
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-calendar text-info"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Data do Documento</div>
+                                        <div class="fw-semibold">{{ doc.dataDocumento|date:"d/m/Y" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lojista -->
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-store text-success"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Lojista</div>
+                                        <div class="fw-semibold">{{ doc.lojista.fantasiaLojista }}</div>
+                                        <div class="text-muted small">{{ doc.lojista.CNPJLojista }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-tag text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Status</div>
+                                        <div>
+                                            {% if doc.status == 'pendente' %}
+                                                <span class="badge-standard bg-warning-subtle">
+                                                    <i class="fas fa-clock me-1"></i>Pendente
+                                                </span>
+                                            {% elif doc.status == 'validado' %}
+                                                <span class="badge-standard bg-success-subtle">
+                                                    <i class="fas fa-check-circle me-1"></i>Validado
+                                                </span>
+                                            {% elif doc.status == 'inconsistente' %}
+                                                <span class="badge-standard bg-danger-subtle">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Inconsistente
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Valores -->
+                            <div class="col-12">
+                                <div class="card card-standard mb-0">
+                                    <div class="card-body p-3">
+                                        <div class="row g-3">
+                                            <!-- Valor Cielo -->
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-2">
+                                                        <i class="fas fa-credit-card text-primary"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-muted small">Valor Cielo</div>
+                                                        <div class="fw-semibold">R$ {{ doc.valorCielo|default:0|floatformat:2 }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Valor Outros -->
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-success bg-opacity-10 rounded-3 p-2 me-2">
+                                                        <i class="fas fa-money-bill text-success"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-muted small">Valor Outros</div>
+                                                        <div class="fw-semibold">R$ {{ doc.valorOutros|default:0|floatformat:2 }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Valor Total -->
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-info bg-opacity-10 rounded-3 p-2 me-2">
+                                                        <i class="fas fa-calculator text-info"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-muted small">Valor Total</div>
+                                                        <div class="fw-semibold">R$ {{ doc.valorDocumento|floatformat:2 }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Observação -->
+                            {% if doc.observacao %}
+                            <div class="col-12">
+                                <div class="alert alert-standard {% if doc.status == 'inconsistente' %}alert-danger{% else %}alert-info{% endif %} mb-0">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas {% if doc.status == 'inconsistente' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold mb-1">Observação</div>
+                                            <div>{{ doc.observacao }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+<!-- Overlay de Loading Global -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div class="d-flex justify-content-center align-items-center h-100">
+        <div class="bg-white rounded p-4 text-center">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <h5 class="text-dark mb-0">Processando reversão...</h5>
+            <p class="text-muted small mb-0">Aguarde um momento</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação para Reversão de Impressão -->
+<div class="modal fade" id="reversaoModal" tabindex="-1" aria-labelledby="reversaoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="reversaoForm">
+                {% csrf_token %}
+                <div class="modal-header bg-gradient bg-warning text-dark border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3">
+                            <i class="fas fa-undo-alt fa-lg text-white"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0" id="reversaoModalLabel">
+                                <strong>Confirmar Reversão de Impressão</strong>
+                            </h5>                       
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            <div class="modal-body">
+                <!-- Alerta principal sobre invalidação de cupons -->
+                <div class="alert alert-danger border-0 shadow-sm">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger me-3 mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-2">
+                                <strong>Atenção: Os cupons anteriores foram invalidados!</strong>
+                            </h6>
+                            <p class="mb-2">Caso já tenha sido impresso, recolha o cupom antigo com o participante antes de entregar o novo.</p>
+                            
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informações do documento -->
+                <div class="card border-0 bg-light mb-3">
+                    <div class="card-body py-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-user text-primary me-2"></i>
+                                    <strong>Participante:</strong>
+                                </div>
+                                <span class="text-muted">{{ user.nome }}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-file-invoice text-primary me-2"></i>
+                                    <strong>Documento:</strong>
+                                </div>
+                                <span class="text-muted" id="docNumeroReversao"></span>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>         
+               
+                
+                <!-- Campo de justificativa -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-comment-dots text-primary me-2"></i>
+                        <label for="motivo" class="form-label mb-0">
+                            <strong>Justificativa da Reversão</strong> <span class="text-danger">*</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Sugestões de justificativas -->
+                    <div class="card border-0 bg-light mb-3">
+                        <div class="card-body py-3">                            
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="cursor: pointer; font-size: 0.875rem;" onclick="usarSugestao('Cupom com erro de impressão - falha na impressora', event)">
+                                    <i class="fas fa-print me-1"></i>Erro na impressora
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="cursor: pointer; font-size: 0.875rem;" onclick="usarSugestao('Cupom impresso com dados errados do lojista', event)">
+                                    <i class="fas fa-store me-1"></i>Dados do lojista errados
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="cursor: pointer; font-size: 0.875rem;" onclick="usarSugestao('Cupom com valor incorreto - valor não confere', event)">
+                                    <i class="fas fa-dollar-sign me-1"></i>Valor incorreto
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="cursor: pointer; font-size: 0.875rem;" onclick="usarSugestao('Cupom duplicado - mesmo documento já processado', event)">
+                                    <i class="fas fa-copy me-1"></i>Cupom duplicado
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="cursor: pointer; font-size: 0.875rem;" onclick="usarSugestao('Cupom com data incorreta - data não confere', event)">
+                                    <i class="fas fa-calendar me-1"></i>Data incorreta
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="cursor: pointer; font-size: 0.875rem;" onclick="usarSugestao('Cupom com número do documento errado', event)">
+                                    <i class="fas fa-file-invoice me-1"></i>Número do documento errado
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="cursor: pointer; font-size: 0.875rem;" onclick="usarSugestao('Cupom com nome do participante incorreto', event)">
+                                    <i class="fas fa-user-edit me-1"></i>Nome do participante errado
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="cursor: pointer; font-size: 0.875rem;" onclick="usarSugestao('Cupom com método de pagamento incorreto', event)">
+                                    <i class="fas fa-credit-card me-1"></i>Método de pagamento errado
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <textarea 
+                        class="form-control border-0 shadow-sm" 
+                        id="motivo" 
+                        name="motivo" 
+                        rows="4" 
+                        placeholder="Descreva detalhadamente o motivo da reversão..."
+                        required
+                        style="resize: none;"
+                    ></textarea>
+                    <div class="form-text mt-2">
+                        <i class="fas fa-info-circle text-primary me-1"></i>
+                        Esta informação será registrada na auditoria do sistema. <strong>Campo obrigatório.</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <div class="d-flex justify-content-between w-100">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-warning shadow-sm" id="btnConfirmarReversao">
+                        <i class="fas fa-undo me-2"></i>Confirmar Reversão
+                    </button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para impressão inteligente de cupons -->
+<script>
+// Garantir que a função confirmarReversao esteja disponível globalmente desde o início
+window.confirmarReversao = function(docId, docNumero) {
+    // Verificar se Bootstrap está disponível
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap não está disponível');
+        alert('Erro: Bootstrap não está carregado. Recarregue a página.');
+        return;
+    }
+    
+    // Verificar se o modal existe
+    const modalElement = document.getElementById('reversaoModal');
+    if (!modalElement) {
+        console.error('Modal de reversão não encontrado');
+        alert('Erro: Modal de reversão não encontrado. Recarregue a página.');
+        return;
+    }
+    
+    // Verificar se os elementos necessários existem
+    const docNumeroElement = document.getElementById('docNumeroReversao');
+    const reversaoForm = document.getElementById('reversaoForm');
+    const motivoField = document.getElementById('motivo');
+    
+    if (!docNumeroElement || !reversaoForm || !motivoField) {
+        console.error('Elementos necessários para reversão não encontrados');
+        alert('Erro: Elementos necessários não encontrados. Recarregue a página.');
+        return;
+    }
+    
+    // Preenche o número do documento no modal
+    docNumeroElement.textContent = docNumero;
+    
+    // Configura a action do formulário
+    reversaoForm.action = `/participante/reverter_impressao/${docId}/`;
+    
+    // Limpar o campo de justificativa
+    motivoField.value = '';
+    
+    // Abre o modal
+    try {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    } catch (error) {
+        console.error('Erro ao abrir modal:', error);
+        alert('Erro ao abrir modal de reversão. Recarregue a página.');
+    }
+};
+
+
+
+function showSuccessToast(message) {
+    // Cria uma notificação toast
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check me-2"></i>
+                <strong class="me-auto">Sucesso!</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Remove a mensagem após 3 segundos
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 3000);
+}
+
+// Função para verificar status de impressão via AJAX (opcional)
+function checkPrintStatusAjax(docId, button) {
+    fetch(`/api/documento/${docId}/print-status/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.impresso) {
+                button.className = 'btn btn-outline-secondary btn-action';
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                button.title = 'Cupons impressos';
+                button.disabled = true;
+                button.removeAttribute('onclick');
+                showSuccessToast('Cupons impressos com sucesso!');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao verificar status:', error);
+        });
+}
+
+// Função para confirmar reversão de impressão (já definida globalmente no início)
+
+// Função para usar sugestão de justificativa
+function usarSugestao(texto, event) {
+    const campoMotivo = document.getElementById('motivo');
+    if (campoMotivo) {
+        campoMotivo.value = texto;
+        campoMotivo.focus();
+        
+        // Adicionar efeito visual de confirmação
+        if (event && event.target) {
+            const badge = event.target.closest('span');
+            if (badge) {
+                const originalText = badge.innerHTML;
+                const originalClass = badge.className;
+                
+                badge.innerHTML = '<i class="fas fa-check me-1"></i>Usado!';
+                badge.className = 'badge bg-success text-white border border-success';
+                
+                setTimeout(() => {
+                    badge.innerHTML = originalText;
+                    badge.className = originalClass;
+                }, 1500);
+            }
+        }
+    } else {
+        console.error('Campo de motivo não encontrado');
+    }
+}
+
+// Garantir que a função esteja disponível globalmente
+window.usarSugestao = usarSugestao;
+
+// Interceptar o envio do formulário de reversão para usar AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    const reversaoForm = document.getElementById('reversaoForm');
+    const btnConfirmar = document.getElementById('btnConfirmarReversao');
+    
+    // Adicionar event listeners para botões de reversão como fallback
+    const reversaoButtons = document.querySelectorAll('[onclick*="confirmarReversao"]');
+    reversaoButtons.forEach(button => {
+        // Remover o onclick inline e adicionar event listener
+        const onclickAttr = button.getAttribute('onclick');
+        if (onclickAttr && onclickAttr.includes('confirmarReversao')) {
+            // Extrair os parâmetros do onclick
+            const match = onclickAttr.match(/confirmarReversao\('([^']+)',\s*'([^']+)'\)/);
+            if (match) {
+                const docId = match[1];
+                const docNumero = match[2];
+                
+                // Remover onclick inline
+                button.removeAttribute('onclick');
+                
+                // Adicionar event listener
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (typeof confirmarReversao === 'function') {
+                        confirmarReversao(docId, docNumero);
+                    } else {
+                        console.error('Função confirmarReversao não está disponível');
+                        alert('Erro: Função de reversão não está disponível. Recarregue a página.');
+                    }
+                });
+            }
+        }
+    });
+    
+    if (reversaoForm) {
+        reversaoForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validar se a justificativa foi preenchida
+            const motivoField = document.getElementById('motivo');
+            const motivo = motivoField.value.trim();
+            
+            if (!motivo) {
+                showErrorToast('Por favor, preencha a justificativa da reversão antes de continuar.');
+                motivoField.focus();
+                return;
+            }
+            
+            // Mostrar loading no botão e overlay
+            const originalContent = btnConfirmar.innerHTML;
+            btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Revertendo...';
+            btnConfirmar.disabled = true;
+            
+            // Mostrar overlay de loading
+            document.getElementById('loadingOverlay').classList.remove('d-none');
+            
+            // Fazer requisição AJAX
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Esconder overlay de loading
+                    document.getElementById('loadingOverlay').classList.add('d-none');
+                    
+                    // Mostrar mensagem de sucesso
+                    showSuccessToast(data.message || 'Reversão realizada com sucesso!');
+                    
+                    // Fechar o modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('reversaoModal'));
+                    modal.hide();
+                    
+                    // Recarregar a página após um pequeno delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Esconder overlay de loading
+                    document.getElementById('loadingOverlay').classList.add('d-none');
+                    
+                    // Mostrar erro
+                    showErrorToast(data.message || 'Erro ao realizar reversão');
+                    
+                    // Restaurar botão
+                    btnConfirmar.innerHTML = originalContent;
+                    btnConfirmar.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                
+                // Esconder overlay de loading
+                document.getElementById('loadingOverlay').classList.add('d-none');
+                
+                showErrorToast('Erro de conexão. Tente novamente.');
+                
+                // Restaurar botão
+                btnConfirmar.innerHTML = originalContent;
+                btnConfirmar.disabled = false;
+            });
+        });
+    }
+});
+
+// Função para mostrar toast de erro
+function showErrorToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong class="me-auto">Erro!</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Remove a mensagem após 5 segundos
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 5000);
+}
+
+// Variáveis globais para controle de impressão
+let documentoAtualId = null;
+let confirmacaoAtiva = false;
+let impressaoWindow = null;
+let timeoutConfirmacao = null;
+let checkWindowInterval = null;
+
+// Verificar se há uma impressão pendente ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar se há dados de impressão pendente no sessionStorage
+    const impressaoPendente = sessionStorage.getItem('impressaoPendente');
+    if (impressaoPendente) {
+        try {
+            const dados = JSON.parse(impressaoPendente);
+            console.log('Impressão pendente detectada:', dados);
+            
+            // Mostrar alerta para o usuário
+            if (confirm('Detectamos uma impressão pendente. Deseja continuar com a confirmação?')) {
+                // Restaurar o estado da impressão
+                documentoAtualId = dados.docId;
+                confirmacaoAtiva = true;
+                
+                // Reabrir o modal de confirmação
+                abrirPopupImpressao(dados.docId, dados.docNumero);
+            } else {
+                // Limpar dados pendentes
+                sessionStorage.removeItem('impressaoPendente');
+                console.log('Impressão pendente cancelada pelo usuário');
+            }
+        } catch (error) {
+            console.error('Erro ao restaurar impressão pendente:', error);
+            sessionStorage.removeItem('impressaoPendente');
+        }
+    }
+});
+
+// Detectar quando a página está sendo descarregada (F5, fechar aba, etc.)
+window.addEventListener('beforeunload', function(event) {
+    if (confirmacaoAtiva && documentoAtualId) {
+        // Salvar dados da impressão pendente
+        const dadosPendentes = {
+            docId: documentoAtualId,
+            docNumero: document.getElementById('docNumeroImpressao')?.textContent || 'Documento',
+            timestamp: new Date().toISOString()
+        };
+        sessionStorage.setItem('impressaoPendente', JSON.stringify(dadosPendentes));
+        
+        // Mostrar aviso ao usuário
+        event.preventDefault();
+        event.returnValue = 'Você tem uma impressão pendente. Tem certeza que deseja sair?';
+        return event.returnValue;
+    }
+});
+
+// Função para abrir popup de impressão com confirmação
+function abrirPopupImpressao(docId, docNumero) {
+    // Armazenar o ID do documento
+    documentoAtualId = docId;
+    
+    // Verificar se o usuário pode cancelar este documento
+    const mainElement = document.querySelector('main');
+    const documentosCanceladosIds = JSON.parse(mainElement.dataset.documentosCancelados || '[]');
+    const isSuporte = mainElement.dataset.isSuporte === 'true';
+    const isSuperuser = mainElement.dataset.isSuperuser === 'true';
+    
+    // Verificar se pode cancelar
+    const podeCancelar = isSuporte || isSuperuser || !documentosCanceladosIds.includes(parseInt(docId));
+    
+    // Configurar botão de cancelar
+    const btnCancelar = document.getElementById('btnCancelarImpressao');
+    if (podeCancelar) {
+        btnCancelar.disabled = false;
+        btnCancelar.className = 'btn btn-secondary';
+        btnCancelar.innerHTML = '<i class="fas fa-times me-2"></i>Cancelar';
+        btnCancelar.title = 'Cancelar impressão';
+    } else {
+        btnCancelar.disabled = true;
+        btnCancelar.className = 'btn btn-secondary disabled';
+        btnCancelar.innerHTML = '<i class="fas fa-ban me-2"></i>Cancelar';
+        btnCancelar.title = 'Você já cancelou este documento uma vez. Solicite ajuda ao suporte.';
+    }
+    
+    // Preencher informações no modal
+    document.getElementById('docNumeroImpressao').textContent = docNumero;
+    
+    // Abrir a página de impressão em nova aba
+    impressaoWindow = window.open(`/barcode/print_get/${docId}/`, '_blank', 'noopener,noreferrer');
+    
+    // Ativar proteção contra atualização
+    confirmacaoAtiva = true;
+    
+    // Mostrar o modal de confirmação - FIXO NA TELA
+    const modalElement = document.getElementById('confirmacaoImpressaoModal');
+    
+    // Configurar modal com proteção máxima
+    const modal = new bootstrap.Modal(modalElement, {
+        backdrop: 'static',  // Não fecha ao clicar fora
+        keyboard: false      // Não fecha com ESC
+    });
+    
+    // Prevenir fechamento do modal por qualquer meio ANTES de mostrar
+    modalElement.addEventListener('hide.bs.modal', function (event) {
+        console.log('Tentativa de fechar modal detectada');
+        
+        // Só permite fechar se for através dos botões "Confirmar" ou "Cancelar"
+        if (!confirmacaoAtiva) {
+            console.log('Permitindo fechamento - confirmação não está ativa');
+            return; // Permite fechar
+        }
+        
+        console.log('Bloqueando fechamento do modal');
+        event.preventDefault(); // Previne fechamento
+        event.stopPropagation();
+        return false;
+    });
+    
+    // Prevenir fechamento com ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && confirmacaoAtiva) {
+            console.log('ESC pressionado - bloqueando');
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        }
+    });
+    
+    // Prevenir clique fora do modal
+    modalElement.addEventListener('click', function(event) {
+        if (event.target === modalElement && confirmacaoAtiva) {
+            console.log('Clique fora do modal - bloqueando');
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        }
+    });
+    
+    // Mostrar o modal
+    modal.show();
+    
+    // Verificação adicional após mostrar o modal
+    setTimeout(() => {
+        if (confirmacaoAtiva) {
+            // Garantir que o modal permaneça aberto
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+                // Reconfigurar o modal para garantir que não feche
+                modalInstance._config.backdrop = 'static';
+                modalInstance._config.keyboard = false;
+            }
+        }
+    }, 100);
+    
+    // Iniciar monitoramento da janela de impressão
+    iniciarMonitoramentoJanela();
+    
+    // Configurar timeout para confirmação automática (5 minutos)
+    timeoutConfirmacao = setTimeout(() => {
+        if (confirmacaoAtiva) {
+            console.log('Timeout de confirmação atingido - confirmando automaticamente');
+            confirmarImpressaoSucesso();
+        }
+    }, 5 * 60 * 1000); // 5 minutos
+}
+
+// Função para monitorar se a janela de impressão foi fechada
+function iniciarMonitoramentoJanela() {
+    checkWindowInterval = setInterval(() => {
+        if (impressaoWindow && impressaoWindow.closed) {
+            console.log('Janela de impressão fechada automaticamente');
+            clearInterval(checkWindowInterval);
+            
+            // Aguardar um pouco antes de confirmar automaticamente
+            setTimeout(() => {
+                if (confirmacaoAtiva) {
+                    console.log('Confirmando impressão após fechamento da janela');
+                    confirmarImpressaoSucesso();
+                }
+            }, 2000); // 2 segundos de delay
+        }
+    }, 1000); // Verificar a cada segundo
+}
+
+// Função para reabrir a impressão
+function reabrirImpressao() {
+    if (documentoAtualId) {
+        console.log('Reabrindo impressão para documento:', documentoAtualId);
+        impressaoWindow = window.open(`/barcode/print_get/${documentoAtualId}/`, '_blank', 'noopener,noreferrer');
+        iniciarMonitoramentoJanela();
+    }
+}
+
+// Função para confirmar impressão com sucesso
+function confirmarImpressaoSucesso() {
+    if (!documentoAtualId) {
+        showErrorToast('Erro: ID do documento não encontrado');
+        return;
+    }
+    
+    // Mostrar loading
+    const btnSucesso = event.target.closest('button');
+    const originalContent = btnSucesso.innerHTML;
+    btnSucesso.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Confirmando...';
+    btnSucesso.disabled = true;
+    
+    const url = `{% url 'participante:confirmar_impressao' doc_id=0 %}`.replace('0', documentoAtualId);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    console.log('Fazendo requisição para:', url);
+    console.log('CSRF Token:', csrfToken);
+    console.log('Documento ID:', documentoAtualId);
+    
+    // Verificar se o CSRF token está presente
+    if (!csrfToken) {
+        showErrorToast('Erro: CSRF token não encontrado. Recarregue a página.');
+        return;
+    }
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({}),
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.log('Error response text:', text.substring(0, 500));
+                throw new Error(`HTTP error! status: ${response.status}. Response: ${text.substring(0, 200)}`);
+            });
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                console.log('Non-JSON response text:', text.substring(0, 500));
+                throw new Error(`Expected JSON response but got: ${contentType}. Response: ${text.substring(0, 200)}`);
+            });
+        }
+        
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            showSuccessToast('Impressão confirmada com sucesso!');
+            // Limpar todos os timeouts e intervalos
+            if (timeoutConfirmacao) {
+                clearTimeout(timeoutConfirmacao);
+                timeoutConfirmacao = null;
+            }
+            if (checkWindowInterval) {
+                clearInterval(checkWindowInterval);
+                checkWindowInterval = null;
+            }
+            
+            // Desativar proteção contra atualização
+            confirmacaoAtiva = false;
+            
+            // Limpar dados pendentes do sessionStorage
+            sessionStorage.removeItem('impressaoPendente');
+            
+            // Fechar o modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmacaoImpressaoModal'));
+            modal.hide();
+            
+            // Atualizar o botão na tabela
+            try {
+                const btnImprimir = document.querySelector(`button[onclick*="abrirPopupImpressao('${documentoAtualId}')"]`);
+                if (btnImprimir) {
+                    btnImprimir.className = 'btn btn-outline-secondary btn-action';
+                    btnImprimir.innerHTML = '<i class="fas fa-check"></i>';
+                    btnImprimir.title = 'Cupons impressos';
+                    btnImprimir.disabled = true;
+                    btnImprimir.removeAttribute('onclick');
+                    console.log('Botão atualizado com sucesso');
+                } else {
+                    console.log('Botão não encontrado para atualização');
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar botão:', error);
+            }
+            
+            // Limpar variável
+            documentoAtualId = null;
+            
+            // Recarregar a página após um delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showErrorToast(data.message || 'Erro ao confirmar impressão');
+            // Restaurar botão
+            btnSucesso.innerHTML = originalContent;
+            btnSucesso.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Erro na requisição:', error);
+        showErrorToast('Erro de conexão. Tente novamente.');
+        // Restaurar botão
+        btnSucesso.innerHTML = originalContent;
+        btnSucesso.disabled = false;
+    });
+}
+
+// Função para solicitar cancelamento (muda o conteúdo do modal atual)
+function solicitarCancelamento() {
+    // Verificar se o botão está desabilitado
+    const btnCancelar = document.getElementById('btnCancelarImpressao');
+    if (btnCancelar.disabled) {
+        showErrorToast('Você já cancelou a impressão deste documento uma vez. Não é possível cancelar novamente. Solicite ajuda ao suporte.');
+        return;
+    }
+    
+    // Verificação adicional de segurança
+    const mainElement = document.querySelector('main');
+    const documentosCanceladosIds = JSON.parse(mainElement.dataset.documentosCancelados || '[]');
+    const isSuporte = mainElement.dataset.isSuporte === 'true';
+    const isSuperuser = mainElement.dataset.isSuperuser === 'true';
+    
+    // Se não é Suporte/Superuser e já cancelou este documento, bloquear
+    if (!isSuporte && !isSuperuser && documentosCanceladosIds.includes(parseInt(documentoAtualId))) {
+        showErrorToast('Você já cancelou a impressão deste documento uma vez. Não é possível cancelar novamente. Solicite ajuda ao suporte.');
+        return;
+    }
+    
+    // Esconder conteúdo de impressão
+    document.getElementById('modalHeaderImpressao').style.display = 'none';
+    document.getElementById('modalBodyImpressao').style.display = 'none';
+    document.getElementById('modalFooterImpressao').style.display = 'none';
+    
+    // Mostrar conteúdo de cancelamento
+    document.getElementById('modalHeaderCancelamento').style.display = 'block';
+    document.getElementById('modalBodyCancelamento').style.display = 'block';
+    document.getElementById('modalFooterCancelamento').style.display = 'block';
+    
+    // Atualizar número do documento no modal de cancelamento
+    const docNumero = document.getElementById('docNumeroImpressao').textContent;
+    document.getElementById('docNumeroCancelamento').textContent = docNumero;
+    
+    // Focar no campo de motivo
+    setTimeout(() => {
+        document.getElementById('motivoCancelamento').focus();
+    }, 100);
+}
+
+// Função para voltar ao modal de impressão
+function voltarParaImpressao() {
+    // Esconder conteúdo de cancelamento
+    document.getElementById('modalHeaderCancelamento').style.display = 'none';
+    document.getElementById('modalBodyCancelamento').style.display = 'none';
+    document.getElementById('modalFooterCancelamento').style.display = 'none';
+    
+    // Mostrar conteúdo de impressão
+    document.getElementById('modalHeaderImpressao').style.display = 'block';
+    document.getElementById('modalBodyImpressao').style.display = 'block';
+    document.getElementById('modalFooterImpressao').style.display = 'block';
+    
+    // Limpar campo de motivo
+    document.getElementById('motivoCancelamento').value = '';
+}
+
+// Função para confirmar cancelamento
+function confirmarCancelamento() {
+    const motivo = document.getElementById('motivoCancelamento').value.trim();
+    
+    if (!motivo) {
+        showErrorToast('Por favor, informe o motivo do cancelamento.');
+        return;
+    }
+    
+    // Mostrar loading
+    const btnConfirmar = event.target.closest('button');
+    const originalContent = btnConfirmar.innerHTML;
+    btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Registrando...';
+    btnConfirmar.disabled = true;
+    
+    // Fazer requisição para registrar cancelamento
+    const url = `{% url 'participante:registrar_cancelamento_impressao' doc_id=0 %}`.replace('0', documentoAtualId);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ motivo: motivo })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccessToast('Cancelamento registrado. O botão "Reverter" agora está disponível.');
+            
+            // Limpar variáveis
+            confirmacaoAtiva = false;
+            documentoAtualId = null;
+            impressaoWindow = null;
+            
+            // Limpar dados pendentes do sessionStorage
+            sessionStorage.removeItem('impressaoPendente');
+            
+            // Fechar o modal principal
+            bootstrap.Modal.getInstance(document.getElementById('confirmacaoImpressaoModal')).hide();
+            
+            // Recarregar a página para atualizar os botões
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showErrorToast(data.message || 'Erro ao registrar cancelamento.');
+            // Restaurar botão
+            btnConfirmar.innerHTML = originalContent;
+            btnConfirmar.disabled = false;
+        }
+    })
+    .catch(error => {
+        showErrorToast('Erro de conexão. Tente novamente.');
+        // Restaurar botão
+        btnConfirmar.innerHTML = originalContent;
+        btnConfirmar.disabled = false;
+    });
+}
+
+// Função para cancelar impressão (versão antiga - mantida para compatibilidade)
+function cancelarImpressao() {
+    // Limpar todos os timeouts e intervalos
+    if (timeoutConfirmacao) {
+        clearTimeout(timeoutConfirmacao);
+        timeoutConfirmacao = null;
+    }
+    if (checkWindowInterval) {
+        clearInterval(checkWindowInterval);
+        checkWindowInterval = null;
+    }
+    
+    // Fechar a janela de impressão se ainda estiver aberta
+    if (impressaoWindow && !impressaoWindow.closed) {
+        impressaoWindow.close();
+    }
+    
+    confirmacaoAtiva = false;
+    documentoAtualId = null;
+    impressaoWindow = null;
+    
+    // Limpar dados pendentes do sessionStorage
+    sessionStorage.removeItem('impressaoPendente');
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmacaoImpressaoModal'));
+    modal.hide();
+    
+    showErrorToast('Impressão cancelada. Os cupons não foram confirmados.');
+}
+
+
+
+// Modificar a função printCupons existente para usar a nova funcionalidade
+function printCupons(button, docId) {
+    // Obter o número do documento
+    const docNumero = button.closest('tr').querySelector('td:nth-child(2)').textContent.trim();
+    
+    // Usar a nova função de impressão com confirmação
+    abrirPopupImpressao(docId, docNumero);
+}
+</script>
+
+<!-- Modal de Confirmação de Impressão - FIXO NA TELA -->
+<div class="modal fade" id="confirmacaoImpressaoModal" tabindex="-1" aria-labelledby="confirmacaoImpressaoModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white" id="modalHeaderImpressao">
+                <h5 class="modal-title" id="confirmacaoImpressaoModalLabel">
+                    <i class="fas fa-print me-2"></i>Confirmação de Impressão
+                </h5>
+                <!-- Removido o botão de fechar (X) para forçar o usuário a escolher uma opção -->
+            </div>
+            
+            <div class="modal-header bg-warning text-dark" id="modalHeaderCancelamento" style="display: none;">
+                <h5 class="modal-title" id="confirmacaoCancelamentoModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Cancelamento
+                </h5>
+                <!-- Removido o botão de fechar (X) para forçar o usuário a escolher uma opção -->
+            </div>
+            <div class="modal-body" id="modalBodyImpressao">
+                <div class="text-center mb-4">
+                    <i class="fas fa-print fa-3x text-primary mb-3"></i>
+                    <h6>Documento: <span id="docNumeroImpressao" class="fw-bold"></span></h6>
+                    <p class="text-muted">A página de impressão foi aberta em uma nova aba.</p>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <i class="fas fa-lock me-2"></i>
+                    <strong>MODAL BLOQUEADO:</strong> Este modal não pode ser fechado até você escolher uma opção.
+                    <br><small class="text-muted">• Não é possível fechar com ESC</small>
+                    <br><small class="text-muted">• Não é possível clicar fora do modal</small>
+                    <br><small class="text-muted">• Se recarregar a página (F5), será solicitado que continue</small>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Instruções:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Imprima os cupons na nova aba aberta</li>
+                        <li>Verifique se a impressão foi bem-sucedida</li>
+                        <li>Clique em "Confirmar Impressão" após imprimir</li>
+                        <li>Ou clique em "Cancelar" se houve algum problema</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Conteúdo do modal para cancelamento -->
+            <div class="modal-body" id="modalBodyCancelamento" style="display: none;">
+                <div class="text-center mb-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h6>Documento: <span id="docNumeroCancelamento" class="fw-bold"></span></h6>
+                    <p class="text-muted">Você está prestes a cancelar a impressão deste documento.</p>
+                </div>
+                
+                {% if not request.user.is_superuser and request.user.groups.all.0.name != 'Suporte' %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Atenção:</strong> Cada grupo pode cancelar apenas uma vez por documento.
+                    Após este cancelamento, será necessário solicitar ajuda ao suporte.
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    <label for="motivoCancelamento" class="form-label">Motivo do cancelamento:</label>
+                    <textarea class="form-control" id="motivoCancelamento" rows="3" 
+                              placeholder="Descreva o motivo do cancelamento..." required></textarea>
+                </div>
+            </div>
+            
+            <div class="modal-footer" id="modalFooterImpressao">
+                <button type="button" class="btn btn-secondary" id="btnCancelarImpressao" onclick="solicitarCancelamento()">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success" onclick="confirmarImpressaoSucesso()">
+                    <i class="fas fa-check me-2"></i>Confirmar Impressão
+                </button>
+            </div>
+            
+            <div class="modal-footer" id="modalFooterCancelamento" style="display: none;">
+                <button type="button" class="btn btn-secondary" onclick="voltarParaImpressao()">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </button>
+                <button type="button" class="btn btn-warning" onclick="confirmarCancelamento()">
+                    <i class="fas fa-times me-2"></i>Confirmar Cancelamento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+/* Transições suaves para mudança de conteúdo do modal */
+.modal-body, .modal-footer, .modal-header {
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Foco automático no campo de motivo */
+#motivoCancelamento:focus {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+</style>
+
+{% endblock %}

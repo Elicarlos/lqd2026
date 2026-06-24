@@ -1,0 +1,437 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for configuracao jornada edit */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar form controls */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label,
+    .form-floating > .form-select:focus ~ label,
+    .form-floating > .form-select:not([value=""]):valid ~ label {
+        color: #667eea;
+    }
+    
+    /* Melhorar switch */
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .form-check-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorar preview cards */
+    .preview-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .preview-card .card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+    }
+    
+    .preview-card .card-body {
+        color: white;
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .preview-card {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:jornadas_gestao' %}" class="text-decoration-none">
+                            Gestão de Jornadas
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:configuracoes_jornada_list' %}" class="text-decoration-none">
+                            Configurações de Jornada
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-edit text-xl text-warning"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">{{ page_title }}</h1>
+                                <p class="text-muted mb-0">Editar configuração de jornada</p>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:configuracoes_jornada_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <form method="post" id="configuracaoJornadaForm" class="form-standard">
+                    {% csrf_token %}
+                    
+                    <!-- Seção: Grupo -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-primary bg-opacity-10 me-3">
+                                <i class="fas fa-users text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Grupo</h4>
+                                <p class="text-muted mb-0">Grupo selecionado para esta configuração</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card border-0 bg-primary bg-opacity-10">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-20 rounded-circle p-2 me-3">
+                                        <i class="fas fa-users text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <p class="fw-semibold text-dark mb-0">{{ configuracao.grupo.name }}</p>
+                                        <p class="small text-muted mb-0">{{ configuracao.grupo.user_set.count }} usuário{{ configuracao.grupo.user_set.count|pluralize }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Esta configuração é aplicada a todos os usuários do grupo {{ configuracao.grupo.name }}
+                        </div>
+                    </div>
+
+                    <!-- Seção: Configurações de Controle -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-success bg-opacity-10 me-3">
+                                <i class="fas fa-clock text-success"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Controle de Jornada</h4>
+                                <p class="text-muted mb-0">Defina como o controle de jornada funcionará</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="requer_jornada" 
+                                           name="requer_jornada" 
+                                           {% if configuracao.requer_jornada %}checked{% endif %}
+                                           onchange="updatePreview()">
+                                    <label class="form-check-label" for="requer_jornada">
+                                        <i class="fas fa-clock me-2"></i>Requer controle de jornada
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Se ativado, os usuários deste grupo precisarão registrar entrada e saída
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="jornada_flexivel" 
+                                           name="jornada_flexivel"
+                                           {% if configuracao.jornada_flexivel %}checked{% endif %}
+                                           onchange="updatePreview()">
+                                    <label class="form-check-label" for="jornada_flexivel">
+                                        <i class="fas fa-flex me-2"></i>Jornada flexível
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Permite entrada e saída sem horário fixo (apenas registro de tempo trabalhado)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Tolerâncias -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-warning bg-opacity-10 me-3">
+                                <i class="fas fa-hourglass-half text-warning"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Tolerâncias</h4>
+                                <p class="text-muted mb-0">Defina os limites de tolerância para entrada e saída</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="tolerancia_entrada" 
+                                           name="tolerancia_entrada" 
+                                           value="{{ configuracao.tolerancia_entrada }}"
+                                           min="0"
+                                           max="120"
+                                           onchange="updatePreview()">
+                                    <label for="tolerancia_entrada">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Tolerância Entrada (minutos)
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Minutos de tolerância antes do horário de início
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="tolerancia_saida" 
+                                           name="tolerancia_saida" 
+                                           value="{{ configuracao.tolerancia_saida }}"
+                                           min="0"
+                                           max="120"
+                                           onchange="updatePreview()">
+                                    <label for="tolerancia_saida">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Tolerância Saída (minutos)
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Minutos de tolerância após o horário de fim
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Status -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-info bg-opacity-10 me-3">
+                                <i class="fas fa-toggle-on text-info"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Status da Configuração</h4>
+                                <p class="text-muted mb-0">Defina se a configuração estará ativa</p>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="ativo" 
+                                   name="ativo" 
+                                   {% if configuracao.ativo %}checked{% endif %}
+                                   onchange="updatePreview()">
+                            <label class="form-check-label" for="ativo">
+                                <i class="fas fa-toggle-on me-2"></i>Configuração ativa
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Configurações inativas não são aplicadas aos usuários
+                        </div>
+                    </div>
+
+                    <!-- Preview da Configuração -->
+                    <div class="preview-card">
+                        <h5 class="fw-semibold mb-3 text-white">
+                            <i class="fas fa-eye me-2"></i>Preview da Configuração
+                        </h5>
+                        <div id="preview" class="text-white">
+                            <p class="mb-0">Carregando preview...</p>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="card card-standard">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'lojista:configuracoes_jornada_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                                </a>
+                                <div class="d-flex gap-2">
+                                    <button type="reset" class="btn btn-outline-warning">
+                                        <i class="fas fa-undo me-2"></i>Restaurar
+                                    </button>
+                                    <button type="submit" class="btn btn-gradient">
+                                        <i class="fas fa-save me-2"></i>Salvar Alterações
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Atualizar preview quando qualquer campo mudar
+    const form = document.getElementById('configuracaoJornadaForm');
+    form.addEventListener('input', updatePreview);
+    form.addEventListener('change', updatePreview);
+    
+    updatePreview();
+});
+
+function updatePreview() {
+    const requerJornada = document.getElementById('requer_jornada').checked;
+    const jornadaFlexivel = document.getElementById('jornada_flexivel').checked;
+    const toleranciaEntrada = document.getElementById('tolerancia_entrada').value;
+    const toleranciaSaida = document.getElementById('tolerancia_saida').value;
+    const ativo = document.getElementById('ativo').checked;
+    const preview = document.getElementById('preview');
+    
+    const grupoNome = "{{ configuracao.grupo.name }}";
+    const grupoUsuarios = {{ configuracao.grupo.user_set.count }};
+    
+    preview.innerHTML = `
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="fas fa-users me-2"></i>Grupo
+                        </h6>
+                        <p class="fw-semibold mb-1">${grupoNome}</p>
+                        <small>${grupoUsuarios} usuário${grupoUsuarios > 1 ? 's' : ''}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="fas fa-clock me-2"></i>Controle
+                        </h6>
+                        <p class="mb-1">
+                            <i class="fas fa-${requerJornada ? 'check' : 'times'}-circle me-2"></i>
+                            <strong>${requerJornada ? 'Obrigatório' : 'Opcional'}</strong>
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-${jornadaFlexivel ? 'check' : 'times'}-circle me-2"></i>
+                            <strong>${jornadaFlexivel ? 'Flexível' : 'Fixo'}</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="fas fa-hourglass-half me-2"></i>Tolerâncias
+                        </h6>
+                        <p class="mb-1"><strong>Entrada:</strong> ${toleranciaEntrada} min</p>
+                        <p class="mb-0"><strong>Saída:</strong> ${toleranciaSaida} min</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Status
+                        </h6>
+                        <p class="mb-1">
+                            <i class="fas fa-${ativo ? 'check' : 'times'}-circle me-2"></i>
+                            <strong>${ativo ? 'Ativo' : 'Inativo'}</strong>
+                        </p>
+                        <small>${ativo ? 'Configuração será aplicada' : 'Configuração não será aplicada'}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "lojista/dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-lg mx-auto bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Adicionar Ramo de Atividade</h2>
+        
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="p-4 {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded-lg">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_atividade" class="block text-sm font-medium text-gray-700 mb-1">Nome do Ramo de Atividade</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-store text-gray-400"></i>
+                    </span>
+                    <input 
+                        type="text" 
+                        name="atividade" 
+                        id="id_atividade"
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                        placeholder="Ex: Vestuário, Calçados, Eletrônicos..."
+                        required
+                    >
+                </div>
+                <p class="mt-1 text-sm text-gray-500">Digite o nome do ramo de atividade que deseja adicionar</p>
+            </div>
+
+            <div class="flex items-center justify-between pt-4">
+                <a href="{% url 'lojista:listatividade' %}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Voltar
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-primary hover:bg-brand-primaryDark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    Salvar
+                </button>
+            </div>
+        </form>
+
+        {% if messages %}
+        <div class="mt-6 flex justify-center">
+            <a href="{% url 'lojista:registeratividade' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <i class="fas fa-plus mr-2"></i>
+                Adicionar outro ramo de atividade
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

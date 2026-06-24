@@ -1,0 +1,556 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for tipo jornada form - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar checkboxes de dias da semana */
+    .day-checkbox {
+        display: none;
+    }
+    
+    .day-label {
+        display: block;
+        padding: 1rem;
+        border: 2px solid rgba(0,0,0,.1);
+        border-radius: 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .day-label:hover {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .day-checkbox:checked + .day-label {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        font-weight: 600;
+    }
+    
+    /* Melhorar form controls */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorar switch */
+    .form-switch .form-check-input {
+        width: 3rem;
+        height: 1.5rem;
+        margin-top: 0.125rem;
+    }
+    
+    .form-switch .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    /* Melhorar preview */
+    .preview-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 1rem;
+        padding: 2rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .preview-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(0,0,0,.08);
+        transition: all 0.3s ease;
+    }
+    
+    .preview-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .preview-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+    }
+    
+    /* Melhorar botões */
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .preview-section {
+            padding: 1rem;
+        }
+        
+        .day-label {
+            padding: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:jornadas_gestao' %}" class="text-decoration-none">
+                            <i class="fas fa-clock me-1"></i>Gestão de Jornadas
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:tipos_jornada_list' %}" class="text-decoration-none">
+                            <i class="fas fa-list me-1"></i>Tipos de Jornada
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-calendar-plus text-xl text-primary"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">{{ page_title }}</h1>
+                                <p class="text-muted mb-0">
+                                    {% if tipo_jornada %}
+                                        Edite as informações da jornada de trabalho
+                                    {% else %}
+                                        Configure horários e dias de trabalho
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:tipos_jornada_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <form method="post" id="jornadaForm" class="form-standard">
+                    {% csrf_token %}
+                    
+                    <!-- Informações Básicas -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-primary bg-opacity-10 me-3">
+                                <i class="fas fa-info-circle text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Informações Básicas</h4>
+                                <p class="text-muted mb-0">Dados principais da jornada</p>
+                            </div>
+                        </div>
+                        
+                        <div class="form-floating">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="nome" 
+                                   name="nome" 
+                                   placeholder="Nome da Jornada"
+                                   value="{% if tipo_jornada %}{{ tipo_jornada.nome }}{% endif %}"
+                                   required>
+                            <label for="nome">
+                                <i class="fas fa-tag me-2"></i>Nome da Jornada <span class="text-danger">*</span>
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb me-1"></i>Nome descritivo para identificar esta jornada (ex: Manhã, Tarde, Noite, Integral)
+                        </div>
+                    </div>
+
+                    <!-- Horários -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-success bg-opacity-10 me-3">
+                                <i class="fas fa-clock text-success"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Horários de Trabalho</h4>
+                                <p class="text-muted mb-0">Defina início e fim da jornada</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="time" 
+                                           class="form-control" 
+                                           id="hora_inicio" 
+                                           name="hora_inicio" 
+                                           value="{% if tipo_jornada %}{{ tipo_jornada.hora_inicio|time:'H:i' }}{% endif %}"
+                                           required>
+                                    <label for="hora_inicio">
+                                        <i class="fas fa-clock me-2"></i>Horário de Início <span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="time" 
+                                           class="form-control" 
+                                           id="hora_fim" 
+                                           name="hora_fim" 
+                                           value="{% if tipo_jornada %}{{ tipo_jornada.hora_fim|time:'H:i' }}{% endif %}"
+                                           required>
+                                    <label for="hora_fim">
+                                        <i class="fas fa-clock me-2"></i>Horário de Fim <span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dias da Semana -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-warning bg-opacity-10 me-3">
+                                <i class="fas fa-calendar-week text-warning"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Dias da Semana</h4>
+                                <p class="text-muted mb-0">Selecione os dias de trabalho</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            {% for dia_num, dia_nome in dias_semana_choices %}
+                            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                <input class="day-checkbox" 
+                                       type="checkbox" 
+                                       name="dias_semana" 
+                                       value="{{ dia_num }}" 
+                                       id="dia_{{ dia_num }}"
+                                       {% if tipo_jornada and dia_num in tipo_jornada.dias_semana %}checked{% endif %}>
+                                <label class="day-label" for="dia_{{ dia_num }}">
+                                    <div class="fw-semibold text-sm">{{ dia_nome|slice:":3" }}</div>
+                                    <small class="text-muted">{{ dia_num }}</small>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text mt-3">
+                            <i class="fas fa-info-circle me-1"></i>Selecione os dias em que esta jornada será aplicada
+                        </div>
+                    </div>
+
+                    <!-- Tolerâncias -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-info bg-opacity-10 me-3">
+                                <i class="fas fa-stopwatch text-info"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Tolerâncias</h4>
+                                <p class="text-muted mb-0">Flexibilidade para entrada e saída</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="tolerancia_entrada" 
+                                           name="tolerancia_entrada" 
+                                           placeholder="Tolerância Entrada"
+                                           value="{% if tipo_jornada %}{{ tipo_jornada.tolerancia_entrada }}{% else %}15{% endif %}"
+                                           min="0" 
+                                           max="120">
+                                    <label for="tolerancia_entrada">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Tolerância Entrada (minutos)
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-clock me-1"></i>Minutos antes do horário oficial para entrada
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="tolerancia_saida" 
+                                           name="tolerancia_saida" 
+                                           placeholder="Tolerância Saída"
+                                           value="{% if tipo_jornada %}{{ tipo_jornada.tolerancia_saida }}{% else %}15{% endif %}"
+                                           min="0" 
+                                           max="120">
+                                    <label for="tolerancia_saida">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Tolerância Saída (minutos)
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-clock me-1"></i>Minutos após o horário oficial para saída
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-success bg-opacity-10 me-3">
+                                <i class="fas fa-toggle-on text-success"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Status</h4>
+                                <p class="text-muted mb-0">Visibilidade da jornada</p>
+                            </div>
+                        </div>
+                        
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="ativo" 
+                                   name="ativo" 
+                                   {% if not tipo_jornada or tipo_jornada.ativo %}checked{% endif %}>
+                            <label class="form-check-label" for="ativo">
+                                <i class="fas fa-toggle-on me-2"></i>Jornada Ativa
+                            </label>
+                        </div>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>Jornadas inativas não podem ser atribuídas a colaboradores
+                        </div>
+                    </div>
+
+                    <!-- Preview da Jornada -->
+                    <div class="preview-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-primary bg-opacity-10 me-3">
+                                <i class="fas fa-eye text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Preview da Jornada</h4>
+                                <p class="text-muted mb-0">Visualização em tempo real</p>
+                            </div>
+                        </div>
+                        
+                        <div id="preview" class="text-muted">
+                            <p class="mb-0">Preencha os campos acima para ver o preview da jornada</p>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="card card-standard">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between gap-3">
+                                <a href="{% url 'lojista:tipos_jornada_list' %}" class="btn btn-outline-secondary btn-action">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-gradient btn-action">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if tipo_jornada %}Atualizar{% else %}Criar{% endif %} Jornada
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('jornadaForm');
+    const preview = document.getElementById('preview');
+    
+    // Atualizar preview quando qualquer campo mudar
+    form.addEventListener('input', updatePreview);
+    form.addEventListener('change', updatePreview);
+    
+    // Atualizar preview inicial
+    updatePreview();
+    
+    function updatePreview() {
+        const nome = document.getElementById('nome').value || 'Nome da Jornada';
+        const horaInicio = document.getElementById('hora_inicio').value || '';
+        const horaFim = document.getElementById('hora_fim').value || '';
+        const toleranciaEntrada = document.getElementById('tolerancia_entrada').value || '0';
+        const toleranciaSaida = document.getElementById('tolerancia_saida').value || '0';
+        const ativo = document.getElementById('ativo').checked;
+        
+        // Formatar horários para exibição
+        const horaInicioDisplay = horaInicio || '--:--';
+        const horaFimDisplay = horaFim || '--:--';
+        
+        // Dias selecionados
+        const diasSelecionados = [];
+        const checkboxes = document.querySelectorAll('input[name="dias_semana"]:checked');
+        checkboxes.forEach(checkbox => {
+            const label = checkbox.parentElement.querySelector('.day-label .fw-semibold').textContent;
+            diasSelecionados.push(label);
+        });
+        
+        const diasTexto = diasSelecionados.length > 0 ? diasSelecionados.join(', ') : 'Nenhum dia selecionado';
+        
+        // Calcular horário com tolerância
+        const horaInicioComTolerancia = calcularHorarioComTolerancia(horaInicio, -parseInt(toleranciaEntrada));
+        const horaFimComTolerancia = calcularHorarioComTolerancia(horaFim, parseInt(toleranciaSaida));
+        
+        preview.innerHTML = `
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="preview-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="preview-icon me-3">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <h6 class="fw-semibold text-primary mb-0">Informações Básicas</h6>
+                        </div>
+                        <p class="mb-2">
+                            <strong>Nome:</strong> ${nome}
+                        </p>
+                        <p class="mb-2">
+                            <i class="fas fa-clock me-2 text-primary"></i>
+                            <strong>Horário:</strong> ${horaInicioDisplay} - ${horaFimDisplay}
+                        </p>
+                        <p class="mb-2">
+                            <i class="fas fa-calendar-week me-2 text-primary"></i>
+                            <strong>Dias:</strong> ${diasTexto}
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-${ativo ? 'check' : 'times'}-circle me-2 text-${ativo ? 'success' : 'danger'}"></i>
+                            <strong>Status:</strong> ${ativo ? 'Ativa' : 'Inativa'}
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="preview-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="preview-icon me-3">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <h6 class="fw-semibold text-primary mb-0">Horário com Tolerância</h6>
+                        </div>
+                        <p class="mb-2">
+                            <i class="fas fa-sign-in-alt me-2 text-success"></i>
+                            <strong>Entrada:</strong> ${horaInicioComTolerancia} 
+                            <small class="text-muted">(${toleranciaEntrada}min antes)</small>
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-sign-out-alt me-2 text-warning"></i>
+                            <strong>Saída:</strong> ${horaFimComTolerancia} 
+                            <small class="text-muted">(${toleranciaSaida}min depois)</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    function calcularHorarioComTolerancia(horario, minutos) {
+        if (!horario || horario === '--:--' || horario === '') return '--:--';
+        
+        try {
+            const [horas, mins] = horario.split(':').map(Number);
+            
+            // Validar se os valores são números válidos
+            if (isNaN(horas) || isNaN(mins)) return '--:--';
+            
+            const totalMinutos = horas * 60 + mins + minutos;
+            
+            if (totalMinutos < 0) return '00:00';
+            if (totalMinutos >= 1440) return '23:59';
+            
+            const novasHoras = Math.floor(totalMinutos / 60);
+            const novosMins = totalMinutos % 60;
+            
+            return `${novasHoras.toString().padStart(2, '0')}:${novosMins.toString().padStart(2, '0')}`;
+        } catch (error) {
+            return '--:--';
+        }
+    }
+});
+</script>
+{% endblock %}

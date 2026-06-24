@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Cupons impressos com sucesso!{% endblock %}
+
+{% block content %}
+<div id="barcode">
+This content will be replaced
+</div>
+    <h1>Os cupons do referentes ao documento <strong>{{ numerodocumento }}</strong> foram enviados para impressão com sucesso!</strong>!</h1>
+    <p><a type="button" id="mymodal" class="btn btn-primary btn-lg" data-toggle="modal" href="#">
+  Imprimir outros cupons do participante
+</a><a type="button" class="btn" href="{% url 'lojista:homepage' %}">Voltar para área de operação</button></p>
+
+{% endblock %}

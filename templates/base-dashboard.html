@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block header %}
+{% include 'components/header-dashboard.html' %}
+{% endblock %}
+
+{% block footer %}
+<!-- Footer removido para páginas de dashboard -->
+{% endblock %}
+
+{% block extra_js %}
+
+{% if request.user.is_authenticated and request.user.is_staff and not request.user.is_superuser and tem_grupo_operacional %}
+<div class="modal fade" id="postoModal" data-bs-backdrop="static" data-bs-keyboard="false" data-bs-dismiss="false" tabindex="-1" aria-labelledby="postoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="postoModalLabel">
+                    <i class="fas fa-desktop me-2"></i>
+                    Selecionar Posto de Trabalho
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Obrigatório:</strong> Você precisa selecionar um posto de trabalho para continuar.
+                </div>
+                
+                <form id="postoModalForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="posto_trabalho" class="form-label">
+                            <i class="fas fa-desktop me-2"></i>
+                            Posto de Trabalho
+                        </label>
+                        <select class="form-select" id="posto_trabalho" name="posto_trabalho" required>
+                            <option value="">Selecione um posto...</option>
+                            {% for posto in postos_disponiveis %}
+                                <option value="{{ posto.id }}" {% if request.user.profile.posto_trabalho == posto %}selected{% endif %}>
+                                    {{ posto.nome }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="confirmarPosto">
+                    <i class="fas fa-check me-2"></i>
+                    Confirmar e Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script do Modal -->
+<script src="{% static 'js/posto-modal.js' %}"></script>
+{% endif %}
+
+
+<!-- Modal de Confirmação para Finalizar Jornada -->
+<div class="modal fade" id="modalFinalizarJornada" tabindex="-1" aria-labelledby="modalFinalizarJornadaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalFinalizarJornadaLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Finalizar Jornada
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja finalizar sua jornada de trabalho?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Esta ação irá registrar o horário de saída e desconectar você do sistema.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-warning" id="btnConfirmarFinalizar">
+                    <i class="fas fa-check me-1"></i>Finalizar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para mostrar modal automaticamente para colaboradores -->
+<script>
+// Aguardar jQuery estar disponível
+function waitForJQuery(callback) {
+    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.mask !== 'undefined') {
+        callback();
+    } else {
+        setTimeout(function() {
+            waitForJQuery(callback);
+        }, 100);
+    }
+}
+
+// Função para finalizar jornada
+window.finalizarJornada = function() {
+    // Mostrar modal de confirmação
+    const modal = new bootstrap.Modal(document.getElementById('modalFinalizarJornada'));
+    modal.show();
+};
+
+// Configurar botão de confirmação
+document.addEventListener('DOMContentLoaded', function() {
+    const btnConfirmar = document.getElementById('btnConfirmarFinalizar');
+    if (btnConfirmar) {
+        btnConfirmar.addEventListener('click', function() {
+            // Desabilitar botão para evitar cliques duplos
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Finalizando...';
+            
+            // Obter token CSRF
+            const csrfToken = '{{ csrf_token }}';
+            
+            // Criar form data
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', csrfToken);
+            
+            fetch('{% url "participante:finalizar_jornada_colaborador" %}', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirecionar diretamente sem mostrar alert
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    // Mostrar erro em um toast ou notificação mais elegante
+                    console.error('Erro:', data.message);
+                    // Opcional: mostrar erro em uma div na página
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-danger position-fixed';
+                    errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+                    errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${data.message}`;
+                    document.body.appendChild(errorDiv);
+                    
+                    // Remover após 5 segundos
+                    setTimeout(() => {
+                        if (errorDiv.parentNode) {
+                            errorDiv.parentNode.removeChild(errorDiv);
+                        }
+                    }, 5000);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                // Mostrar erro em uma div na página
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger position-fixed';
+                errorDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+                errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Erro de conexão. Tente novamente.';
+                document.body.appendChild(errorDiv);
+                
+                // Remover após 5 segundos
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.parentNode.removeChild(errorDiv);
+                    }
+                }, 5000);
+            })
+            .finally(() => {
+                // Reabilitar botão
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = '<i class="fas fa-check me-1"></i>Finalizar';
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalFinalizarJornada'));
+                if (modal) {
+                    modal.hide();
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

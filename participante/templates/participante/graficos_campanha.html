@@ -1,0 +1,352 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Gráficos da Campanha - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:dados_campanha' %}" class="text-decoration-none">Dados da Campanha</a>
+                    </li>
+                    <li class="breadcrumb-item active">Gráficos da Campanha</li>
+                </ol>
+            </nav>
+            
+            <div class="card bg-white rounded-4 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Gráficos da Campanha</h1>
+                            <p class="text-muted mb-0">Visualize os dados da campanha através de gráficos interativos</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'participante:dados_campanha' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar aos Dados
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <!-- Estatísticas Rápidas -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Dias com Dados</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ labels|length|default:0 }}</h3>
+                                <p class="small text-muted mb-0">
+                                    <i class="fas fa-calendar me-1"></i>Período
+                                </p>
+                            </div>
+                            <div class="bg-light rounded-3 p-3">
+                                <i class="fas fa-calendar text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Dias de Faturamento</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ data_faturamento|length|default:0 }}</h3>
+                                <p class="small text-muted mb-0">
+                                    <i class="fas fa-dollar-sign me-1"></i>Movimentação
+                                </p>
+                            </div>
+                            <div class="bg-light rounded-3 p-3">
+                                <i class="fas fa-dollar-sign text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Bairros Atendidos</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ bairros|length|default:0 }}</h3>
+                                <p class="small text-muted mb-0">
+                                    <i class="fas fa-map-marker-alt me-1"></i>Cobertura
+                                </p>
+                            </div>
+                            <div class="bg-light rounded-3 p-3">
+                                <i class="fas fa-map-marker-alt text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Top Lojistas</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ nomes_lojistas|length|default:0 }}</h3>
+                                <p class="small text-muted mb-0">
+                                    <i class="fas fa-trophy me-1"></i>Destaques
+                                </p>
+                            </div>
+                            <div class="bg-light rounded-3 p-3">
+                                <i class="fas fa-trophy text-muted"></i>
+                            </div>
+        </div>
+        </div>
+        </div>
+        </div>
+    </div>
+
+        <!-- Gráficos -->
+        <div class="row g-4">
+    <!-- Gráfico de Cupons por Dia -->
+            <div class="col-lg-6">
+                <div class="card bg-white rounded-4 shadow-sm border-0 h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-chart-line me-2"></i>Cupons Gerados por Dia
+                        </h5>
+        </div>
+                    <div class="card-body p-4">
+        <canvas id="cuponsChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+    </div>
+
+    <!-- Gráfico de Faturamento por Dia -->
+            <div class="col-lg-6">
+                <div class="card bg-white rounded-4 shadow-sm border-0 h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-chart-bar me-2"></i>Faturamento por Dia
+                        </h5>
+        </div>
+                    <div class="card-body p-4">
+        <canvas id="faturamentoChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+    </div>
+
+    <!-- Gráfico de Métodos de Pagamento -->
+            <div class="col-lg-6">
+                <div class="card bg-white rounded-4 shadow-sm border-0 h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-credit-card me-2"></i>Distribuição por Método de Pagamento
+                        </h5>
+        </div>
+                    <div class="card-body p-4">
+        <canvas id="pagamentoChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+    </div>
+
+    <!-- Gráfico de Distribuição por Bairro -->
+            <div class="col-lg-6">
+                <div class="card bg-white rounded-4 shadow-sm border-0 h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-map-marker-alt me-2"></i>Distribuição por Bairro
+                        </h5>
+        </div>
+                    <div class="card-body p-4">
+        <canvas id="bairrosChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+    </div>
+
+    <!-- Gráfico de Top Lojistas -->
+            <div class="col-12">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-trophy me-2"></i>Top Lojistas por Faturamento
+                        </h5>
+        </div>
+                    <div class="card-body p-4">
+        <canvas id="lojistasChart" width="400" height="200"></canvas>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de Cupons por Dia
+    const cuponsCtx = document.getElementById('cuponsChart').getContext('2d');
+    new Chart(cuponsCtx, {
+        type: 'line',
+        data: {
+            labels: {{ labels|safe }},
+            datasets: [{
+                label: 'Cupons Gerados',
+                data: {{ data|safe }},
+                borderColor: '#6c757d',
+                backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico de Faturamento por Dia
+    const faturamentoCtx = document.getElementById('faturamentoChart').getContext('2d');
+    new Chart(faturamentoCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ data_faturamento|safe }},
+            datasets: [{
+                label: 'Faturamento (R$)',
+                data: {{ valor_faturamento|safe }},
+                backgroundColor: '#6c757d',
+                borderColor: '#6c757d',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico de Métodos de Pagamento
+    const pagamentoCtx = document.getElementById('pagamentoChart').getContext('2d');
+    new Chart(pagamentoCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ metodos|safe }},
+            datasets: [{
+                data: {{ valores|safe }},
+                backgroundColor: [
+                    '#6c757d',
+                    '#adb5bd'
+                ],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Gráfico de Distribuição por Bairro
+    const bairrosCtx = document.getElementById('bairrosChart').getContext('2d');
+    new Chart(bairrosCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ bairros|safe }},
+            datasets: [{
+                label: 'Participantes',
+                data: {{ totais|safe }},
+                backgroundColor: '#6c757d',
+                borderColor: '#6c757d',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Gráfico de Top Lojistas
+    const lojistasCtx = document.getElementById('lojistasChart').getContext('2d');
+    new Chart(lojistasCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ nomes_lojistas|safe }},
+            datasets: [{
+                label: 'Faturamento (R$)',
+                data: {{ valores_lojistas|safe }},
+                backgroundColor: '#6c757d',
+                borderColor: '#6c757d',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

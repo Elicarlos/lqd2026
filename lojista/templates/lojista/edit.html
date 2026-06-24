@@ -1,0 +1,137 @@
+{% extends "mobile.html" %}
+{% block title %}Editar Lojista{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Editar Lojista</h1>
+        <p class="mt-2 text-sm text-gray-600">
+          Por favor, atualize os dados do lojista conforme necessário
+        </p>
+      </div>
+
+      <form action="." method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- CNPJ -->
+        <div>
+          <label for="id_CNPJLojista" class="block text-sm font-medium text-gray-700">
+            CNPJ do Lojista
+            <span class="text-red-500">*</span>
+          </label>
+          {{ lojista_form.CNPJLojista }}
+          {% if lojista_form.CNPJLojista.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ lojista_form.CNPJLojista.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Inscrição Estadual -->
+        <div>
+          <label for="id_IELojista" class="block text-sm font-medium text-gray-700">
+            Inscrição Estadual
+            <span class="text-red-500">*</span>
+          </label>
+          {{ lojista_form.IELojista }}
+          {% if lojista_form.IELojista.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ lojista_form.IELojista.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Nome Fantasia -->
+        <div>
+          <label for="id_fantasiaLojista" class="block text-sm font-medium text-gray-700">
+            Nome Fantasia
+            <span class="text-red-500">*</span>
+          </label>
+          {{ lojista_form.fantasiaLojista }}
+          {% if lojista_form.fantasiaLojista.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ lojista_form.fantasiaLojista.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Razão Social -->
+        <div>
+          <label for="id_razaoLojista" class="block text-sm font-medium text-gray-700">
+            Razão Social
+            <span class="text-red-500">*</span>
+          </label>
+          {{ lojista_form.razaoLojista }}
+          {% if lojista_form.razaoLojista.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ lojista_form.razaoLojista.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Ramo de Atividade -->
+        <div>
+          <label for="id_ramoAtividade" class="block text-sm font-medium text-gray-700">
+            Ramo de Atividade
+            <span class="text-red-500">*</span>
+          </label>
+          {{ lojista_form.ramoAtividade }}
+          {% if lojista_form.ramoAtividade.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ lojista_form.ramoAtividade.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Localização -->
+        <div>
+          <label for="id_localizacao" class="block text-sm font-medium text-gray-700">
+            Localização
+            <span class="text-red-500">*</span>
+          </label>
+          {{ lojista_form.localizacao }}
+          {% if lojista_form.localizacao.errors %}
+            <p class="mt-1 text-sm text-red-600">{{ lojista_form.localizacao.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Botões -->
+        <div class="flex items-center justify-end space-x-4 pt-4">
+          <a href="{% url 'lojista:homepage' %}" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            Cancelar
+          </a>
+          <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+            Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Máscara para CNPJ
+  const cnpjField = document.getElementById('id_CNPJLojista');
+  if (cnpjField) {
+    cnpjField.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length <= 14) {
+        value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+        value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+        value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        e.target.value = value;
+      }
+    });
+  }
+  
+  // Máscara para IE
+  const ieField = document.getElementById('id_IELojista');
+  if (ieField) {
+    ieField.addEventListener('input', function(e) {
+      let value = e.target.value.replace(/\D/g, '');
+      if (value.length <= 12) {
+        value = value.replace(/^(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/\.(\d{3})(\d)/, '.$1.$2');
+        value = value.replace(/\.(\d{3})(\d)/, '.$1.$2');
+        e.target.value = value;
+      }
+    });
+  }
+});
+</script>
+
+{% endblock %}

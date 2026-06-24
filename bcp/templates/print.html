@@ -1,0 +1,361 @@
+{% extends "mobile.html" %}
+
+{% block title %}Imprimindo Cupons{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <title>Imprimindo Cupons</title>
+    <script type="text/javascript">
+        let currentPdfUrl = null;
+        let docId = '{{ doc_id }}';
+
+        function showPdfPreview(pdfUrl) {
+            console.log('Mostrando preview do PDF:', pdfUrl);
+            currentPdfUrl = pdfUrl;
+            
+            const loading = document.getElementById('loading');
+            const previewOverlay = document.getElementById('pdf-preview-overlay');
+            const previewContainer = document.getElementById('pdf-preview-container');
+            const pdfViewer = document.getElementById('pdf-viewer');
+            
+            // Ocultar tela de carregamento
+            loading.classList.add('hidden');
+            
+            // Configurar o iframe com o PDF
+            pdfViewer.src = pdfUrl;
+            
+            // Mostrar overlay e container de preview
+            previewOverlay.classList.remove('hidden');
+            previewContainer.classList.remove('hidden');
+            
+            // Animação de entrada
+            setTimeout(() => {
+                previewOverlay.classList.add('opacity-100');
+                previewContainer.classList.add('scale-100');
+                previewContainer.classList.remove('scale-95');
+            }, 10);
+            
+            // Verificar se o PDF carregou corretamente
+            pdfViewer.onload = function() {
+                console.log('PDF carregado com sucesso');
+            };
+            
+            pdfViewer.onerror = function() {
+                console.error('Erro ao carregar PDF');
+                showStatusMessage('error', 'Erro ao Carregar PDF', 'Não foi possível carregar o PDF. Verifique se o arquivo existe.');
+            };
+        }
+
+        function markAsPrinted() {
+            if (!docId) {
+                console.log('Doc ID não disponível para marcar como impresso');
+                return;
+            }
+            
+            console.log('Marcando documento como impresso:', docId);
+            
+            // Fazer requisição para marcar como impresso
+            fetch(`/barcode/confirm_print/${docId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: 'success=true'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Documento marcado como impresso com sucesso');
+                } else {
+                    console.error('Erro ao marcar como impresso:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro na requisição de marcação:', error);
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function printPDF() {
+            if (!currentPdfUrl) {
+                showStatusMessage('error', 'Erro', 'PDF não disponível para impressão.');
+                return;
+            }
+            
+            console.log('Iniciando impressão do PDF:', currentPdfUrl);
+            
+            try {
+                // Método 1: Tentar imprimir o iframe atual
+                const pdfViewer = document.getElementById('pdf-viewer');
+                try {
+                    pdfViewer.contentWindow.print();
+                    console.log('Diálogo de impressão aberto');
+                    
+                    // Marcar como impresso após abrir o diálogo
+                    setTimeout(() => {
+                        markAsPrinted();
+                    }, 1000);
+                    
+                    showStatusMessage('success', 'Impressão Iniciada!', 'O diálogo de impressão foi aberto.');
+                    return;
+                } catch (e) {
+                    console.log('Não foi possível imprimir o iframe, tentando abrir em nova janela...');
+                }
+                
+                // Método 2: Abrir em nova janela e imprimir
+                const printWindow = window.open(currentPdfUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                
+                if (printWindow) {
+                    console.log('Nova janela aberta para PDF');
+                    
+                    // Aguardar carregamento e imprimir
+                setTimeout(() => {
+                    try {
+                            printWindow.print();
+                            console.log('Diálogo de impressão aberto');
+                            
+                            // Marcar como impresso após abrir o diálogo
+                            setTimeout(() => {
+                                markAsPrinted();
+                            }, 1000);
+                            
+                            showStatusMessage('success', 'Impressão Iniciada!', 'O diálogo de impressão foi aberto em uma nova janela.');
+                            
+                            // Fechar a janela após um tempo
+                        setTimeout(() => {
+                                try {
+                                    printWindow.close();
+                                } catch (e) {
+                                    console.log('Não foi possível fechar a janela automaticamente');
+                                }
+                            }, 5000);
+                            
+                    } catch (error) {
+                        console.error('Erro ao imprimir:', error);
+                            showStatusMessage('warning', 'Ação Manual Necessária', 'O PDF foi aberto em uma nova janela. Use Ctrl+P para imprimir.');
+                        }
+                    }, 2000);
+                    
+                } else {
+                    throw new Error('Pop-up bloqueado');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao imprimir PDF:', error);
+                showStatusMessage('warning', 'Impressão Manual', 'Use Ctrl+P no preview ou habilite pop-ups para impressão automática.');
+            }
+        }
+
+        function closePdfPreview() {
+            const previewOverlay = document.getElementById('pdf-preview-overlay');
+            const previewContainer = document.getElementById('pdf-preview-container');
+            
+            // Limpar sessão de impressão
+            if (docId) {
+                fetch(`/barcode/clear_print_session/${docId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Sessão de impressão limpa:', data);
+        })
+        .catch(error => {
+                    console.error('Erro ao limpar sessão:', error);
+                });
+            }
+            
+            // Animação de saída
+            previewContainer.classList.remove('scale-100');
+            previewContainer.classList.add('scale-95');
+            previewOverlay.classList.remove('opacity-100');
+            
+            setTimeout(() => {
+                previewOverlay.classList.add('hidden');
+                previewContainer.classList.add('hidden');
+                
+                // Redirecionar para a área operacional (não para dashboard de participante)
+                window.location.href = "{% url 'lojista:homepage' %}";
+            }, 200);
+        }
+
+        function showStatusMessage(type, title, message) {
+            const statusDiv = document.getElementById('status-message');
+            
+            // Remover classes anteriores
+            statusDiv.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-lg shadow-2xl text-center font-sans z-50 max-w-md max-h-96 overflow-auto';
+            
+            // Adicionar classes específicas do tipo
+            if (type === 'success') {
+                statusDiv.classList.add('border-l-4', 'border-green-500');
+            } else if (type === 'error') {
+                statusDiv.classList.add('border-l-4', 'border-red-500');
+            } else if (type === 'warning') {
+                statusDiv.classList.add('border-l-4', 'border-yellow-500');
+            }
+            
+            let buttons = '';
+            if (type === 'success') {
+                buttons = `
+                    <button onclick="closeStatusMessage()" class="inline-block px-6 py-3 mx-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">OK</button>
+                `;
+            } else if (type === 'warning') {
+                buttons = `
+                    <button onclick="closeStatusMessage()" class="inline-block px-6 py-3 mx-2 bg-yellow-500 text-white rounded-lg font-bold hover:bg-yellow-600 transition-colors">Entendido</button>
+                `;
+            } else {
+                buttons = `
+                    <a href="{% url 'participante:impressao_backoffice' %}" class="inline-block px-6 py-3 mx-2 bg-gray-600 text-white rounded-lg font-bold hover:bg-gray-700 transition-colors">Tentar Novamente</a>
+                    <button onclick="closeStatusMessage()" class="inline-block px-6 py-3 mx-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors">OK</button>
+                `;
+            }
+            
+            statusDiv.innerHTML = `
+                <h3 class="text-xl font-bold text-gray-800 mb-4">${title}</h3>
+                <p class="text-gray-600 mb-6">${message}</p>
+                ${buttons}
+            `;
+            statusDiv.classList.remove('hidden');
+        }
+
+        function closeStatusMessage() {
+            document.getElementById('status-message').classList.add('hidden');
+        }
+
+        function checkTaskStatus(taskId) {
+            console.log('Verificando status da tarefa:', taskId);
+            
+            fetch(`/barcode/check_task_status/${taskId}/`)
+                .then(response => {
+                    const contentType = response.headers.get('content-type');
+                    console.log('Content-Type:', contentType);
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        // Se não for JSON, presume-se que é o PDF
+                        console.log('PDF recebido diretamente');
+                        const pdfUrl = `/barcode/check_task_status/${taskId}/`;
+                        showPdfPreview(pdfUrl);
+                        throw new Error('PDF Loaded');
+                    }
+                })
+                .then(data => {
+                    console.log('Status recebido:', data);
+                    
+                    if (data.status === 'SUCCESS') {
+                        console.log('Tarefa concluída com sucesso');
+                        
+                        // Verificar se temos a URL do PDF
+                        if (data.pdf_url) {
+                            console.log('URL do PDF encontrada:', data.pdf_url);
+                            showPdfPreview(data.pdf_url);
+                        } else {
+                            console.error('URL do PDF não encontrada no response');
+                            showStatusMessage('error', 'Erro no PDF', 'URL do PDF não encontrada. Tente novamente.');
+                        }
+                        
+                    } else if (data.status === 'FAILURE') {
+                        console.error('Falha na geração do PDF');
+                        showStatusMessage('error', 'Erro na Geração', 'Falha ao gerar o PDF. Tente novamente.');
+                    } else {
+                        console.log('Tarefa ainda em processamento, aguardando...');
+                        setTimeout(() => checkTaskStatus(taskId), 2000);
+                    }
+                })
+                .catch(error => {
+                    if (error.message !== 'PDF Loaded') {
+                        console.error('Erro ao verificar status:', error);
+                        showStatusMessage('error', 'Erro de Conexão', 'Erro ao verificar o status da impressão. Tente novamente.');
+                    }
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Página carregada, iniciando processo de carregamento do PDF');
+            
+            const pdfUrl = '{{ pdf_url }}';
+            console.log('PDF URL:', pdfUrl);
+            
+            // Mostrar tela de carregamento
+            document.getElementById('loading').classList.remove('hidden');
+            
+            if (pdfUrl.includes('task_id=')) {
+                const taskId = pdfUrl.split('task_id=').pop();
+                console.log('Task ID encontrado:', taskId);
+                checkTaskStatus(taskId);
+            } else {
+                console.log('URL direta do PDF');
+                showPdfPreview(pdfUrl);
+            }
+        });
+
+        // Atalhos de teclado
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'p') {
+                event.preventDefault();
+                if (currentPdfUrl) {
+                    printPDF();
+                }
+            }
+            if (event.key === 'Escape') {
+                closePdfPreview();
+            }
+        });
+</script>
+</head>
+<body class="bg-gray-50">
+    <!-- Tela de carregamento -->
+    <div id="loading" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mx-auto mb-6"></div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Preparando Preview</h2>
+            <p class="text-gray-600">Aguarde enquanto o PDF é carregado...</p>
+        </div>
+    </div>
+
+    <!-- Overlay de fundo para o preview -->
+    <div id="pdf-preview-overlay" onclick="closePdfPreview()" class="fixed inset-0 bg-black bg-opacity-80 z-40 hidden transition-opacity duration-300"></div>
+
+    <!-- Container de preview do PDF -->
+    <div id="pdf-preview-container" class="fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-11/12 h-5/6 max-w-6xl max-h-screen bg-white rounded-lg shadow-2xl z-50 hidden flex flex-col overflow-hidden transition-transform duration-300 scale-95">
+        <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
+            <h3 class="text-lg font-bold">📄 Preview dos Cupons</h3>
+            <div class="flex gap-3">
+                <button onclick="printPDF()" class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors text-sm">
+                    🖨️ Imprimir
+                </button>
+                <button onclick="closePdfPreview()" class="px-4 py-2 bg-gray-600 text-white rounded-lg font-bold hover:bg-gray-700 transition-colors text-sm">
+                    ❌ Fechar
+                </button>
+            </div>
+        </div>
+        <iframe id="pdf-viewer" src="" title="Preview do PDF" class="flex-1 w-full border-none bg-white"></iframe>
+    </div>
+
+    <!-- Mensagens de status -->
+    <div id="status-message" class="hidden"></div>
+</body>
+</html>
+{% endblock %}

@@ -1,0 +1,37 @@
+{
+  "name": "liquida2018",
+  "version": "1.0.0",
+  "description": "\"# lqd2024\"  \"# lqd2025\"",
+  "main": "index.js",
+  "scripts": {
+    "tailwind:dev": "tailwindcss -i ./static/css/tailwind/input.css -o ./static/css/tailwind/output.css --watch",
+    "tailwind:build": "NODE_ENV=production tailwindcss -i ./static/css/tailwind/input.css -o ./static/css/tailwind/output.css --minify",
+    "build": "npm run tailwind:build",
+    "build:local": "tailwindcss -i ./static/css/tailwind/input.css -o ./static/css/tailwind/output.css",
+    "heroku-postbuild": "npm run build"
+  },
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
+  "dependencies": {
+    "bootstrap": "^3.4.1",
+    "@tailwindcss/forms": "^0.5.10",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elicarlos/lqd2025.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/Elicarlos/lqd2025/issues"
+  },
+  "homepage": "https://github.com/Elicarlos/lqd2025#readme",
+  "devDependencies": {}
+}

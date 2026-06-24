@@ -1,0 +1,99 @@
+<table class="table table-hover table-bordered">
+    <thead >
+      <tr>
+        <th>CNPJ do Lojista</th>
+        <th>Nome Fantasia</th> 
+        <th>localizacao</th>
+        <!-- <th>Lojista Cielo</th> -->
+        <th>Participante</th>
+        <th style="width: 300px;">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lojista in page_obj.object_list %}
+        <tr style="height: 5px ;">
+          <td>{{ lojista.CNPJLojista }}</td>
+          <td>{{ lojista.fantasiaLojista }}</td>       
+          <td>{{ lojista.localizacao.nome }}</td>
+          <!-- <td class="text-center">
+            {% if lojista.lojista_cielo %}
+              <i class="fa fa-check-circle text-success" title="Lojista Cielo"></i>
+            {% else %}
+              <i class="fa fa-times-circle text-danger" title="Não é Lojista Cielo"></i>
+            {% endif %}
+          </td> -->
+          <td>
+            <span class="
+              {% if lojista.status == 'Pendente' %}
+                label label-warning
+              {% elif lojista.status == 'Sim' %}
+                label label-success
+              {% elif lojista.status == 'Não' %}
+                label label-danger
+              {% elif lojista.status == 'Inativo' %}
+                label label-danger
+              {% else %}
+                label label-default
+              {% endif %}
+            ">
+              {{ lojista.status }}
+            </span>
+          </td>
+          <!-- <td>
+            <div style="display: flex; align-items: center; gap: 5px;  ">
+              <button class="btn btn-secondary editar-lojista-btn" data-id="{{ lojista.id }}"><span class="glyphicon glyphicon-pencil"></span></button>
+              <div class="d-flex align-items-center" style="display: flex; gap: 5px">
+                <select class="form-control form-control-sm status-select" data-id="{{ lojista.id }}" style="width: 180px;">
+                  <option value="">Alterar status</option>
+                  {% for status, label in lojista.STATUS_CHOICES %}
+                      <option value="{{ status }}" {% if lojista.status == status %}selected{% endif %}>
+                          {{ label }}
+                      </option>
+                  {% endfor %}
+              </select>
+                <button class="btn btn-success btn-sm salvar-status-btn" style="display:none;" data-id="{{ lojista.id }}">
+                  <span class="glyphicon glyphicon-ok"></span>
+                </button>
+              </div>
+            </div>
+          </td> -->
+
+          <td>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                {% if lojista.status == "Pendente" %}
+                    <button class="btn btn-secondary editar-lojista-btn" data-id="{{ lojista.id }}">
+                        <span class="glyphicon glyphicon-pencil"></span>
+                    </button>
+                {% else %}
+                    
+                {% endif %}
+                <div class="d-flex align-items-center" style="display: flex; gap: 5px;">
+                    <select class="form-control form-control-sm status-select" data-id="{{ lojista.id }}" style="width: 190px;" {% if lojista.status != "Pendente" %}disabled{% endif %}>
+                        <option value="">Alterar status</option>
+                        {% for status, label in lojista.STATUS_CHOICES %}
+                            <option value="{{ status }}" {% if lojista.status == status %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    {% if lojista.status == "Pendente" %}
+                        <button class="btn btn-success btn-sm salvar-status-btn" style="display:none;" data-id="{{ lojista.id }}">
+                            <span class="glyphicon glyphicon-ok"></span>
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </td>
+        
+
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5">No data</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Paginação -->
+  {% include "partials/pagination.html" %}

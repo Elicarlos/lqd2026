@@ -1,0 +1,100 @@
+/* Import Design Tokens */
+@import 'variables.css';
+
+/* Base styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans bg-white text-gray-900 antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+/* Componentes base que não conflitam com o existente */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center;
+    @apply px-4 py-2;
+    @apply rounded-md;
+    @apply font-medium;
+    @apply transition-colors duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-[var(--brand-primary)];
+    @apply text-white;
+    @apply hover:bg-[var(--brand-primary-dark)];
+    @apply focus:ring-[var(--brand-primary)];
+  }
+
+  .btn-outline {
+    @apply border border-gray-300;
+    @apply bg-white;
+    @apply text-gray-700;
+    @apply hover:bg-gray-50;
+    @apply focus:ring-[var(--brand-primary)];
+  }
+
+  .card {
+    @apply bg-white;
+    @apply rounded-lg;
+    @apply shadow-md;
+    @apply overflow-hidden;
+    @apply transition-all duration-200;
+    @apply hover:shadow-lg;
+    @apply border border-gray-100;
+  }
+
+  .input {
+    @apply w-full;
+    @apply px-4 py-2;
+    @apply rounded-md;
+    @apply border border-gray-300;
+    @apply focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent;
+    @apply placeholder-gray-400;
+  }
+
+  .label {
+    @apply block;
+    @apply text-sm font-medium;
+    @apply text-gray-700;
+    @apply mb-1;
+  }
+
+  /* Animações suaves */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+}
+
+/* Keyframes para animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

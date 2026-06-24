@@ -1,0 +1,304 @@
+:root {
+  --color-primary: #269fe6;
+  --color-primary-hover: #2086c2;
+  --color-primary-dark: #13141f;
+  --color-primary-dark-hover: #212336;
+  --color-primary-light: #d4ecfa;
+  --color-primary-light-hover: #bdd8e7;
+
+  --color-white: #fff;
+  --color-black: #000;
+
+  --color-dark-text: #444;
+  --color-info-light: #cce5ff;
+  --color-debug-light: #cce5ff;
+  --color-success-light: #d4edda;
+  --color-alert-light: #fff3cd;
+  --color-warning-light: #fff3cd;
+  --color-error-light: #f8d7da;
+
+  --color-info-dark: #4d86c4;
+  --color-debug-dark: #4d86c4;
+  --color-success-dark: #4a9c5d;
+  --color-alert-dark: #927f40;
+  --color-warning-dark: #927f40;
+  --color-error-dark: #da525d;
+
+  --color-gray-0: #f9f9f9;
+  --color-gray-1: #e0e0e0;
+  --color-gray-2: #c7c7c7;
+  --color-gray-3: #aeaeae;
+  --color-gray-4: #959595;
+  --color-gray-5: #7d7d7d;
+  --color-gray-6: #646464;
+  --color-gray-7: #4b4b4b;
+  --color-gray-8: #323232;
+  --color-gray-9: #191919;
+
+  --font-primary: sans-serif;
+  --font-headings: "Roboto Slab", serif;
+
+  --spacing-gutter-medium: 3rem;
+  --spacing-gutter-large: 4rem;
+}
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+html {
+  font-size: 62.5%;
+}
+body {
+  font-size: 1.6rem;
+  font-family: var(--font-primary);
+  background: var(--color-gray-1);
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-headings);
+}
+
+.container {
+  max-width: 144rem;
+  margin: 0 auto;
+  padding: var(--spacing-gutter-medium);
+}
+.main-header-container {
+  background: #207e7f;
+}
+.main-logo {
+  font-size: 4rem;
+  color: var(--color-white);
+  text-decoration: none;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin: 0 auto;
+}
+.main-logo-icon {
+  margin-right: 2rem;
+}
+.search-form {
+  border: 0.2rem solid var(--color-primary-dark);
+  max-width: 64rem;
+  margin: 0 auto;
+  border-radius: 0.4rem;
+  position: relative;
+  transition: all 300ms ease-in-out;
+}
+.search-input,
+.search-button {
+  border: none;
+  background: none;
+  outline: none;
+  padding: 1rem;
+  transition: all 300ms ease-in-out;
+}
+.search-input {
+  width: 100%;
+  padding-right: 3rem;
+  transition: all 300ms ease-in-out;
+}
+.search-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.search-button:focus {
+  outline: 1px solid var(--color-primary);
+  background: rgba(0, 0, 0, 0.05);
+}
+.search-form:focus-within {
+  border-color: var(--color-primary);
+  background: var(--color-white);
+}
+.search-form:focus-within .search-button {
+  color: var(--color-primary);
+}
+@import url("https://fonts.googleapis.com/css?family=Oswald");
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #dadde6;
+  font-family: arial;
+}
+
+.fl-left {
+  float: left;
+}
+
+.fl-right {
+  float: right;
+}
+
+h2 {
+  text-transform: uppercase;
+  font-weight: 900;
+  border-left: 10px solid #f9ed35;
+  padding-left: 10px;
+  margin-bottom: 30px;
+}
+
+.row {
+  overflow: hidden;
+}
+
+.card {
+  display: table-row;
+  width: 49%;
+  background-color: #fff;
+  color: #989898;
+  margin-bottom: 10px;
+  font-family: "Oswald", sans-serif;
+  text-transform: uppercase;
+  border-radius: 4px;
+  position: relative;
+}
+
+.card + .card {
+  margin-left: 2%;
+}
+
+.date {
+  display: table-cell;
+  width: 25%;
+  position: relative;
+  text-align: center;
+  border-right: 2px dashed #dadde6;
+}
+
+.date:before,
+.date:after {
+  content: "";
+  display: block;
+  width: 30px;
+  height: 30px;
+  background-color: #dadde6;
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  z-index: 1;
+  border-radius: 50%;
+}
+
+.date:after {
+  top: auto;
+  bottom: -15px;
+}
+
+.date time {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+.date time span {
+  display: block;
+}
+
+.date time span:first-child {
+  color: #2b2b2b;
+  font-weight: 600;
+  font-size: 250%;
+}
+
+.date time span:last-child {
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-top: -10px;
+}
+
+.card-cont {
+  display: table-cell;
+  width: 75%;
+  font-size: 85%;
+  padding: 10px 10px 30px 50px;
+}
+
+.card-cont h3 {
+  color: #3c3c3c;
+  font-size: 130%;
+}
+
+.row:last-child .card:last-of-type .card-cont h3 {
+  text-decoration: line-through;
+}
+
+.card-cont > div {
+  display: table-row;
+}
+
+.card-cont .even-date i,
+.card-cont .even-info i,
+.card-cont .even-date time,
+.card-cont .even-info p {
+  display: table-cell;
+}
+
+.card-cont .even-date i,
+.card-cont .even-info i {
+  padding: 5% 5% 0 0;
+}
+
+.card-cont .even-info p {
+  padding: 30px 50px 0 0;
+}
+
+.card-cont .even-date time span {
+  display: block;
+}
+
+.card-cont a {
+  display: block;
+  text-decoration: none;
+  width: 80px;
+  height: 30px;
+  background-color: #d8dde0;
+  color: #fff;
+  text-align: center;
+  line-height: 30px;
+  border-radius: 2px;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
+
+.row:last-child .card:first-child .card-cont a {
+  background-color: #037fdd;
+}
+
+.row:last-child .card:last-child .card-cont a {
+  background-color: #f8504c;
+}
+
+@media screen and (max-width: 860px) {
+  .card {
+    display: block;
+    float: none;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .card + .card {
+    margin-left: 0;
+  }
+  .card-cont .even-date,
+  .card-cont .even-info {
+    font-size: 75%;
+  }
+}

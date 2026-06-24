@@ -1,0 +1,3715 @@
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User, Group
+from django.core.paginator import Paginator
+
+def can_manage_journey_records(user):
+    """
+    Verifica se o usuário pode gerenciar registros de jornada
+    - Superuser
+    - Staff
+    - Grupo 'Suporte'
+    - Grupo 'Gerente Solve'
+    """
+    if user.is_superuser or user.is_staff:
+        return True
+    
+    # Verificar grupos específicos
+    grupos_permitidos = ['Suporte', 'Gerente Solve']
+    user_groups = user.groups.values_list('name', flat=True)
+    
+    return any(grupo in user_groups for grupo in grupos_permitidos)
+from django.db.models import Case, Exists, OuterRef, Q, When
+from django.db import models
+from django.http import (
+    HttpResponseBadRequest,
+    HttpResponseNotAllowed,
+    HttpResponseNotFound,
+    JsonResponse,
+)
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods
+from django.http import HttpResponse
+
+from cupom.models import Cupom
+from participante.forms import ProfileEditForm, UserEditForm
+from participante.models import (
+    Campanha,
+    DocumentoFiscal,
+    PostoTrabalho,
+    Profile,
+    RegistroJornada,
+    TipoJornada,
+    JornadaColaborador,
+    SystemRole,
+    UserRole,
+    URLTreinamento,
+)
+from participante.permissions import (
+    get_user_dashboard_cards,
+    get_cards_by_type,
+    user_has_card_permission,
+    is_operador,
+    is_gerente,
+    is_backoffice,
+    is_supervisor,
+    is_gerente_solve,
+    is_recursos_humanos,
+)
+
+from .filters import LojistaFilter
+from .forms import (
+    LocalizacaoRegistrationForm,
+    LojistaRegistrationForm,
+    RamoAtividadeRegistrationForm,
+)
+from .models import AdesaoLojista, Localizacao, Lojista, RamoAtividade
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def reprint(request):
+    # Obter parâmetros de busca
+    numero_documento = request.GET.get("numero_documento", "")
+    cpf_participante = request.GET.get("cpf_participante", "")
+    data_documento = request.GET.get("data_documento", "")
+    lojista_id = request.GET.get("lojista", "")
+    status = request.GET.get("status", "")
+    valor_minimo = request.GET.get("valor_minimo", "")
+
+    # Query base
+    documentos = DocumentoFiscal.objects.all()
+
+    # Aplicar filtros
+    if numero_documento:
+        documentos = documentos.filter(numeroDocumento__icontains=numero_documento)
+    
+    if cpf_participante:
+        cpf_limpo = cpf_participante.replace('.', '').replace('-', '')
+        documentos = documentos.filter(user__profile__CPF__icontains=cpf_limpo)
+    
+    if data_documento:
+        documentos = documentos.filter(dataDocumento=data_documento)
+    
+    if lojista_id:
+        documentos = documentos.filter(lojista_id=lojista_id)
+    
+    if status:
+        documentos = documentos.filter(status=status)
+    
+    if valor_minimo:
+        try:
+            valor = float(valor_minimo)
+            documentos = documentos.filter(valorDocumento__gte=valor)
+        except ValueError:
+            pass
+
+    # Ordenar por data de cadastro (mais recentes primeiro)
+    documentos = documentos.order_by('-dataCadastro')
+
+    # Obter lista de lojistas para o filtro
+    lojistas = Lojista.objects.filter(status="Sim").order_by('fantasiaLojista')
+
+    context = {
+        "documentos": documentos,
+        "lojistas": lojistas,
+    }
+
+    return render(request, "lojista/search_doc.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def cupons(request):
+    if request.GET.get("q"):
+        if "q" in request.GET is not None:
+            cpf = request.GET.get("q")
+            profile = get_object_or_404(Profile, CPF=cpf)
+            user = get_object_or_404(User, username=profile.user.username)
+            cupons = Cupom.objects.filter(user=user)
+            return render(
+                request,
+                "lojista/cupons.html",
+                {"section": "cupons", "user": profile, "cupons": cupons},
+            )
+        else:
+            messages.error(request, "CPF não encontrado!")
+    return render(request, "lojista/search_by_cpf.html")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def search_cupom(request):
+    if request.GET.get("q"):
+        if "q" in request.GET is not None:
+            numeroCupom = request.GET.get("q")
+            try:
+                cupom = Cupom.objects.get(id=numeroCupom)
+                if cupom:
+                    profile = Profile.objects.get(user=cupom.user)
+                    return render(
+                        request,
+                        "lojista/cupom_detail.html",
+                        {"section": "cupons", "user": profile, "cupom": cupom},
+                    )
+            except Cupom.DoesNotExist:
+                messages.error(request, "Cupom não encontrado!")
+                return render(request, "lojista/search_by_cupom.html")
+        else:
+            messages.error(request, "Cupom não encontrado!")
+    return render(request, "lojista/search_by_cupom.html")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def search(request):
+    # Ordena os lojistas pelo status, priorizando "Pendente"
+    lojista_list = Lojista.objects.all().order_by(
+        Case(When(status="Pendente", then=0), default=1), "status"
+    )
+
+    lojista_filter = LojistaFilter(request.GET, queryset=lojista_list)
+    queryset_filtrado = lojista_filter.qs
+
+    # Paginação
+    paginator = Paginator(queryset_filtrado, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(
+        request,
+        "lojista/lojistas_list.html",
+        {
+            "filter": lojista_filter,
+            "page_obj": page_obj,
+            "section": "lojistas",
+        },
+    )
+
+
+
+@login_required
+@require_POST
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def autorizar_lojista(request, lojista_id):
+    try:
+        lojista = Lojista.objects.get(id=lojista_id)
+
+        novo_status = request.POST.get("status")
+        status_validos = dict(Lojista.STATUS_CHOICES).keys()
+
+        if novo_status not in status_validos:
+            return JsonResponse(
+                {"success": False, "message": "Status inválido"}
+            )
+
+        lojista.status = novo_status
+        lojista.autorizado_por = request.user
+        lojista.save()
+
+        return JsonResponse({"success": True, "status": lojista.status})
+
+    except Lojista.DoesNotExist:
+        return JsonResponse(
+            {"success": False, "message": "Lojista não encontrado"}
+        )
+
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=500)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def gerenciar_lojistas(request):
+    """
+    View completa para gerenciar lojistas com filtros, busca e paginação
+    """
+    try:
+        from django.db.models import Q
+        from django.core.paginator import Paginator
+        from datetime import datetime
+        
+        # Obter parâmetros de filtro
+        status_filter = request.GET.get('status', '')
+        cnpj_search = request.GET.get('cnpj', '').strip()
+        
+        # Query base
+        lojistas = Lojista.objects.all()
+        
+        # Aplicar filtro por status
+        if status_filter:
+            lojistas = lojistas.filter(status=status_filter)
+        
+        # Aplicar busca por CNPJ
+        if cnpj_search:
+            # Remove caracteres especiais do CNPJ para busca
+            cnpj_clean = cnpj_search.replace('.', '').replace('/', '').replace('-', '')
+            
+            # Busca mais inteligente: tentar tanto o formato original quanto o limpo
+            from django.db.models import Q
+            
+            # Criar query que busca tanto o CNPJ formatado quanto o limpo
+            lojistas = lojistas.filter(
+                Q(CNPJLojista__icontains=cnpj_search) |  # Busca com formatação
+                Q(CNPJLojista__icontains=cnpj_clean)     # Busca sem formatação
+            )
+        
+        # Ordenação (padrão: nome fantasia)
+        order_by = request.GET.get('order_by', 'fantasiaLojista')
+        if order_by in ['fantasiaLojista', 'razaoLojista', 'CNPJLojista', 'status', 'dataCadastro']:
+            lojistas = lojistas.order_by(order_by)
+        else:
+            lojistas = lojistas.order_by('fantasiaLojista')
+        
+        # Paginação
+        paginator = Paginator(lojistas, 20)  # 20 lojistas por página
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Estatísticas (baseadas nos filtros aplicados)
+        autorizados_count = lojistas.filter(status='Sim').count()
+        pendentes_count = lojistas.filter(status='Pendente').count()
+        inativos_count = lojistas.filter(status__in=['Não', 'Inativo']).count()
+        
+        # Estatísticas totais (sem filtros)
+        total_autorizados = Lojista.objects.filter(status='Sim').count()
+        total_pendentes = Lojista.objects.filter(status='Pendente').count()
+        total_inativos = Lojista.objects.filter(status__in=['Não', 'Inativo']).count()
+        
+        return render(
+            request,
+            "lojista/gerenciar_lojistas.html",
+            {
+                "page_obj": page_obj,
+                "status_filter": status_filter,
+                "cnpj_search": cnpj_search,
+                "order_by": order_by,
+                "autorizados_count": autorizados_count,
+                "pendentes_count": pendentes_count,
+                "inativos_count": inativos_count,
+                "total_autorizados": total_autorizados,
+                "total_pendentes": total_pendentes,
+                "total_inativos": total_inativos,
+                "total_lojistas": lojistas.count(),
+                "has_filters": bool(status_filter or cnpj_search),
+            },
+        )
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        messages.error(request, f"Erro ao carregar lojistas: {e}")
+        return render(request, "lojista/gerenciar_lojistas.html", {
+            "page_obj": None,
+            "status_filter": "",
+            "cnpj_search": "",
+            "order_by": "fantasiaLojista",
+            "autorizados_count": 0,
+            "pendentes_count": 0,
+            "inativos_count": 0,
+            "total_autorizados": 0,
+            "total_pendentes": 0,
+            "total_inativos": 0,
+            "total_lojistas": 0,
+            "has_filters": False,
+        })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def editar_lojista(request, lojista_id):
+    # Verificar se o usuário tem permissão para editar lojistas via sistema de cards
+    from participante.models import CardDinamico
+    
+    try:
+        card_editar = CardDinamico.objects.get(nome='editar_lojista', ativo=True)
+        pode_editar = (
+            request.user.is_superuser or 
+            card_editar.pode_ver(request.user)
+        )
+    except CardDinamico.DoesNotExist:
+        # Se o card não existe, usar verificação padrão
+        pode_editar = request.user.is_superuser or request.user.is_staff
+    
+    if not pode_editar:
+        messages.error(request, "Você não tem permissão para editar lojistas.")
+        return redirect('lojista:homepage')
+    
+    lojista = get_object_or_404(Lojista, id=lojista_id)
+
+    if request.method == "POST":
+        form = LojistaRegistrationForm(request.POST, instance=lojista)
+        
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Lojista '{lojista.fantasiaLojista}' atualizado com sucesso!")
+            return redirect("lojista:gerenciar_lojistas")
+        else:
+            messages.error(request, "Por favor, corrija os erros no formulário.")
+    else:
+        form = LojistaRegistrationForm(instance=lojista)
+    
+    return render(request, "lojista/editar_lojista.html", {
+        "form": form,
+        "lojista": lojista
+    })
+
+
+@login_required
+def homepage(request):
+    # Cards do dashboard agora são gerenciados pelo sistema CardDinamico
+    # Não é mais necessário chamar setup_dashboard_cards_auto()
+    
+    # Verificar se o usuário tem permissão para acessar área operacional
+    from participante.models import UserRole
+    from participante.permissions import get_user_roles
+    
+    user_roles = UserRole.objects.filter(user=request.user).values_list('role__name', flat=True)
+    user_roles_list = list(user_roles)
+    
+    # Roles que podem acessar área operacional
+    roles_operacionais = ["Operador", "Supervisor", "Gerente", "Backoffice", "Gerente Solve", "Recursos Humanos", "Suporte", "Operadores"]
+    is_staff_operacional = (
+        request.user.is_superuser or
+        any(role in roles_operacionais for role in user_roles_list) or
+        any(request.user.groups.filter(name=role).exists() for role in roles_operacionais)
+    )
+    
+    if not is_staff_operacional:
+        from django.contrib import messages
+        messages.error(request, "Você não tem permissão para acessar esta área.")
+        return redirect("participante:dashboard")
+    
+    documentos_nao_enviados = DocumentoFiscal.objects.filter(
+        enviado_por_operador=False, id=OuterRef("documentoFiscal_id")
+    )
+
+    cupons_pendentes = (
+        Cupom.objects.filter(impresso=False)
+        .annotate(documento_nao_enviado=Exists(documentos_nao_enviados))
+        .filter(documento_nao_enviado=True)
+        .exists()
+    )
+
+    campanha = Campanha.objects.filter(ativa=True).first()
+
+    lojista_pendente = Lojista.objects.filter(status="Pendente").exists()
+
+    postos_trabalho = PostoTrabalho.objects.all()
+    jornada_ativa = RegistroJornada.objects.filter(
+        user=request.user, horario_fim__isnull=True
+    ).exists()
+    show_popup = request.session.pop("show_popup", False)
+    
+    # Estatísticas para o dashboard
+    from django.utils import timezone
+    from django.db.models import Count
+    from participante.models import StatusChoices
+    
+    hoje = timezone.now().date()
+    
+    # Estatísticas gerais
+    # Usuários com is_staff=True são colaboradores (equipe interna)
+    from django.contrib.auth.models import User
+    colaboradores_ids = User.objects.filter(is_staff=True).values_list('id', flat=True)
+    
+    stats = {
+        'participantes': Profile.objects.exclude(user_id__in=colaboradores_ids).count(),
+        'colaboradores': Profile.objects.filter(user_id__in=colaboradores_ids).count(),
+        'lojistas': Lojista.objects.count(),
+        'lojistas_ativos': Lojista.objects.filter(status="Sim").count(),
+        'pendentes': DocumentoFiscal.objects.filter(status=StatusChoices.PENDENTE).count(),
+        'cupons': Cupom.objects.filter(dataCriacao__date=hoje).count(),
+    }
+    
+    
+    # Buscar cards do usuário
+    user_cards = get_user_dashboard_cards(request.user)
+    participantes_cards = get_cards_by_type(request.user, 'PARTICIPANTE')
+    lojistas_cards = get_cards_by_type(request.user, 'LOJISTA')
+    configuracoes_cards = get_cards_by_type(request.user, 'CONFIGURACAO')
+    backoffice_cards = get_cards_by_type(request.user, 'BACKOFFICE')
+    relatorios_cards = get_cards_by_type(request.user, 'RELATORIO')
+    usuarios_cards = get_cards_by_type(request.user, 'RECURSOS_HUMANOS')
+    operacoes_cards = get_cards_by_type(request.user, 'OPERACOES')    
+    
+    
+
+    
+
+    
+    # Verificar se usuário tem grupos operacionais
+    grupos_operacionais = ['Operador', 'Operadores', 'Gerente', 'Backoffice', 'Supervisor', 'Gerente Solve', 'Recursos Humanos', 'Suporte']
+    tem_grupo_operacional = request.user.groups.filter(name__in=grupos_operacionais).exists()
+    
+    context = {
+        "lojista_pendente": lojista_pendente,
+        "campanha": campanha,
+        "cupons_pendentes": cupons_pendentes,
+        "jornada_iniciada": jornada_ativa,
+        "show_popup": show_popup,
+        "postos_trabalho": postos_trabalho,
+        "section": "lojista",
+        "is_operador": is_operador(request.user),
+        "is_gerente": is_gerente(request.user),
+        "is_gerente_solve": is_gerente_solve(request.user),
+        "is_backoffice": is_backoffice(request.user),
+        "is_supervisor": is_supervisor(request.user),
+        "is_recursos_humanos": is_recursos_humanos(request.user),
+        "stats": stats,
+        # Cards organizados por tipo
+        "participantes_cards": participantes_cards,
+        "lojistas_cards": lojistas_cards,
+        "configuracoes_cards": configuracoes_cards,
+        "backoffice_cards": backoffice_cards,
+        "relatorios_cards": relatorios_cards,
+        "usuarios_cards": usuarios_cards,
+        "operacoes_cards": operacoes_cards,
+        "user_cards": user_cards,
+        # Adicionar variáveis do modal
+        "tem_grupo_operacional": tem_grupo_operacional,
+        "postos_disponiveis": postos_trabalho,
+    }
+    return render(request, "lojista/dashboard-new.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def lojistas_home(request):
+    """Esse é o dashboard de onde aparece os cards dos operadores e colocaboradores da campanha"""
+    return render(request, "lojista/lojistas_home.html", {
+        "section": "lojistas",
+    })
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def cadastro_lojista(request):
+    """Cadastro de lojistas"""
+    if request.method == "POST":
+        lojista_form = LojistaRegistrationForm(request.POST)
+
+        if lojista_form.is_valid():
+            new_lojista = lojista_form.save(commit=False)
+            new_lojista.cadastrado_por = request.user
+
+            if lojista_form.cleaned_data.get("lojista_cielo"):
+                new_lojista.lojista_cielo = True
+
+            new_lojista.save()
+
+            messages.success(request, f"Lojista '{new_lojista.fantasiaLojista}' cadastrado com sucesso!")
+            return redirect("lojista:gerenciar_lojistas")
+
+        else:
+            messages.error(request, "Por favor, corrija os erros no formulário.")
+
+    else:
+        lojista_form = LojistaRegistrationForm()
+    return render(request, "lojista/register-lojista.html", {"lojista_form": lojista_form})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def edit(request):
+    if request.method == "POST":
+        user_form = UserEditForm(instance=request.user, data=request.POST)
+        profile_form = ProfileEditForm(
+            instance=request.user.profile, data=request.POST, files=request.FILES
+        )
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, "Perfil atualizado com sucesso")
+        else:
+            messages.error(request, "Erro na atualização do perfil")
+    else:
+        user_form = UserEditForm(instance=request.user)
+        profile_form = ProfileEditForm(instance=request.user.profile)
+    return render(
+        request,
+        "participante/edit.html",
+        {"user_form": user_form, "profile_form": profile_form},
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def editlojista(request, id):
+    if request.method == "POST":
+        instance = get_object_or_404(Lojista, id=id)
+        lojista_form = LojistaRegistrationForm(instance=instance, data=request.POST)
+        if lojista_form.is_valid():
+            lojista_form.save()
+            messages.success(request, "Perfil atualizado com sucesso")
+        else:
+            messages.error(request, "Erro na atualização do Lojista")
+    else:
+        instance = get_object_or_404(Lojista, id=id)
+        lojista_form = LojistaRegistrationForm(instance=instance)
+    return render(request, "lojista/edit.html", {"lojista_form": lojista_form})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def lojistalist(request):
+    lojistas = Lojista.objects.all()
+    return render(
+        request,
+        "lojista/list_lojistas.html",
+        {"section": "listar-lojistas", "lojistas": lojistas},
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def registeratividade(request):
+    if request.method == "POST":
+        ramoatividade_form = RamoAtividadeRegistrationForm(request.POST)
+
+        if ramoatividade_form.is_valid():
+            new_ramoatividade = ramoatividade_form.save(commit=False)
+            new_ramoatividade.cadastrado_por = request.user
+            new_ramoatividade.save()
+            messages.success(request, f"Ramo de atividade '{new_ramoatividade.atividade}' cadastrado com sucesso!")
+            return redirect("lojista:listatividade")
+        else:
+            messages.error(request, "Por favor, corrija os erros no formulário.")
+
+    else:
+        ramoatividade_form = RamoAtividadeRegistrationForm()
+    return render(
+        request,
+        "lojista/register_ramo_atividade.html",
+        {"form": ramoatividade_form},
+    )
+
+
+@login_required
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def register_localizacao(request):
+    if request.method == "POST":
+        localizacao_form = LocalizacaoRegistrationForm(request.POST)
+
+        if localizacao_form.is_valid():
+            nova_localizacao = localizacao_form.save(commit=False)
+            nova_localizacao.cadastrado_por = request.user
+            nova_localizacao.save()
+            messages.success(request, f"Localização '{nova_localizacao.nome}' cadastrada com sucesso!")
+            return redirect("lojista:lista_localizao")
+        else:
+            messages.error(request, "Por favor, corrija os erros no formulário.")
+            print(f"Form errors: {localizacao_form.errors}")
+
+    else:
+        localizacao_form = LocalizacaoRegistrationForm()
+    return render(
+        request,
+        "lojista/registro_localizacao.html",
+        {"localizacao_form": localizacao_form},
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def listatividade(request):
+    ramosatividade = RamoAtividade.objects.all().order_by('atividade')
+    return render(
+        request,
+        "lojista/list_ramo_atividade.html",
+        {"section": "ramoatividade", "ramosatividade": ramosatividade},
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def editar_ramo_atividade(request, ramo_id):
+    ramo = get_object_or_404(RamoAtividade, id=ramo_id)
+    
+    if request.method == "POST":
+        atividade = request.POST.get("atividade")
+        ativo = request.POST.get("ativo") == "1"
+        
+        if atividade:
+            ramo.atividade = atividade
+            ramo.ativo = ativo
+            ramo.save()
+            messages.success(request, f"Ramo de atividade '{ramo.atividade}' atualizado com sucesso!")
+            return redirect("lojista:listatividade")
+        else:
+            messages.error(request, "Nome da atividade é obrigatório.")
+    
+    return render(request, "lojista/editar_ramo_atividade.html", {"ramo": ramo})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+@require_POST
+def excluir_ramo_atividade(request, ramo_id):
+    ramo = get_object_or_404(RamoAtividade, id=ramo_id)
+    nome = ramo.atividade
+    
+    # Verifica se há lojistas usando este ramo
+    lojistas_com_ramo = ramo.lojista_set.count()
+    
+    if lojistas_com_ramo > 0:
+        messages.error(
+            request, 
+            f"Não é possível excluir o ramo '{nome}' pois existem {lojistas_com_ramo} lojista(s) vinculado(s) a ele."
+        )
+    else:
+        ramo.delete()
+        messages.success(request, f"Ramo de atividade '{nome}' excluído com sucesso!")
+    
+    return redirect("lojista:listatividade")
+
+
+@login_required
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def lista_localizacao(request):
+    localizacoes = Localizacao.objects.all().order_by('nome')
+    return render(
+        request,
+        "lojista/list_localizacao.html",
+        {"section": "localizacao", "localizacoes": localizacoes},
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def editar_localizacao(request, localizacao_id):
+    localizacao = get_object_or_404(Localizacao, id=localizacao_id)
+    
+    if request.method == "POST":
+        nome = request.POST.get("nome")
+        descricao = request.POST.get("descricao", "")
+        
+        if nome:
+            localizacao.nome = nome
+            localizacao.descricao = descricao
+            localizacao.save()
+            messages.success(request, f"Localização '{localizacao.nome}' atualizada com sucesso!")
+            return redirect("lojista:lista_localizao")
+        else:
+            messages.error(request, "Nome da localização é obrigatório.")
+    
+    return render(request, "lojista/editar_localizacao.html", {"localizacao": localizacao})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def excluir_localizacao(request, localizacao_id):
+    localizacao = get_object_or_404(Localizacao, id=localizacao_id)
+    if localizacao.lojista_set.exists():
+        messages.error(
+            request,
+            "Não é possível excluir uma localização que possui lojistas vinculados.",
+        )
+        return redirect("lojista:lista_localizao")
+    try:
+        localizacao.delete()
+        messages.success(
+            request, f'Localização "{localizacao.nome}" excluída com sucesso.'
+        )
+    except Exception as e:
+        messages.error(request, f"Erro ao excluir localização: {str(e)}")
+    return redirect("lojista:lista_localizao")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def lista_interessado(request):
+    try:
+        interessados = AdesaoLojista.objects.all().order_by(
+            "atendido", "-data_contato", "fantasia"
+        )
+
+        # Estatísticas
+        total_count = interessados.count()
+        pendentes_count = interessados.filter(status='Pendente').count()
+        convertidos_count = interessados.filter(status='Sim').count()
+        sem_venda_count = interessados.filter(status='Atendido sem Venda').count()
+        inativos_count = interessados.filter(status='Inativo').count()
+
+        return render(
+            request,
+            "lojista/lista_interessados.html",
+            {
+                "section": "interessados", 
+                "interessados": interessados,
+                "total_count": total_count,
+                "pendentes_count": pendentes_count,
+                "convertidos_count": convertidos_count,
+                "sem_venda_count": sem_venda_count,
+                "inativos_count": inativos_count,
+            },
+        )
+    except Exception as e:
+        print(f"Erro na view lista_interessado: {str(e)}")
+        messages.error(request, f"Erro ao carregar a página: {str(e)}")
+        return render(request, "lojista/lista_interessados.html", {
+            "section": "interessados",
+            "interessados": [],
+            "total_count": 0,
+            "pendentes_count": 0,
+            "convertidos_count": 0,
+            "sem_venda_count": 0,
+            "inativos_count": 0,
+        })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+@require_POST
+def marcar_como_atendido(request, adesao_id):
+    try:
+        adesao = get_object_or_404(AdesaoLojista, id=adesao_id)
+
+        # Pega o status do request ou usa o padrão
+        novo_status = request.POST.get("status", "Atendido sem Venda")
+
+        # Valida se o status é permitido
+        if novo_status not in dict(AdesaoLojista.STATUS_CHOICES).keys():
+            messages.error(request, "Status inválido selecionado.")
+            return JsonResponse({"error": "Status inválido"}, status=400)
+
+        # Atualiza os campos
+        adesao.atendido = True
+        adesao.atendido_por = request.user
+        adesao.data_contato = timezone.now()
+        adesao.status = novo_status
+
+        # Salva as alterações
+        adesao.save()
+
+        # Adiciona mensagem de sucesso
+        messages.success(
+            request,
+            f'Lojista "{adesao.fantasia}" atualizado para status "{novo_status}".',
+        )
+
+        # Retorna JSON para requisições AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                "success": True,
+                "message": f'Lojista "{adesao.fantasia}" atualizado para status "{novo_status}".',
+                "status": novo_status
+            })
+
+    except Exception as e:
+        # Log do erro e mensagem para o usuário
+        print(f"Erro ao atualizar status do lojista: {str(e)}")
+        messages.error(
+            request, "Erro ao atualizar status do lojista. Por favor, tente novamente."
+        )
+        return JsonResponse({"error": str(e)}, status=500)
+
+    return redirect("lojista:lista_interessado")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def register_posto(request):
+    if request.method == "POST":
+        nome = request.POST.get("nome")
+        descricao = request.POST.get("descricao", "")
+        
+        if nome:
+            PostoTrabalho.objects.create(
+                nome=nome,
+                descricao=descricao
+            )
+            messages.success(request, f"Posto '{nome}' cadastrado com sucesso!")
+            return redirect("lojista:listar_postos")
+        else:
+            messages.error(request, "Nome do posto é obrigatório.")
+    
+    return render(request, "lojista/register_posto.html")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def listar_postos(request):
+    postos = PostoTrabalho.objects.all().order_by('nome')
+    return render(request, "lojista/listar_postos.html", {"postos": postos})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def editar_posto(request, posto_id):
+    posto = get_object_or_404(PostoTrabalho, id=posto_id)
+    
+    if request.method == "POST":
+        nome = request.POST.get("nome")
+        descricao = request.POST.get("descricao", "")
+        
+        if nome:
+            posto.nome = nome
+            posto.descricao = descricao
+            posto.save()
+            messages.success(request, f"Posto '{nome}' atualizado com sucesso!")
+            return redirect("lojista:listar_postos")
+        else:
+            messages.error(request, "Nome do posto é obrigatório.")
+    
+    return render(request, "lojista/editar_posto.html", {"posto": posto})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+@require_POST
+def excluir_posto(request, posto_id):
+    posto = get_object_or_404(PostoTrabalho, id=posto_id)
+    nome = posto.nome
+    
+    # Verifica se há usuários usando este posto
+    usuarios_com_posto = Profile.objects.filter(posto_trabalho=posto).count()
+    jornadas_com_posto = RegistroJornada.objects.filter(posto_trabalho=posto).count()
+    
+    if usuarios_com_posto > 0 or jornadas_com_posto > 0:
+        messages.error(
+            request, 
+            f"Não é possível excluir o posto '{nome}' pois existem {usuarios_com_posto} usuário(s) e {jornadas_com_posto} jornada(s) vinculada(s) a ele."
+        )
+    else:
+        posto.delete()
+        messages.success(request, f"Posto '{nome}' excluído com sucesso!")
+    
+    return redirect("lojista:listar_postos")
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+@require_POST
+def atualizar_status(request, interessado_id):
+    if request.method == "POST":
+        interessado = get_object_or_404(AdesaoLojista, id=interessado_id)
+        novo_status = request.POST.get("status")
+
+        if novo_status in dict(interessado.STATUS_CHOICES).keys():
+            interessado.atualizar_status(novo_status, request.user)
+            return JsonResponse(
+                {
+                    "success": True,
+                    "status": novo_status,
+                    "autorizado_por": request.user.get_full_name()
+                    or request.user.username,
+                }
+            )
+        return JsonResponse({"success": False, "error": "Status inválido."}, status=400)
+    return JsonResponse(
+        {"success": False, "error": "Método não permitido."}, status=405
+    )
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def cadastrar_colaborador(request):
+
+    """
+    View para cadastrar novos colaboradores da equipe interna.
+    
+    Funcionalidades:
+    - Cadastro de colaboradores usando formulário de registro
+    - Marca automaticamente como staff e colaborador
+    - Status inativo até ser configurado pelo RH
+    
+    Permissões: superuser, staff
+    Tags: gestao, colaboradores, cadastro
+    """
+    from participante.forms import UserRegistrationForm, ProfileRegistrationForm
+    from participante.models import Profile
+    from django.contrib.auth.models import User
+    from django.contrib import messages
+    from django.db import transaction, IntegrityError
+    from django.urls import reverse
+    
+    # Verificar se usuário tem permissão
+    # DEBUG: Temporariamente permitir superuser ou staff
+    if not (request.user.is_superuser or request.user.is_staff):
+        if not user_has_card_permission(request.user, 'adicionar_colaboradores'):
+            messages.error(request, "Você não tem permissão para adicionar colaboradores.")
+            return redirect('lojista:homepage')
+    
+    if request.method == "POST":
+        
+        user_form = UserRegistrationForm(request.POST)
+        profile_form = ProfileRegistrationForm(request.POST, files=request.FILES)
+        
+        # Para colaboradores, definir valores padrão para campos obrigatórios
+        if 'sexo' not in request.POST:
+            profile_form.data = profile_form.data.copy()
+            profile_form.data['sexo'] = 'P'  # Prefiro não dizer
+        
+        if 'pergunta' not in request.POST:
+            profile_form.data = profile_form.data.copy()
+            profile_form.data['pergunta'] = 'liquida_teresina_2025'  # Valor padrão
+        
+        # Para colaboradores, não exigir password2 (confirmação de senha)
+        if 'password2' not in request.POST:
+            user_form.data = user_form.data.copy()
+            user_form.data['password2'] = user_form.data.get('password', '')  # Usar a mesma senha
+
+        # Get raw data to check for duplicates before full validation
+        username = user_form.data.get('username')
+        email = user_form.data.get('email')
+
+        if username and User.objects.filter(username=username).exists():
+            user_form.add_error('username', "Este CPF já está cadastrado no sistema.")
+        
+        if email and User.objects.filter(email=email).exists():
+            user_form.add_error('email', "Este e-mail já está cadastrado no sistema.")
+
+        # Now, validate both forms. If we added an error above, is_valid() will be False.
+        if user_form.is_valid() and profile_form.is_valid():
+            try:
+                with transaction.atomic():
+                    # If we get here, forms are valid and no duplicates were found
+                    new_user = user_form.save(commit=False)
+                    new_user.set_password(user_form.cleaned_data["password"])
+                    # Marcar como staff (colaborador)
+                    new_user.is_staff = True
+                    new_user.save()
+
+                    new_profile = profile_form.save(commit=False)
+                    # Formatar o CPF antes de salvar no Profile
+                    cpf_limpo = new_user.username
+                    cpf_formatado = f"{cpf_limpo[:3]}.{cpf_limpo[3:6]}.{cpf_limpo[6:9]}-{cpf_limpo[9:]}"
+                    new_profile.CPF = cpf_formatado
+                    new_profile.user = new_user
+                    
+                    # Marcar como colaborador
+                    new_profile.is_colaborador = True
+                    # Colaboradores começam com status inativo até serem configurados
+                    new_profile.status_ativo = False
+                    
+                    new_profile.save()
+
+                    messages.success(request, f"Colaborador {new_profile.nome} cadastrado com sucesso! Você pode atribuir funções na página de gerenciamento de usuários.")
+                    
+                    return redirect('lojista:homepage')
+
+            except Exception as e:
+                # Add a generic error if something unexpected happens during save
+                user_form.add_error(None, f"Ocorreu um erro inesperado durante o cadastro: {e}")
+        
+        # If we reach this point, it's because the forms were invalid from the start,
+        # or we added a duplicate error. Render the page again with the forms
+        # containing the error messages.
+        if not (user_form.is_valid() and profile_form.is_valid()):
+            # Mostrar os erros específicos na mensagem
+            error_details = []
+            
+            if not user_form.is_valid():
+                for field, errors in user_form.errors.items():
+                    for error in errors:
+                        error_details.append(f"User form - {field}: {error}")
+            
+            if not profile_form.is_valid():
+                for field, errors in profile_form.errors.items():
+                    for error in errors:
+                        error_details.append(f"Profile form - {field}: {error}")
+            
+            # Mostrar os erros específicos na mensagem
+            if error_details:
+                error_message = "Erros encontrados:<br/>" + "<br/>".join(error_details[:5])  # Limitar a 5 erros
+                messages.error(request, error_message)
+            else:
+                messages.error(request, "Erro no formulário. Por favor, corrija os erros indicados.")
+    else:
+        # For a GET request, display a blank form
+        user_form = UserRegistrationForm()
+        profile_form = ProfileRegistrationForm()
+    
+    # Buscar roles do usuário para exibir na interface
+    from participante.permissions import get_user_roles
+    user_roles = get_user_roles(request.user)
+    
+    
+    return render(
+        request,
+        "lojista/colaboradores.html",
+        {
+            "user_form": user_form, 
+            "profile_form": profile_form,
+            "user_roles": user_roles,
+        },
+    )
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def solicitar_materiais(request):
+    """
+    Redireciona para o formulário externo da empresa.
+    Disponível para operadores e outros grupos conforme configuração.
+    """
+    # Verificar se o usuário tem permissão para acessar esta funcionalidade
+    
+    if not user_has_card_permission(request.user, 'solicitar_materiais'):
+        messages.error(request, "Você não tem permissão para acessar esta funcionalidade.")
+        return redirect('lojista:homepage')
+    
+    # Redirecionar para o formulário externo da empresa
+    # SUBSTITUA PELA URL REAL QUE A EMPRESA VAI FORNECER
+    link_formulario_empresa = "https://forms.google.com/d/SEU-FORMULARIO-AQUI"
+    return redirect(link_formulario_empresa)
+    
+    # Buscar informações do usuário para o formulário
+    try:
+        profile = request.user.profile
+        posto_trabalho = profile.posto_trabalho
+    except:
+        profile = None
+        posto_trabalho = None
+    
+    # Se for POST, processar o formulário
+    if request.method == 'POST':
+        # Aqui você pode processar a solicitação
+        tipo_material = request.POST.get('tipo_material')
+        quantidade = request.POST.get('quantidade')
+        descricao = request.POST.get('descricao')
+        urgencia = request.POST.get('urgencia', 'normal')
+        
+        # Validações básicas
+        if not tipo_material or not quantidade or not descricao:
+            messages.error(request, "Todos os campos obrigatórios devem ser preenchidos.")
+        else:
+            # Aqui você salvaria a solicitação no banco de dados
+            # Por enquanto, vamos só exibir uma mensagem de sucesso
+            messages.success(
+                request, 
+                f"Solicitação de {tipo_material} enviada com sucesso! "
+                f"Quantidade: {quantidade}, Urgência: {urgencia}"
+            )
+            return redirect('lojista:solicitar_materiais')
+    
+    # Tipos de materiais disponíveis
+    tipos_materiais = [
+        ('bobinas_cupom', 'Bobinas para Cupons'),
+        ('bobinas_comprovante', 'Bobinas para Comprovantes'),
+        ('papel_a4', 'Papel A4'),
+        ('canetas', 'Canetas'),
+        ('grampeador', 'Grampeador'),
+        ('grampos', 'Grampos'),
+        ('pasta_documentos', 'Pasta para Documentos'),
+        ('outros', 'Outros Materiais'),
+    ]
+    
+    context = {
+        'profile': profile,
+        'posto_trabalho': posto_trabalho,
+        'tipos_materiais': tipos_materiais,
+        'page_title': 'Solicitar Materiais',
+    }
+    
+    return render(request, 'lojista/solicitar_materiais.html', context)
+
+
+# ===============================================================================
+# VIEWS DE GESTÃO DE JORNADAS
+# ===============================================================================
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def jornadas_gestao(request):
+    """
+    Página principal de gestão de jornadas
+    """
+    
+    # Buscar tipos de jornada
+    tipos_jornada = TipoJornada.objects.filter(ativo=True).order_by('nome')
+    
+    # Buscar colaboradores com jornadas (apenas staff, não participantes)
+    colaboradores_com_jornada = User.objects.filter(
+        jornadas_atribuidas__ativo=True,
+        is_staff=True
+    ).distinct().order_by('username')
+    
+    # Buscar jornadas ativas (novo sistema) - apenas de colaboradores
+    from participante.models import RegistroJornada
+    jornadas_ativas_list = RegistroJornada.objects.filter(
+        status='ATIVA',
+        user__is_staff=True
+    ).select_related('user', 'user__profile', 'posto_trabalho').order_by('-horario_inicio')
+    
+    # Buscar configurações de jornada (novo sistema)
+    from participante.models import ConfiguracaoJornada
+    configuracoes_jornada = ConfiguracaoJornada.objects.filter(
+        ativo=True
+    ).select_related('grupo').order_by('grupo__name')
+    
+    # Buscar exceções de jornada (novo sistema) - apenas de colaboradores
+    from participante.models import ExcecaoJornada
+    excecoes_jornada = ExcecaoJornada.objects.filter(
+        ativo=True,
+        usuario__is_staff=True
+    ).select_related('usuario').order_by('-created_at')[:10]  # Últimas 10
+    
+    # Estatísticas (apenas colaboradores)
+    total_tipos_jornada = tipos_jornada.count()
+    total_colaboradores_com_jornada = colaboradores_com_jornada.count()
+    total_colaboradores = User.objects.filter(
+        is_active=True, 
+        is_staff=True
+    ).count()
+    jornadas_ativas = jornadas_ativas_list.count()
+    total_configuracoes = configuracoes_jornada.count()
+    
+    context = {
+        'tipos_jornada': tipos_jornada,
+        'colaboradores_com_jornada': colaboradores_com_jornada,
+        'jornadas_ativas_list': jornadas_ativas_list,
+        'configuracoes_jornada': configuracoes_jornada,
+        'excecoes_jornada': excecoes_jornada,
+        'total_tipos_jornada': total_tipos_jornada,
+        'total_colaboradores_com_jornada': total_colaboradores_com_jornada,
+        'total_colaboradores': total_colaboradores,
+        'jornadas_ativas': jornadas_ativas,
+        'total_configuracoes': total_configuracoes,
+        'page_title': 'Gestão de Jornadas',
+    }
+    
+    return render(request, 'lojista/jornadas_gestao.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def tipos_jornada_list(request):
+    """
+    Lista os tipos de jornada existentes
+    """
+    
+    tipos = TipoJornada.objects.all().order_by('nome')
+    
+    # Paginação
+    paginator = Paginator(tipos, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'page_title': 'Tipos de Jornada',
+    }
+    
+    return render(request, 'lojista/tipos_jornada_list.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def tipo_jornada_create(request):
+    """
+    Criar novo tipo de jornada
+    """
+    
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        hora_inicio = request.POST.get('hora_inicio')
+        hora_fim = request.POST.get('hora_fim')
+        dias_semana = request.POST.getlist('dias_semana')
+        tolerancia_entrada = request.POST.get('tolerancia_entrada', 15)
+        tolerancia_saida = request.POST.get('tolerancia_saida', 15)
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Validações
+        if not nome:
+            messages.error(request, "Nome da jornada é obrigatório.")
+        elif not hora_inicio or not hora_fim:
+            messages.error(request, "Horários de início e fim são obrigatórios.")
+        elif not dias_semana:
+            messages.error(request, "Selecione pelo menos um dia da semana.")
+        else:
+            try:
+                # Converter dias da semana para inteiros
+                dias_semana_int = [int(dia) for dia in dias_semana]
+                
+                # Criar o tipo de jornada
+                tipo_jornada = TipoJornada.objects.create(
+                    nome=nome,
+                    hora_inicio=hora_inicio,
+                    hora_fim=hora_fim,
+                    dias_semana=dias_semana_int,
+                    tolerancia_entrada=int(tolerancia_entrada),
+                    tolerancia_saida=int(tolerancia_saida),
+                    ativo=ativo
+                )
+                
+                messages.success(request, f"Tipo de jornada '{nome}' criado com sucesso!")
+                return redirect('lojista:tipos_jornada_list')
+                
+            except Exception as e:
+                messages.error(request, f"Erro ao criar jornada: {str(e)}")
+    
+    # Dias da semana para o formulário
+    dias_semana_choices = [
+        (1, 'Segunda-feira'),
+        (2, 'Terça-feira'),
+        (3, 'Quarta-feira'),
+        (4, 'Quinta-feira'),
+        (5, 'Sexta-feira'),
+        (6, 'Sábado'),
+        (7, 'Domingo'),
+    ]
+    
+    context = {
+        'dias_semana_choices': dias_semana_choices,
+        'page_title': 'Criar Tipo de Jornada',
+    }
+    
+    return render(request, 'lojista/tipo_jornada_form.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def tipo_jornada_edit(request, pk):
+    """
+    Editar tipo de jornada existente
+    """
+    
+    tipo_jornada = get_object_or_404(TipoJornada, pk=pk)
+    
+    if request.method == 'POST':
+        nome = request.POST.get('nome', '').strip()
+        hora_inicio = request.POST.get('hora_inicio')
+        hora_fim = request.POST.get('hora_fim')
+        dias_semana = request.POST.getlist('dias_semana')
+        tolerancia_entrada = request.POST.get('tolerancia_entrada', 15)
+        tolerancia_saida = request.POST.get('tolerancia_saida', 15)
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Validações
+        if not nome:
+            messages.error(request, "Nome da jornada é obrigatório.")
+        elif not hora_inicio or not hora_fim:
+            messages.error(request, "Horários de início e fim são obrigatórios.")
+        elif not dias_semana:
+            messages.error(request, "Selecione pelo menos um dia da semana.")
+        else:
+            try:
+                # Converter dias da semana para inteiros
+                dias_semana_int = [int(dia) for dia in dias_semana]
+                
+                # Atualizar o tipo de jornada
+                tipo_jornada.nome = nome
+                tipo_jornada.hora_inicio = hora_inicio
+                tipo_jornada.hora_fim = hora_fim
+                tipo_jornada.dias_semana = dias_semana_int
+                tipo_jornada.tolerancia_entrada = int(tolerancia_entrada)
+                tipo_jornada.tolerancia_saida = int(tolerancia_saida)
+                tipo_jornada.ativo = ativo
+                tipo_jornada.save()
+                
+                messages.success(request, f"Tipo de jornada '{nome}' atualizado com sucesso!")
+                return redirect('lojista:tipos_jornada_list')
+                
+            except Exception as e:
+                messages.error(request, f"Erro ao atualizar jornada: {str(e)}")
+    
+    # Dias da semana para o formulário
+    dias_semana_choices = [
+        (1, 'Segunda-feira'),
+        (2, 'Terça-feira'), 
+        (3, 'Quarta-feira'),
+        (4, 'Quinta-feira'),
+        (5, 'Sexta-feira'),
+        (6, 'Sábado'),
+        (7, 'Domingo'),
+    ]
+    
+    context = {
+        'tipo_jornada': tipo_jornada,
+        'dias_semana_choices': dias_semana_choices,
+        'page_title': f'Editar {tipo_jornada.nome}',
+    }
+    
+    return render(request, 'lojista/tipo_jornada_form.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def jornadas_colaboradores_list(request):
+    """
+    Lista jornadas atribuídas a colaboradores
+    """
+    
+    # Filtros
+    colaborador_filter = request.GET.get('colaborador', '')
+    jornada_filter = request.GET.get('jornada', '')
+    ativo_filter = request.GET.get('ativo', 'all')
+    
+    # Query base - apenas jornadas de colaboradores (staff)
+    jornadas = JornadaColaborador.objects.select_related(
+        'colaborador', 'tipo_jornada'
+    ).filter(
+        colaborador__is_staff=True
+    ).order_by('-data_inicio')
+    
+    # Aplicar filtros
+    if colaborador_filter:
+        jornadas = jornadas.filter(
+            Q(colaborador__username__icontains=colaborador_filter) |
+            Q(colaborador__first_name__icontains=colaborador_filter) |
+            Q(colaborador__last_name__icontains=colaborador_filter) |
+            Q(colaborador__profile__CPF__icontains=colaborador_filter) |
+            Q(colaborador__profile__nome__icontains=colaborador_filter)
+        )
+    
+    if jornada_filter:
+        jornadas = jornadas.filter(tipo_jornada__nome__icontains=jornada_filter)
+    
+    if ativo_filter == 'true':
+        jornadas = jornadas.filter(ativo=True)
+    elif ativo_filter == 'false':
+        jornadas = jornadas.filter(ativo=False)
+    
+    # Paginação
+    paginator = Paginator(jornadas, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Buscar colaboradores e tipos para os filtros
+    colaboradores = User.objects.filter(
+        jornadas_atribuidas__isnull=False,
+        is_staff=True
+    ).distinct().order_by('username')
+    
+    tipos_jornada = TipoJornada.objects.filter(ativo=True).order_by('nome')
+    
+    context = {
+        'page_obj': page_obj,
+        'colaboradores': colaboradores,
+        'tipos_jornada': tipos_jornada,
+        'colaborador_filter': colaborador_filter,
+        'jornada_filter': jornada_filter,
+        'ativo_filter': ativo_filter,
+        'page_title': 'Jornadas dos Colaboradores',
+    }
+    
+    return render(request, 'lojista/jornadas_colaboradores_list.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def jornada_colaborador_create(request):
+    """
+    Atribuir jornada a um colaborador
+    """
+    
+    if request.method == 'POST':
+        colaborador_id = request.POST.get('colaborador')
+        tipo_jornada_id = request.POST.get('tipo_jornada')
+        data_inicio = request.POST.get('data_inicio')
+        data_fim = request.POST.get('data_fim')
+        observacoes = request.POST.get('observacoes', '').strip()
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Validações
+        if not colaborador_id or not tipo_jornada_id or not data_inicio:
+            messages.error(request, "Colaborador, tipo de jornada e data de início são obrigatórios.")
+        else:
+            try:
+                colaborador = User.objects.get(pk=colaborador_id)
+                tipo_jornada = TipoJornada.objects.get(pk=tipo_jornada_id)
+                
+                # Verificar se já existe jornada para este colaborador na mesma data
+                existing = JornadaColaborador.objects.filter(
+                    colaborador=colaborador,
+                    data_inicio=data_inicio
+                ).first()
+                
+                # Verificar se o colaborador tem jornadas ativas ou incompletas
+                from datetime import date
+                
+                hoje = date.today()
+                
+                # Verificar jornadas ativas (sem data_fim ou data_fim > hoje)
+                jornadas_ativas = JornadaColaborador.objects.filter(
+                    colaborador=colaborador,
+                    ativo=True
+                ).filter(
+                    models.Q(data_fim__isnull=True) | models.Q(data_fim__gte=hoje)
+                ).exclude(id=existing.id if existing else None)
+                
+                # Verificar registros de jornada não finalizados
+                registros_nao_finalizados = RegistroJornada.objects.filter(
+                    user=colaborador,
+                    status='ATIVA'
+                ).exists()
+                
+                if jornadas_ativas.exists():
+                    messages.error(
+                        request,
+                        f"Não é possível atribuir jornada para {colaborador.username}. "
+                        f"O colaborador já possui {jornadas_ativas.count()} jornada(s) ativa(s) "
+                        f"que ainda não foram finalizadas."
+                    )
+                elif registros_nao_finalizados:
+                    messages.error(
+                        request,
+                        f"Não é possível atribuir jornada para {colaborador.username}. "
+                        f"O colaborador possui registros de jornada não finalizados. "
+                        f"É necessário finalizar a jornada atual antes de atribuir uma nova."
+                    )
+                elif existing:
+                    # Atualizar jornada existente
+                    existing.tipo_jornada = tipo_jornada
+                    existing.data_fim = data_fim if data_fim else None
+                    existing.observacoes = observacoes
+                    existing.ativo = ativo
+                    existing.save()
+                    
+                    messages.success(
+                        request,
+                        f"Jornada de {colaborador.username} atualizada para '{tipo_jornada.nome}' com sucesso!"
+                    )
+                else:
+                    # Criar nova atribuição
+                    jornada_colaborador = JornadaColaborador.objects.create(
+                        colaborador=colaborador,
+                        tipo_jornada=tipo_jornada,
+                        data_inicio=data_inicio,
+                        data_fim=data_fim if data_fim else None,
+                        observacoes=observacoes,
+                        ativo=ativo
+                    )
+                    
+                    messages.success(
+                        request,
+                        f"Jornada '{tipo_jornada.nome}' atribuída a {colaborador.username} com sucesso!"
+                    )
+                
+                return redirect('lojista:jornadas_colaboradores_list')
+                    
+            except (User.DoesNotExist, TipoJornada.DoesNotExist) as e:
+                messages.error(request, f"Erro: {str(e)}")
+            except Exception as e:
+                messages.error(request, f"Erro ao criar atribuição: {str(e)}")
+    
+    # Buscar colaboradores e tipos de jornada
+    colaboradores = User.objects.filter(is_active=True, is_staff=True).select_related('profile').order_by('username')
+    tipos_jornada = TipoJornada.objects.filter(ativo=True).order_by('nome')
+    
+    # Verificar status dos colaboradores para exibição
+    from datetime import date
+    
+    hoje = date.today()
+    colaboradores_com_status = []
+    
+    for colaborador in colaboradores:
+        # Verificar jornadas ativas
+        jornadas_ativas = JornadaColaborador.objects.filter(
+            colaborador=colaborador,
+            ativo=True
+        ).filter(
+            models.Q(data_fim__isnull=True) | models.Q(data_fim__gte=hoje)
+        )
+        
+        # Verificar registros não finalizados
+        registros_nao_finalizados = RegistroJornada.objects.filter(
+            user=colaborador,
+            status='ATIVA'
+        ).exists()
+        
+        status = 'disponivel'
+        status_texto = 'Disponível para nova jornada'
+        
+        if registros_nao_finalizados:
+            status = 'jornada_ativa'
+            status_texto = 'Jornada ativa (não finalizada)'
+        elif jornadas_ativas.exists():
+            status = 'jornada_atribuida'
+            status_texto = f'{jornadas_ativas.count()} jornada(s) ativa(s)'
+        
+        colaboradores_com_status.append({
+            'colaborador': colaborador,
+            'status': status,
+            'status_texto': status_texto,
+            'jornadas_ativas_count': jornadas_ativas.count(),
+            'tem_registro_ativo': registros_nao_finalizados
+        })
+    
+    context = {
+        'colaboradores': colaboradores_com_status,
+        'tipos_jornada': tipos_jornada,
+        'page_title': 'Atribuir Jornada a Colaborador',
+    }
+    
+    return render(request, 'lojista/jornada_colaborador_form.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def jornada_colaborador_edit(request, jornada_id):
+    """
+    Editar jornada atribuída a um colaborador
+    """
+    
+    # Buscar a jornada
+    try:
+        jornada = JornadaColaborador.objects.get(pk=jornada_id)
+    except JornadaColaborador.DoesNotExist:
+        messages.error(request, "Jornada não encontrada.")
+        return redirect('lojista:jornadas_colaboradores_list')
+    
+    if request.method == 'POST':
+        tipo_jornada_id = request.POST.get('tipo_jornada')
+        data_inicio = request.POST.get('data_inicio')
+        data_fim = request.POST.get('data_fim')
+        observacoes = request.POST.get('observacoes', '').strip()
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Validações
+        if not tipo_jornada_id or not data_inicio:
+            messages.error(request, "Tipo de jornada e data de início são obrigatórios.")
+        else:
+            try:
+                tipo_jornada = TipoJornada.objects.get(pk=tipo_jornada_id)
+                
+                # Atualizar jornada
+                jornada.tipo_jornada = tipo_jornada
+                jornada.data_inicio = data_inicio
+                jornada.data_fim = data_fim if data_fim else None
+                jornada.observacoes = observacoes
+                jornada.ativo = ativo
+                jornada.save()
+                
+                messages.success(
+                    request,
+                    f"Jornada de {jornada.colaborador.username} atualizada com sucesso!"
+                )
+                return redirect('lojista:jornadas_colaboradores_list')
+                    
+            except TipoJornada.DoesNotExist:
+                messages.error(request, "Tipo de jornada não encontrado.")
+            except Exception as e:
+                messages.error(request, f"Erro ao atualizar jornada: {str(e)}")
+    
+    # Buscar tipos de jornada
+    tipos_jornada = TipoJornada.objects.filter(ativo=True).order_by('nome')
+    
+    context = {
+        'jornada': jornada,
+        'tipos_jornada': tipos_jornada,
+        'page_title': 'Editar Jornada de Colaborador',
+    }
+    
+    return render(request, 'lojista/jornada_colaborador_edit.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def jornada_colaborador_toggle_status(request, jornada_id):
+    """
+    Ativar/Inativar jornada atribuída a um colaborador via AJAX
+    """
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        jornada = JornadaColaborador.objects.get(pk=jornada_id)
+        
+        # Alternar status
+        jornada.ativo = not jornada.ativo
+        jornada.save()
+        
+        status_texto = 'ativada' if jornada.ativo else 'inativada'
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Jornada {status_texto} com sucesso!',
+            'ativo': jornada.ativo
+        })
+        
+    except JornadaColaborador.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Jornada não encontrada'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Erro: {str(e)}'}, status=500)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def configuracoes_jornada_list(request):
+    """
+    Lista configurações de jornada por grupo
+    """
+    
+    # Buscar configurações
+    from participante.models import ConfiguracaoJornada
+    configuracoes = ConfiguracaoJornada.objects.select_related('grupo').order_by('grupo__name')
+    
+    # Paginação
+    paginator = Paginator(configuracoes, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'page_title': 'Configurações de Jornada',
+    }
+    
+    return render(request, 'lojista/configuracoes_jornada_list.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def configuracao_jornada_create(request):
+    """
+    Criar nova configuração de jornada
+    """
+    
+    if request.method == 'POST':
+        from participante.models import ConfiguracaoJornada
+        
+        grupo_id = request.POST.get('grupo')
+        requer_jornada = request.POST.get('requer_jornada') == 'on'
+        jornada_flexivel = request.POST.get('jornada_flexivel') == 'on'
+        tolerancia_entrada = request.POST.get('tolerancia_entrada', 15)
+        tolerancia_saida = request.POST.get('tolerancia_saida', 15)
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Validações
+        if not grupo_id:
+            messages.error(request, "Grupo é obrigatório.")
+        else:
+            try:
+                grupo = Group.objects.get(pk=grupo_id)
+                
+                # Verificar se já existe configuração para este grupo
+                existing = ConfiguracaoJornada.objects.filter(grupo=grupo).first()
+                if existing:
+                    messages.error(request, f"Já existe uma configuração para o grupo '{grupo.name}'.")
+                else:
+                    # Criar configuração
+                    configuracao = ConfiguracaoJornada.objects.create(
+                        grupo=grupo,
+                        requer_jornada=requer_jornada,
+                        jornada_flexivel=jornada_flexivel,
+                        tolerancia_entrada=tolerancia_entrada,
+                        tolerancia_saida=tolerancia_saida,
+                        ativo=ativo
+                    )
+                    
+                    messages.success(
+                        request,
+                        f"Configuração criada com sucesso para o grupo '{grupo.name}'!"
+                    )
+                    return redirect('lojista:configuracoes_jornada_list')
+                    
+            except Group.DoesNotExist:
+                messages.error(request, "Grupo não encontrado.")
+            except Exception as e:
+                messages.error(request, f"Erro ao criar configuração: {str(e)}")
+    
+    # Buscar grupos disponíveis
+    grupos = Group.objects.all().order_by('name')
+    
+    context = {
+        'grupos': grupos,
+        'page_title': 'Nova Configuração de Jornada',
+    }
+    
+    return render(request, 'lojista/configuracao_jornada_form.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def configuracao_jornada_edit(request, config_id):
+    """
+    Editar configuração de jornada
+    """
+    
+    # Buscar configuração
+    from participante.models import ConfiguracaoJornada
+    try:
+        configuracao = ConfiguracaoJornada.objects.get(pk=config_id)
+    except ConfiguracaoJornada.DoesNotExist:
+        messages.error(request, "Configuração não encontrada.")
+        return redirect('lojista:configuracoes_jornada_list')
+    
+    if request.method == 'POST':
+        requer_jornada = request.POST.get('requer_jornada') == 'on'
+        jornada_flexivel = request.POST.get('jornada_flexivel') == 'on'
+        tolerancia_entrada = request.POST.get('tolerancia_entrada', 15)
+        tolerancia_saida = request.POST.get('tolerancia_saida', 15)
+        ativo = request.POST.get('ativo') == 'on'
+        
+        try:
+            # Atualizar configuração
+            configuracao.requer_jornada = requer_jornada
+            configuracao.jornada_flexivel = jornada_flexivel
+            configuracao.tolerancia_entrada = tolerancia_entrada
+            configuracao.tolerancia_saida = tolerancia_saida
+            configuracao.ativo = ativo
+            configuracao.save()
+            
+            messages.success(
+                request,
+                f"Configuração atualizada com sucesso para o grupo '{configuracao.grupo.name}'!"
+            )
+            return redirect('lojista:configuracoes_jornada_list')
+                
+        except Exception as e:
+            messages.error(request, f"Erro ao atualizar configuração: {str(e)}")
+    
+    context = {
+        'configuracao': configuracao,
+        'page_title': 'Editar Configuração de Jornada',
+    }
+    
+    return render(request, 'lojista/configuracao_jornada_edit.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def configuracao_jornada_toggle_status(request, config_id):
+    """
+    Ativar/Inativar configuração de jornada via AJAX
+    """
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        from participante.models import ConfiguracaoJornada
+        configuracao = ConfiguracaoJornada.objects.get(pk=config_id)
+        
+        # Alternar status
+        configuracao.ativo = not configuracao.ativo
+        configuracao.save()
+        
+        status_texto = 'ativada' if configuracao.ativo else 'inativada'
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Configuração {status_texto} com sucesso!',
+            'ativo': configuracao.ativo
+        })
+        
+    except ConfiguracaoJornada.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Configuração não encontrada'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Erro: {str(e)}'}, status=500)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def excecoes_jornada_list(request):
+    """
+    Lista exceções de jornada
+    """
+    
+    # Buscar exceções
+    from participante.models import ExcecaoJornada
+    excecoes = ExcecaoJornada.objects.select_related('usuario', 'created_by').order_by('-created_at')
+    
+    # Filtros
+    usuario_filter = request.GET.get('usuario', '')
+    tipo_filter = request.GET.get('tipo', '')
+    ativo_filter = request.GET.get('ativo', 'all')
+    
+    if usuario_filter:
+        excecoes = excecoes.filter(
+            models.Q(usuario__username__icontains=usuario_filter) |
+            models.Q(usuario__first_name__icontains=usuario_filter) |
+            models.Q(usuario__last_name__icontains=usuario_filter)
+        )
+    
+    if tipo_filter:
+        excecoes = excecoes.filter(tipo=tipo_filter)
+    
+    if ativo_filter != 'all':
+        excecoes = excecoes.filter(ativo=ativo_filter == 'true')
+    
+    # Paginação
+    paginator = Paginator(excecoes, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'usuario_filter': usuario_filter,
+        'tipo_filter': tipo_filter,
+        'ativo_filter': ativo_filter,
+        'page_title': 'Exceções de Jornada',
+    }
+    
+    return render(request, 'lojista/excecoes_jornada_list.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def excecao_jornada_create(request):
+    """
+    Criar nova exceção de jornada
+    """
+    
+    if request.method == 'POST':
+        from participante.models import ExcecaoJornada
+        
+        usuario_id = request.POST.get('usuario')
+        tipo = request.POST.get('tipo')
+        data_inicio = request.POST.get('data_inicio')
+        data_fim = request.POST.get('data_fim')
+        horario_inicio = request.POST.get('horario_inicio')
+        horario_fim = request.POST.get('horario_fim')
+        justificativa = request.POST.get('justificativa', '').strip()
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Validações
+        if not usuario_id or not tipo or not data_inicio or not justificativa:
+            messages.error(request, "Usuário, tipo, data de início e justificativa são obrigatórios.")
+        else:
+            try:
+                usuario = User.objects.get(pk=usuario_id)
+                
+                # Criar exceção
+                excecao = ExcecaoJornada.objects.create(
+                    usuario=usuario,
+                    tipo=tipo,
+                    data_inicio=data_inicio,
+                    data_fim=data_fim if data_fim else None,
+                    horario_inicio=horario_inicio if horario_inicio else None,
+                    horario_fim=horario_fim if horario_fim else None,
+                    justificativa=justificativa,
+                    ativo=ativo,
+                    created_by=request.user
+                )
+                
+                messages.success(
+                    request,
+                    f"Exceção criada com sucesso para {usuario.username}!"
+                )
+                return redirect('lojista:excecoes_jornada_list')
+                    
+            except User.DoesNotExist:
+                messages.error(request, "Usuário não encontrado.")
+            except Exception as e:
+                messages.error(request, f"Erro ao criar exceção: {str(e)}")
+    
+    # Buscar usuários disponíveis (apenas staff)
+    usuarios = User.objects.filter(is_active=True, is_staff=True).order_by('username')
+    
+    # Tipos de exceção
+    from participante.models import ExcecaoJornada
+    tipos_excecao = ExcecaoJornada.TIPO_CHOICES
+    
+    context = {
+        'usuarios': usuarios,
+        'tipos_excecao': tipos_excecao,
+        'page_title': 'Nova Exceção de Jornada',
+    }
+    
+    return render(request, 'lojista/excecao_jornada_form.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def excecao_jornada_edit(request, excecao_id):
+    """
+    Editar exceção de jornada
+    """
+    
+    # Buscar exceção
+    from participante.models import ExcecaoJornada
+    try:
+        excecao = ExcecaoJornada.objects.get(pk=excecao_id)
+    except ExcecaoJornada.DoesNotExist:
+        messages.error(request, "Exceção não encontrada.")
+        return redirect('lojista:excecoes_jornada_list')
+    
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo')
+        data_inicio = request.POST.get('data_inicio')
+        data_fim = request.POST.get('data_fim')
+        horario_inicio = request.POST.get('horario_inicio')
+        horario_fim = request.POST.get('horario_fim')
+        justificativa = request.POST.get('justificativa', '').strip()
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Validações
+        if not tipo or not data_inicio or not justificativa:
+            messages.error(request, "Tipo, data de início e justificativa são obrigatórios.")
+        else:
+            try:
+                # Atualizar exceção
+                excecao.tipo = tipo
+                excecao.data_inicio = data_inicio
+                excecao.data_fim = data_fim if data_fim else None
+                excecao.horario_inicio = horario_inicio if horario_inicio else None
+                excecao.horario_fim = horario_fim if horario_fim else None
+                excecao.justificativa = justificativa
+                excecao.ativo = ativo
+                excecao.save()
+                
+                messages.success(
+                    request,
+                    f"Exceção atualizada com sucesso para {excecao.usuario.username}!"
+                )
+                return redirect('lojista:excecoes_jornada_list')
+                    
+            except Exception as e:
+                messages.error(request, f"Erro ao atualizar exceção: {str(e)}")
+    
+    # Tipos de exceção
+    tipos_excecao = ExcecaoJornada.TIPO_CHOICES
+    
+    context = {
+        'excecao': excecao,
+        'tipos_excecao': tipos_excecao,
+        'page_title': 'Editar Exceção de Jornada',
+    }
+    
+    return render(request, 'lojista/excecao_jornada_edit.html', context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def excecao_jornada_toggle_status(request, excecao_id):
+    """
+    Ativar/Inativar exceção de jornada via AJAX
+    """
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método não permitido'}, status=405)
+    
+    try:
+        from participante.models import ExcecaoJornada
+        excecao = ExcecaoJornada.objects.get(pk=excecao_id)
+        
+        # Alternar status
+        excecao.ativo = not excecao.ativo
+        excecao.save()
+        
+        status_texto = 'ativada' if excecao.ativo else 'inativada'
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Exceção {status_texto} com sucesso!',
+            'ativo': excecao.ativo
+        })
+        
+    except ExcecaoJornada.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Exceção não encontrada'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Erro: {str(e)}'}, status=500)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def gerenciar_colaboradores_pendentes(request):
+    """
+    View para gerenciar colaboradores pendentes de ativação.
+    
+    Funcionalidades:
+    - Lista colaboradores cadastrados mas não ativados
+    - Permite ativar colaborador com jornada e grupo
+    - Permite rejeitar colaborador (desativa)
+    - Configuração inicial de jornada e permissões
+    
+    Permissões: superuser, staff
+    Tags: gestao, colaboradores, rh, ativacao
+    """
+    from participante.models import Profile, UserRole, SystemRole
+    from participante.models import PostoTrabalho, TipoJornada, JornadaColaborador
+    from django.contrib.auth.models import Group
+    from django.db import transaction
+    
+    # Buscar colaboradores pendentes
+    colaboradores_pendentes = Profile.objects.filter(
+        is_colaborador=True,
+        status_ativo=False
+    ).select_related('user').order_by('dataCadastro')
+    
+    # Buscar colaboradores ativos para comparação
+    colaboradores_ativos = Profile.objects.filter(
+        is_colaborador=True,
+        status_ativo=True
+    ).select_related('user').order_by('-dataCadastro')[:10]
+    
+    # Dados para formulários
+    tipos_jornada = TipoJornada.objects.filter(ativo=True).order_by('nome')
+    roles = Group.objects.all().order_by('name')  # Usar grupos do Django em vez de SystemRole
+    grupos = Group.objects.all().order_by('name')
+    
+    if request.method == "POST":
+        action = request.POST.get('action')
+        colaborador_id = request.POST.get('colaborador_id')
+        
+        try:
+            colaborador = Profile.objects.get(id=colaborador_id, is_colaborador=True)
+            
+            if action == 'ativar':
+                with transaction.atomic():
+                    # Configurar jornada
+                    jornada_id = request.POST.get('tipo_jornada')
+                    if jornada_id:
+                        jornada = TipoJornada.objects.get(id=jornada_id)
+                        # Verificar se já existe jornada para este colaborador na data atual
+                        data_inicio = timezone.now().date()
+                        jornada_existente, created = JornadaColaborador.objects.get_or_create(
+                            colaborador=colaborador.user,
+                            data_inicio=data_inicio,
+                            defaults={'tipo_jornada': jornada}
+                        )
+                        # Se já existia, atualizar o tipo de jornada
+                        if not created:
+                            jornada_existente.tipo_jornada = jornada
+                            jornada_existente.save()
+                    
+                    # Configurar role/grupo
+                    role_id = request.POST.get('role')
+                    if role_id:
+                        grupo = Group.objects.get(id=role_id)
+                        colaborador.user.groups.add(grupo)
+                    
+                    # Ativar colaborador
+                    colaborador.status_ativo = True
+                    colaborador.save()
+                    
+                    messages.success(request, f"Colaborador {colaborador.nome} ativado com sucesso!")
+                    
+            elif action == 'rejeitar':
+                # Marcar como inativo e remover is_colaborador
+                colaborador.status_ativo = False
+                colaborador.is_colaborador = False
+                colaborador.save()
+                
+                # Desativar usuário
+                colaborador.user.is_active = False
+                colaborador.user.save()
+                
+                messages.warning(request, f"Colaborador {colaborador.nome} rejeitado e desativado.")
+                
+        except Profile.DoesNotExist:
+            messages.error(request, "Colaborador não encontrado.")
+        except Exception as e:
+            messages.error(request, f"Erro ao processar ação: {str(e)}")
+    
+    context = {
+        'colaboradores_pendentes': colaboradores_pendentes,
+        'colaboradores_ativos': colaboradores_ativos,
+        'tipos_jornada': tipos_jornada,
+        'roles': roles,
+        'grupos': grupos,
+    }
+    
+    return render(request, "lojista/colaboradores_pendentes.html", context)
+
+
+from participante.decorators import require_card_permission
+
+@login_required
+@require_card_permission('autorizar_lojista', redirect_url='lojista:homepage')
+def autorizar_lojistas(request):
+    """
+    View para gerenciar autorizações de lojistas
+    """
+    from django.db.models import Q
+    from django.contrib.auth.models import Group
+    from django.db import transaction
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    from .models import AutorizacaoLojista
+    
+    # Permissão já verificada pelo decorator @require_card_permission
+    
+    # Parâmetros de filtro e paginação
+    search_query = request.GET.get('search', '').strip()
+    page = request.GET.get('page', 1)
+    per_page = request.GET.get('per_page', 20)  # Itens por página
+    
+    # Query base para todos os lojistas
+    lojistas_queryset = Lojista.objects.all()
+    
+    # Aplicar filtro de busca se fornecido
+    if search_query:
+        lojistas_queryset = lojistas_queryset.filter(
+            Q(CNPJLojista__icontains=search_query) |
+            Q(fantasiaLojista__icontains=search_query) |
+            Q(razaoLojista__icontains=search_query)
+        )
+    
+    # Ordenar por fantasia
+    lojistas_queryset = lojistas_queryset.order_by('fantasiaLojista')
+    
+    # Aplicar paginação
+    paginator = Paginator(lojistas_queryset, per_page)
+    try:
+        lojistas_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        lojistas_paginados = paginator.page(1)
+    except EmptyPage:
+        lojistas_paginados = paginator.page(paginator.num_pages)
+    
+    # Buscar todos os lojistas organizados por status (sem paginação para os cards)
+    lojistas_pendentes = Lojista.objects.filter(status="Pendente").order_by('fantasiaLojista')
+    lojistas_autorizados = Lojista.objects.filter(status="Sim").order_by('fantasiaLojista')
+    lojistas_negados = Lojista.objects.filter(status="Não").order_by('fantasiaLojista')
+    lojistas_inativos = Lojista.objects.filter(status="Inativo").order_by('fantasiaLojista')
+    
+    if request.method == "POST":
+        action = request.POST.get('action')
+        lojista_id = request.POST.get('lojista_id')
+        novo_status = request.POST.get('novo_status')
+        observacao = request.POST.get('observacao', '')
+        
+        try:
+            lojista = Lojista.objects.get(id=lojista_id)
+            status_anterior = lojista.status
+            
+            if action == 'alterar_status':
+                # Validar se novo_status foi fornecido
+                if not novo_status or novo_status.strip() == '':
+                    messages.error(request, "Status não pode estar vazio.")
+                    return redirect('lojista:autorizar_lojistas')
+                
+                novo_status = novo_status.strip()
+                
+                # Validar observação para rejeições (apenas quando realmente rejeitando)
+                if novo_status == 'Não':
+                    observacao_limpa = observacao.strip() if observacao else ''
+                    if not observacao_limpa:
+                        messages.error(request, "É obrigatório informar o motivo da rejeição.")
+                        return redirect('lojista:autorizar_lojistas')
+                
+
+                
+                with transaction.atomic():
+                    # Registrar a autorização
+                    AutorizacaoLojista.objects.create(
+                        lojista=lojista,
+                        autorizado_por=request.user,
+                        status_anterior=status_anterior or '',
+                        status_novo=novo_status,
+                        observacao=observacao
+                    )
+                    
+                    # Atualizar o status do lojista
+                    lojista.status = novo_status
+                    lojista.autorizado_por = request.user
+                    lojista.save()
+                    
+                    messages.success(request, f"Status do lojista {lojista.fantasiaLojista} alterado para {novo_status}.")
+                    return redirect('lojista:autorizar_lojistas')
+                    
+        except Lojista.DoesNotExist:
+            messages.error(request, "Lojista não encontrado.")
+            return redirect('lojista:autorizar_lojistas')
+        except Exception as e:
+            messages.error(request, f"Erro ao processar autorização: {str(e)}")
+            return redirect('lojista:autorizar_lojistas')
+    
+    # Buscar histórico de autorizações
+    historico_autorizacoes = AutorizacaoLojista.objects.select_related('lojista', 'autorizado_por').order_by('-data_autorizacao')[:20]
+    
+    context = {
+        'lojistas_pendentes': lojistas_pendentes,
+        'lojistas_autorizados': lojistas_autorizados,
+        'lojistas_negados': lojistas_negados,
+        'lojistas_inativos': lojistas_inativos,
+        'lojistas_paginados': lojistas_paginados,
+        'historico_autorizacoes': historico_autorizacoes,
+        'search_query': search_query,
+        'per_page': per_page,
+    }
+    
+    return render(request, "lojista/autorizar_lojistas.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def cadastrar_colaboradores_massa(request):
+    """
+    View para cadastro em massa de colaboradores durante treinamentos/eventos.
+    
+    Funcionalidades:
+    - Cadastro múltiplo sem redirecionamento
+    - Lista de colaboradores cadastrados recentemente
+    - Suporte a URL com hash para acesso direto
+    - Interface otimizada para cadastros em lote
+    - QR Code pode direcionar para esta rota
+    
+    Permissões: superuser, staff
+    Tags: gestao, colaboradores, cadastro, massa, treinamento
+    """
+    from participante.forms import UserRegistrationForm, ProfileRegistrationForm
+    from participante.models import Profile
+    from django.contrib.auth.models import User
+    from django.contrib import messages
+    from django.db import transaction, IntegrityError
+    from django.urls import reverse
+    
+    # Verificar se usuário tem permissão
+    if not (request.user.is_superuser or request.user.is_staff):
+        if not user_has_card_permission(request.user, 'adicionar_colaboradores'):
+            messages.error(request, "Você não tem permissão para adicionar colaboradores.")
+            return redirect('lojista:homepage')
+    
+    # Buscar colaboradores cadastrados recentemente (últimos 10)
+    colaboradores_recentes = Profile.objects.filter(
+        is_colaborador=True
+    ).select_related('user').order_by('-dataCadastro')[:10]
+    
+    if request.method == "POST":
+        user_form = UserRegistrationForm(request.POST)
+        profile_form = ProfileRegistrationForm(request.POST, files=request.FILES)
+        
+        # Para colaboradores, definir valores padrão para campos obrigatórios
+        if 'sexo' not in request.POST:
+            profile_form.data = profile_form.data.copy()
+            profile_form.data['sexo'] = 'P'  # Prefiro não dizer
+        
+        if 'pergunta' not in request.POST:
+            profile_form.data = profile_form.data.copy()
+            profile_form.data['pergunta'] = 'liquida_teresina_2025'  # Valor padrão
+        
+        # Para colaboradores, não exigir password2 (confirmação de senha)
+        if 'password2' not in request.POST:
+            user_form.data = user_form.data.copy()
+            user_form.data['password2'] = user_form.data.get('password', '')  # Usar a mesma senha
+
+        # Get raw data to check for duplicates before full validation
+        username = user_form.data.get('username')
+        email = user_form.data.get('email')
+
+        if username and User.objects.filter(username=username).exists():
+            user_form.add_error('username', "Este CPF já está cadastrado no sistema.")
+        
+        if email and User.objects.filter(email=email).exists():
+            user_form.add_error('email', "Este e-mail já está cadastrado no sistema.")
+
+        # Now, validate both forms. If we added an error above, is_valid() will be False.
+        if user_form.is_valid() and profile_form.is_valid():
+            try:
+                with transaction.atomic():
+                    # If we get here, forms are valid and no duplicates were found
+                    new_user = user_form.save(commit=False)
+                    new_user.set_password(user_form.cleaned_data["password"])
+                    # Marcar como staff (colaborador)
+                    new_user.is_staff = True
+                    new_user.save()
+
+                    new_profile = profile_form.save(commit=False)
+                    # Formatar o CPF antes de salvar no Profile
+                    cpf_limpo = new_user.username
+                    cpf_formatado = f"{cpf_limpo[:3]}.{cpf_limpo[3:6]}.{cpf_limpo[6:9]}-{cpf_limpo[9:]}"
+                    new_profile.CPF = cpf_formatado
+                    new_profile.user = new_user
+                    
+                    # Marcar como colaborador
+                    new_profile.is_colaborador = True
+                    # Colaboradores começam com status inativo até serem configurados
+                    new_profile.status_ativo = False
+                    
+                    new_profile.save()
+
+                    messages.success(request, f"✅ Colaborador {new_profile.nome} cadastrado com sucesso!")
+                    
+                    # Limpar formulário para próximo cadastro
+                    user_form = UserRegistrationForm()
+                    profile_form = ProfileRegistrationForm()
+                    
+                    # Atualizar lista de colaboradores recentes
+                    colaboradores_recentes = Profile.objects.filter(
+                        is_colaborador=True
+                    ).select_related('user').order_by('-dataCadastro')[:10]
+
+            except Exception as e:
+                # Add a generic error if something unexpected happens during save
+                user_form.add_error(None, f"Ocorreu um erro inesperado durante o cadastro: {e}")
+        
+        # If we reach this point, it's because the forms were invalid from the start,
+        # or we added a duplicate error. Render the page again with the forms
+        # containing the error messages.
+        if not (user_form.is_valid() and profile_form.is_valid()):
+            # DEBUG: Mostrar erros específicos
+            error_details = []
+            
+            if not user_form.is_valid():
+                for field, errors in user_form.errors.items():
+                    for error in errors:
+                        error_details.append(f"User form - {field}: {error}")
+            
+            if not profile_form.is_valid():
+                for field, errors in profile_form.errors.items():
+                    for error in errors:
+                        error_details.append(f"Profile form - {field}: {error}")
+            
+            # Mostrar os erros específicos na mensagem
+            if error_details:
+                error_message = "Erros encontrados:<br/>" + "<br/>".join(error_details[:5])  # Limitar a 5 erros
+                messages.error(request, error_message)
+            else:
+                messages.error(request, "Erro no formulário. Por favor, corrija os erros indicados.")
+    else:
+        # For a GET request, display a blank form
+        user_form = UserRegistrationForm()
+        profile_form = ProfileRegistrationForm()
+    
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'colaboradores_recentes': colaboradores_recentes,
+        'total_cadastrados': colaboradores_recentes.count(),
+        'hash_url': request.GET.get('hash', ''),
+        'section': 'colaboradores_massa'
+    }
+    
+    return render(request, "lojista/colaboradores_massa.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def upload_colaboradores_lote(request):
+    """
+    View para upload em lote de colaboradores via planilha CSV/Excel.
+    
+    Funcionalidades:
+    - Upload de arquivo CSV/Excel com dados dos colaboradores
+    - Validação em lote dos dados
+    - Processamento assíncrono para grandes volumes
+    - Relatório detalhado de sucessos e erros
+    - Template para download da planilha modelo
+    - Suporte a diferentes formatos de arquivo
+    
+    Permissões: superuser, staff
+    Tags: gestao, colaboradores, upload, lote, planilha
+    """
+    from django.core.files.storage import default_storage
+    from django.core.files.base import ContentFile
+    from django.db import transaction
+    from django.contrib.auth.models import User
+    from participante.models import Profile
+    import csv
+    import io
+    from datetime import datetime
+    
+    # Verificar se usuário tem permissão
+    if not (request.user.is_superuser or request.user.is_staff):
+        if not user_has_card_permission(request.user, 'adicionar_colaboradores'):
+            messages.error(request, "Você não tem permissão para adicionar colaboradores.")
+            return redirect('lojista:homepage')
+    
+    if request.method == "POST":
+        uploaded_file = request.FILES.get('arquivo_colaboradores')
+        
+        if not uploaded_file:
+            messages.error(request, "Por favor, selecione um arquivo para upload.")
+        else:
+            # Validar tipo de arquivo
+            if not uploaded_file.name.endswith(('.csv', '.xlsx', '.xls')):
+                messages.error(request, "Formato de arquivo não suportado. Use CSV ou Excel.")
+            else:
+                try:
+                    # Processar arquivo CSV
+                    if uploaded_file.name.endswith('.csv'):
+                        # Decodificar arquivo CSV
+                        content = uploaded_file.read().decode('utf-8')
+                        csv_reader = csv.DictReader(io.StringIO(content))
+                        
+                        sucessos = 0
+                        erros = []
+                        
+                        for row_num, row in enumerate(csv_reader, start=2):  # Começar do 2 (linha 1 é cabeçalho)
+                            try:
+                                # Validar dados obrigatórios
+                                if not row.get('cpf') or not row.get('nome') or not row.get('email'):
+                                    erros.append(f"Linha {row_num}: CPF, nome e email são obrigatórios")
+                                    continue
+                                
+                                # Verificar se CPF já existe
+                                cpf_limpo = ''.join(filter(str.isdigit, row['cpf']))
+                                if User.objects.filter(username=cpf_limpo).exists():
+                                    erros.append(f"Linha {row_num}: CPF {row['cpf']} já cadastrado")
+                                    continue
+                                
+                                # Verificar se email já existe
+                                if User.objects.filter(email=row['email']).exists():
+                                    erros.append(f"Linha {row_num}: Email {row['email']} já cadastrado")
+                                    continue
+                                
+                                # Criar usuário
+                                with transaction.atomic():
+                                    user = User.objects.create_user(
+                                        username=cpf_limpo,
+                                        email=row['email'],
+                                        password=row.get('senha', '123456')  # Senha padrão
+                                    )
+                                    user.is_staff = True
+                                    user.save()
+                                    
+                                    # Criar perfil
+                                    profile = Profile.objects.create(
+                                        user=user,
+                                        nome=row['nome'],
+                                        CPF=f"{cpf_limpo[:3]}.{cpf_limpo[3:6]}.{cpf_limpo[6:9]}-{cpf_limpo[9:]}",
+                                        whatsapp=row.get('telefone', ''),
+                                        endereco=row.get('endereco', ''),
+                                        bairro=row.get('bairro', ''),
+                                        cidade=row.get('cidade', ''),
+                                        estado=row.get('estado', ''),
+                                        date_of_birth=datetime.strptime(row.get('data_nascimento', '1990-01-01'), '%Y-%m-%d').date() if row.get('data_nascimento') else None,
+                                        is_colaborador=True,
+                                        status_ativo=False,
+                                        sexo=row.get('sexo', 'P'),
+                                        pergunta='liquida_teresina_2025'
+                                    )
+                                    
+                                    sucessos += 1
+                                    
+                            except Exception as e:
+                                erros.append(f"Linha {row_num}: Erro - {str(e)}")
+                        
+                        # Mostrar resultados
+                        if sucessos > 0:
+                            messages.success(request, f"✅ {sucessos} colaborador(es) cadastrado(s) com sucesso!")
+                        
+                        if erros:
+                            error_msg = f"❌ {len(erros)} erro(s) encontrado(s):<br/>" + "<br/>".join(erros[:10])
+                            if len(erros) > 10:
+                                error_msg += f"<br/>... e mais {len(erros) - 10} erro(s)"
+                            messages.error(request, error_msg)
+                    
+                    else:
+                        messages.error(request, "Processamento de arquivos Excel será implementado em breve.")
+                        
+                except Exception as e:
+                    messages.error(request, f"Erro ao processar arquivo: {str(e)}")
+    
+    # Buscar estatísticas de uploads recentes
+    colaboradores_recentes = Profile.objects.filter(
+        is_colaborador=True
+    ).select_related('user').order_by('-dataCadastro')[:5]
+    
+    context = {
+        'colaboradores_recentes': colaboradores_recentes,
+        'total_cadastrados': colaboradores_recentes.count(),
+        'section': 'colaboradores_upload'
+    }
+    
+    return render(request, "lojista/colaboradores_upload.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def cadastrar_colaborador_rapido(request):
+    """
+    View para cadastro rápido de colaboradores com formulário minimalista.
+    
+    Funcionalidades:
+    - Formulário simplificado com apenas campos essenciais
+    - Cadastro rápido para situações urgentes
+    - Campos opcionais podem ser preenchidos posteriormente
+    - Interface otimizada para cadastros rápidos
+    - Redirecionamento para edição posterior
+    
+    Permissões: superuser, staff
+    Tags: gestao, colaboradores, cadastro, rapido, urgente
+    """
+    from participante.forms import UserRegistrationForm, ProfileRegistrationForm
+    from participante.models import Profile
+    from django.contrib.auth.models import User
+    from django.contrib import messages
+    from django.db import transaction, IntegrityError
+    from django.urls import reverse
+    
+    # Verificar se usuário tem permissão
+    if not (request.user.is_superuser or request.user.is_staff):
+        if not user_has_card_permission(request.user, 'adicionar_colaboradores'):
+            messages.error(request, "Você não tem permissão para adicionar colaboradores.")
+            return redirect('lojista:homepage')
+    
+    if request.method == "POST":
+        # Criar formulários com apenas campos essenciais
+        user_form = UserRegistrationForm(request.POST)
+        
+        # Para cadastro rápido, apenas campos essenciais
+        profile_data = {
+            'nome': request.POST.get('nome', ''),
+            'whatsapp': request.POST.get('whatsapp', ''),
+            'sexo': 'P',  # Padrão
+            'pergunta': 'liquida_teresina_2025',  # Padrão
+        }
+        
+        profile_form = ProfileRegistrationForm(profile_data)
+        
+        # Para colaboradores, não exigir password2 (confirmação de senha)
+        if 'password2' not in request.POST:
+            user_form.data = user_form.data.copy()
+            user_form.data['password2'] = user_form.data.get('password', '')  # Usar a mesma senha
+
+        # Get raw data to check for duplicates before full validation
+        username = user_form.data.get('username')
+        email = user_form.data.get('email')
+
+        if username and User.objects.filter(username=username).exists():
+            user_form.add_error('username', "Este CPF já está cadastrado no sistema.")
+        
+        if email and User.objects.filter(email=email).exists():
+            user_form.add_error('email', "Este e-mail já está cadastrado no sistema.")
+
+        # Validar apenas campos essenciais
+        if user_form.is_valid() and profile_data['nome']:
+            try:
+                with transaction.atomic():
+                    # If we get here, forms are valid and no duplicates were found
+                    new_user = user_form.save(commit=False)
+                    new_user.set_password(user_form.cleaned_data["password"])
+                    # Marcar como staff (colaborador)
+                    new_user.is_staff = True
+                    new_user.save()
+
+                    new_profile = Profile.objects.create(
+                        user=new_user,
+                        nome=profile_data['nome'],
+                        whatsapp=profile_data['whatsapp'],
+                        CPF=f"{new_user.username[:3]}.{new_user.username[3:6]}.{new_user.username[6:9]}-{new_user.username[9:]}",
+                        is_colaborador=True,
+                        status_ativo=False,
+                        sexo=profile_data['sexo'],
+                        pergunta=profile_data['pergunta']
+                    )
+
+                    messages.success(request, f"✅ Colaborador {new_profile.nome} cadastrado rapidamente! Complete os dados posteriormente.")
+                    
+                    # Redirecionar para edição do perfil
+                    return redirect('participante:gestao_colaboradores')
+
+            except Exception as e:
+                # Add a generic error if something unexpected happens during save
+                user_form.add_error(None, f"Ocorreu um erro inesperado durante o cadastro: {e}")
+        
+        # If we reach this point, it's because the forms were invalid from the start,
+        # or we added a duplicate error. Render the page again with the forms
+        # containing the error messages.
+        if not user_form.is_valid() or not profile_data['nome']:
+            # DEBUG: Mostrar erros específicos
+            error_details = []
+            
+            if not user_form.is_valid():
+                for field, errors in user_form.errors.items():
+                    for error in errors:
+                        error_details.append(f"User form - {field}: {error}")
+            
+            if not profile_data['nome']:
+                error_details.append("Nome é obrigatório")
+            
+            # Mostrar os erros específicos na mensagem
+            if error_details:
+                error_message = "Erros encontrados:<br/>" + "<br/>".join(error_details[:5])  # Limitar a 5 erros
+                messages.error(request, error_message)
+            else:
+                messages.error(request, "Erro no formulário. Por favor, corrija os erros indicados.")
+    else:
+        # For a GET request, display a blank form
+        user_form = UserRegistrationForm()
+    
+    context = {
+        'user_form': user_form,
+        'section': 'colaboradores_rapido'
+    }
+    
+    return render(request, "lojista/colaboradores_rapido.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def criar_url_treinamento(request):
+    """
+    View para criar nova URL de treinamento.
+    
+    Funcionalidades:
+    - Criar URL com hash único
+    - Gerar QR Code automaticamente
+    - Configurar título e descrição
+    - Controle de ativação
+    
+    Permissões: superuser, staff
+    Tags: treinamento, url, qr-code, colaboradores
+    """
+    from participante.models import URLTreinamento
+    import uuid
+    
+    if request.method == "POST":
+        titulo = request.POST.get('titulo')
+        descricao = request.POST.get('descricao')
+        
+        if titulo and descricao:
+            # Gerar hash único
+            hash_url = str(uuid.uuid4())[:8]
+            
+            # Criar URL de treinamento
+            url_treinamento = URLTreinamento.objects.create(
+                hash_url=hash_url,
+                titulo=titulo,
+                descricao=descricao,
+                criado_por=request.user
+            )
+            
+            messages.success(request, f"✅ URL de treinamento criada com sucesso!")
+            return redirect('lojista:gerenciar_urls_treinamento')
+        else:
+            messages.error(request, "Por favor, preencha todos os campos obrigatórios.")
+    
+    context = {
+        'section': 'criar_url_treinamento'
+    }
+    
+    return render(request, "lojista/criar_url_treinamento.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def gerenciar_urls_treinamento(request):
+    """
+    View para gerenciar URLs de treinamento.
+    
+    Funcionalidades:
+    - Listar todas as URLs criadas
+    - Ativar/desativar URLs
+    - Visualizar estatísticas
+    - Gerar QR Codes
+    
+    Permissões: superuser, staff
+    Tags: treinamento, gerenciar, urls, colaboradores
+    """
+    from participante.models import URLTreinamento
+    
+    # Buscar URLs de treinamento
+    urls_treinamento = URLTreinamento.objects.all().order_by('-data_criacao')
+    
+    # Processar ações
+    if request.method == "POST":
+        url_id = request.POST.get('url_id')
+        action = request.POST.get('action')
+        
+        if url_id and action:
+            try:
+                url_treinamento = URLTreinamento.objects.get(id=url_id)
+                
+                if action == 'ativar':
+                    url_treinamento.ativar()
+                    messages.success(request, f"✅ URL '{url_treinamento.titulo}' ativada!")
+                elif action == 'desativar':
+                    url_treinamento.desativar()
+                    messages.success(request, f"✅ URL '{url_treinamento.titulo}' desativada!")
+                elif action == 'excluir':
+                    url_treinamento.delete()
+                    messages.success(request, f"✅ URL '{url_treinamento.titulo}' excluída!")
+                
+                return redirect('lojista:gerenciar_urls_treinamento')
+                
+            except URLTreinamento.DoesNotExist:
+                messages.error(request, "URL de treinamento não encontrada.")
+    
+    context = {
+        'urls_treinamento': urls_treinamento,
+        'section': 'gerenciar_urls_treinamento'
+    }
+    
+    return render(request, "lojista/gerenciar_urls_treinamento.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def colaboradores_url_treinamento(request, hash_url):
+    """
+    View para visualizar colaboradores cadastrados via URL específica.
+    
+    Funcionalidades:
+    - Listar colaboradores por URL
+    - Estatísticas de cadastro
+    - Exportar dados
+    
+    Permissões: superuser, staff
+    Tags: treinamento, colaboradores, estatisticas
+    """
+    from participante.models import URLTreinamento
+    
+    try:
+        url_treinamento = URLTreinamento.objects.get(hash_url=hash_url)
+        colaboradores = url_treinamento.colaboradores_cadastrados.all().order_by('-dataCadastro')
+        
+        context = {
+            'url_treinamento': url_treinamento,
+            'colaboradores': colaboradores,
+            'total_colaboradores': colaboradores.count(),
+            'section': 'colaboradores_url_treinamento'
+        }
+        
+        return render(request, "lojista/colaboradores_url_treinamento.html", context)
+        
+    except URLTreinamento.DoesNotExist:
+        messages.error(request, "URL de treinamento não encontrada.")
+        return redirect('lojista:gerenciar_urls_treinamento')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def gestao_colaboradores_dashboard(request):
+    """
+    Dashboard principal de gestão de colaboradores
+    - Ações rápidas
+    - Acesso a todas as funcionalidades
+    - Sem estatísticas (conforme solicitado)
+    
+    Permissões: superuser, staff
+    Tags: gestao, colaboradores, dashboard, rh
+    """
+    from participante.models import Profile, UserRole, SystemRole
+    from participante.models import PostoTrabalho, TipoJornada, JornadaColaborador
+    from django.contrib.auth.models import Group
+    from django.db.models import Count
+    
+    # Buscar dados para contexto
+    colaboradores_pendentes = Profile.objects.filter(
+        is_colaborador=True,
+        status_ativo=False
+    ).count()
+    
+    colaboradores_ativos = Profile.objects.filter(
+        is_colaborador=True,
+        status_ativo=True
+    ).count()
+    
+    # Dados para formulários
+    tipos_jornada = TipoJornada.objects.filter(ativo=True).order_by('nome')
+    roles = Group.objects.all().order_by('name')  # Usar grupos do Django
+    grupos = Group.objects.all().order_by('name')
+    postos_trabalho = PostoTrabalho.objects.all().order_by('nome')
+    
+    context = {
+        'colaboradores_pendentes_count': colaboradores_pendentes,
+        'colaboradores_ativos_count': colaboradores_ativos,
+        'tipos_jornada': tipos_jornada,
+        'roles': roles,
+        'grupos': grupos,
+        'postos_trabalho': postos_trabalho,
+    }
+    
+    return render(request, "lojista/gestao_colaboradores_dashboard.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def configurar_colaborador_unificado(request, colaborador_id=None):
+    """
+    Página unificada para configurar colaborador
+    - Criar novo colaborador
+    - Editar colaborador existente
+    - Configurar tudo de uma vez
+    
+    Permissões: superuser, staff
+    Tags: gestao, colaboradores, configuracao, rh
+    """
+    from participante.models import Profile, UserRole, SystemRole
+    from participante.models import PostoTrabalho, TipoJornada, JornadaColaborador
+    from django.contrib.auth.models import Group
+    from django.db import transaction
+    from django.utils import timezone
+    
+    # Dados para formulários
+    tipos_jornada = TipoJornada.objects.filter(ativo=True).order_by('nome')
+    roles = Group.objects.all().order_by('name')  # Usar grupos do Django
+    grupos = Group.objects.all().order_by('name')
+    postos_trabalho = PostoTrabalho.objects.all().order_by('nome')
+    
+    colaborador = None
+    is_edit = False
+    
+    if colaborador_id:
+        try:
+            colaborador = Profile.objects.get(id=colaborador_id, is_colaborador=True)
+            is_edit = True
+        except Profile.DoesNotExist:
+            messages.error(request, "Colaborador não encontrado.")
+            return redirect('lojista:gestao_colaboradores_dashboard')
+    
+    if request.method == "POST":
+        action = request.POST.get('action')
+        
+        if action == 'salvar':
+            try:
+                with transaction.atomic():
+                    # Dados básicos
+                    nome = request.POST.get('nome')
+                    email = request.POST.get('email')
+                    whatsapp = request.POST.get('whatsapp')
+                    
+                    # Configuração de trabalho
+                    posto_id = request.POST.get('posto_trabalho')
+                    jornada_id = request.POST.get('tipo_jornada')
+                    role_id = request.POST.get('role')
+                    data_inicio = request.POST.get('data_inicio')
+                    status_ativo = request.POST.get('status_ativo') == 'on'
+                    
+                    # Configurações de jornada
+                    requer_jornada = request.POST.get('requer_jornada') == 'on'
+                    jornada_flexivel = request.POST.get('jornada_flexivel') == 'on'
+                    
+                    if is_edit and colaborador:
+                        # Atualizar colaborador existente
+                        colaborador.nome = nome
+                        colaborador.whatsapp = whatsapp
+                        colaborador.status_ativo = status_ativo
+                        colaborador.requer_jornada = requer_jornada
+                        colaborador.jornada_flexivel = jornada_flexivel
+                        
+                        # Atualizar posto de trabalho
+                        if posto_id:
+                            posto = PostoTrabalho.objects.get(id=posto_id)
+                            colaborador.posto_trabalho = posto
+                        
+                        colaborador.save()
+                        
+                        # Atualizar email do usuário
+                        colaborador.user.email = email
+                        colaborador.user.save()
+                        
+                        # Configurar jornada
+                        if jornada_id and data_inicio:
+                            # Remover jornadas antigas
+                            JornadaColaborador.objects.filter(colaborador=colaborador.user).delete()
+                            
+                            # Criar nova jornada
+                            jornada = TipoJornada.objects.get(id=jornada_id)
+                            JornadaColaborador.objects.create(
+                                colaborador=colaborador.user,
+                                tipo_jornada=jornada,
+                                data_inicio=data_inicio
+                            )
+                        
+                        # Configurar role
+                        if role_id:
+                            # Remover roles antigas
+                            UserRole.objects.filter(user=colaborador.user).delete()
+                            
+                            # Configurar grupo
+                            grupo = Group.objects.get(id=role_id)
+                            colaborador.user.groups.clear()  # Remove grupos antigos
+                            colaborador.user.groups.add(grupo)  # Adiciona novo grupo
+                        
+                        messages.success(request, f"Colaborador {colaborador.nome} atualizado com sucesso!")
+                        
+                    else:
+                        # Criar novo colaborador (implementar se necessário)
+                        messages.info(request, "Funcionalidade de criação será implementada em breve.")
+                    
+                    return redirect('lojista:gestao_colaboradores_dashboard')
+                    
+            except Exception as e:
+                messages.error(request, f"Erro ao salvar colaborador: {str(e)}")
+        
+        elif action == 'ativar':
+            if colaborador:
+                try:
+                    with transaction.atomic():
+                        colaborador.status_ativo = True
+                        colaborador.save()
+                        messages.success(request, f"Colaborador {colaborador.nome} ativado com sucesso!")
+                        return redirect('lojista:gestao_colaboradores_dashboard')
+                except Exception as e:
+                    messages.error(request, f"Erro ao ativar colaborador: {str(e)}")
+        
+        elif action == 'rejeitar':
+            if colaborador:
+                try:
+                    with transaction.atomic():
+                        colaborador.status_ativo = False
+                        colaborador.is_colaborador = False
+                        colaborador.save()
+                        
+                        colaborador.user.is_active = False
+                        colaborador.user.save()
+                        
+                        messages.warning(request, f"Colaborador {colaborador.nome} rejeitado e desativado.")
+                        return redirect('lojista:gestao_colaboradores_dashboard')
+                except Exception as e:
+                    messages.error(request, f"Erro ao rejeitar colaborador: {str(e)}")
+    
+    context = {
+        'colaborador': colaborador,
+        'is_edit': is_edit,
+        'tipos_jornada': tipos_jornada,
+        'roles': roles,
+        'grupos': grupos,
+        'postos_trabalho': postos_trabalho,
+    }
+    
+    return render(request, "lojista/configurar_colaborador_unificado.html", context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def buscar_lojista_ajax(request):
+    """
+    View AJAX para buscar lojista por CNPJ exatamente como foi digitado
+    """
+    from django.http import JsonResponse
+    
+    cnpj = request.GET.get('cnpj', '').strip()
+    
+    
+    if not cnpj:
+        return JsonResponse({
+            'success': False,
+            'message': 'CNPJ não fornecido'
+        })
+    
+    try:
+        # Buscar lojista - busca exata com o CNPJ exatamente como foi digitado
+        lojista = Lojista.objects.filter(CNPJLojista=cnpj).first()
+        
+        if lojista:
+            # Busca exata - sempre será encontrado_exato = True
+            encontrado_exato = True    
+            # Log para debug
+           
+            
+            return JsonResponse({
+                'success': True,
+                'encontrado_exato': encontrado_exato,
+                'cnpj_buscado': cnpj,
+                'cnpj_encontrado': lojista.CNPJLojista,
+                'lojista': {
+                    'id': lojista.id,
+                    'cnpj': lojista.CNPJLojista,
+                    'razaoLojista': lojista.razaoLojista,
+                    'fantasiaLojista': lojista.fantasiaLojista,
+                    'status': lojista.status,
+                    'telefone': lojista.telefone or '',
+                    'endereco': lojista.endereco or ''
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Lojista não encontrado'
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro ao buscar lojista: {str(e)}'
+        })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+@require_POST
+def cadastrar_lojista_ajax(request):
+    """
+    View AJAX para cadastrar novo lojista
+    """
+    from django.http import JsonResponse
+    from django.db import transaction
+
+    
+    
+    try:
+        cnpj = request.POST.get('cnpj', '').strip()
+        razao_social = request.POST.get('razao_social', '').strip()
+        nome_fantasia = request.POST.get('nome_fantasia', '').strip()
+        telefone = request.POST.get('telefone', '').strip()
+        endereco = request.POST.get('endereco', '').strip()
+        ramo_atividade_id = request.POST.get('ramo_atividade_id', '').strip()
+        localizacao_id = request.POST.get('localizacao_id', '').strip()
+
+        print(f"Antes e limpar {cnpj}")
+        
+        # Validações
+        if not cnpj or not razao_social or not nome_fantasia:
+            return JsonResponse({
+                'success': False,
+                'message': 'CNPJ, Razão Social e Nome Fantasia são obrigatórios'
+            })
+        
+        # Limpar CNPJ e aplicar máscara
+        cnpj_limpo = ''.join(filter(str.isdigit, cnpj))
+        
+        
+        if len(cnpj_limpo) != 14:
+            return JsonResponse({
+                'success': False,
+                'message': 'CNPJ deve ter 14 dígitos'
+            })
+        
+        # Aplicar máscara ao CNPJ (formato XX.XXX.XXX/XXXX-XX)
+        cnpj_formatado = f"{cnpj_limpo[:2]}.{cnpj_limpo[2:5]}.{cnpj_limpo[5:8]}/{cnpj_limpo[8:12]}-{cnpj_limpo[12:]}"
+
+       
+
+        
+        
+        # Verificar se já existe
+        if Lojista.objects.filter(CNPJLojista=cnpj_formatado).exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'Lojista com este CNPJ já está cadastrado'
+            })
+        
+        # Buscar ramo de atividade e localização
+        ramo_atividade = None
+        if ramo_atividade_id:
+            try:
+                ramo_atividade = RamoAtividade.objects.get(id=ramo_atividade_id, ativo=True)
+            except RamoAtividade.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ramo de atividade selecionado não existe ou está inativo'
+                })
+        
+        localizacao = None
+        if localizacao_id:
+            try:
+                localizacao = Localizacao.objects.get(id=localizacao_id)
+            except Localizacao.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Localização selecionada não existe'
+                })
+
+        with transaction.atomic():
+            # Criar novo lojista
+            novo_lojista = Lojista.objects.create(
+                CNPJLojista=cnpj_formatado,
+                razaoLojista=razao_social,
+                fantasiaLojista=nome_fantasia,
+                telefone=telefone,
+                endereco=endereco,
+                ramoAtividade=ramo_atividade,
+                localizacao=localizacao,
+                status='Pendente',  # Status inicial
+                cadastrado_por=request.user
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Lojista cadastrado com sucesso',
+                'lojista': {
+                    'id': novo_lojista.id,
+                    'cnpj': novo_lojista.CNPJLojista,
+                    'razaoLojista': novo_lojista.razaoLojista,
+                    'fantasiaLojista': novo_lojista.fantasiaLojista,
+                    'status': novo_lojista.status,
+                    'telefone': novo_lojista.telefone or '',
+                    'endereco': novo_lojista.endereco or '',
+                    'ramoAtividade': novo_lojista.ramoAtividade.atividade if novo_lojista.ramoAtividade else '',
+                    'localizacao': novo_lojista.localizacao.nome if novo_lojista.localizacao else ''
+                }
+            })
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro ao cadastrar lojista: {str(e)}'
+        })
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def finalizar_jornadas_automaticas_manual(request):
+    """
+    Finaliza jornadas automaticamente (botão manual para usuários autorizados)
+    """
+    
+    if request.method == "POST":
+        try:
+            from participante.models import RegistroJornada, JornadaColaborador
+            from django.contrib.sessions.models import Session
+            from datetime import datetime, time, timedelta
+            from django.utils import timezone
+            
+            agora = timezone.now()
+            jornadas_finalizadas = 0
+            usuarios_deslogados = 0
+            
+            print(f"🔍 Executando finalização manual de jornadas - {agora.strftime('%d/%m/%Y %H:%M')}")
+            
+            # Buscar todas as jornadas ativas
+            jornadas_ativas = RegistroJornada.objects.filter(
+                horario_fim__isnull=True,
+                status='ATIVA'
+            )
+            
+            for registro in jornadas_ativas:
+                try:
+                    # Buscar a jornada atribuída ao colaborador
+                    jornada_atribuida = JornadaColaborador.get_jornada_ativa(registro.user)
+                    
+                    if not jornada_atribuida:
+                        print(f"⚠️ Usuário {registro.user.username} não tem jornada atribuída - finalizando com horário atual")
+                        registro.horario_fim = agora
+                        registro.status = 'FINALIZADA'
+                        registro.save()
+                        jornadas_finalizadas += 1
+                        usuarios_deslogados += 1
+                        continue
+                    
+                    tipo_jornada = jornada_atribuida.tipo_jornada
+                    
+                    # Calcular horário limite (fim da jornada + tolerância)
+                    hora_fim_jornada = tipo_jornada.hora_fim
+                    tolerancia_minutos = tipo_jornada.tolerancia_saida
+                    
+                    # CORREÇÃO: Usar a data de início da jornada, não a data de hoje
+                    data_inicio_jornada = registro.horario_inicio.date()
+                    fim_jornada = datetime.combine(data_inicio_jornada, hora_fim_jornada)
+                    
+                    # Adicionar tolerância
+                    limite_final = fim_jornada + timedelta(minutes=tolerancia_minutos)
+                    
+                    # Se já passou do limite, finalizar a jornada
+                    # CORREÇÃO: Usar timezone-aware para comparação
+                    from django.utils import timezone
+                    limite_final_aware = timezone.make_aware(limite_final)
+                    
+                    if agora > limite_final_aware:
+                        print(f"⏰ Finalizando jornada de {registro.user.username}")
+                        print(f"   - Data início: {data_inicio_jornada}")
+                        print(f"   - Horário fim jornada: {hora_fim_jornada}")
+                        print(f"   - Tolerância: {tolerancia_minutos} min")
+                        print(f"   - Limite final: {limite_final_aware.strftime('%d/%m/%Y %H:%M')}")
+                        print(f"   - Horário atual: {agora.strftime('%d/%m/%Y %H:%M')}")
+                        
+                        # Finalizar a jornada usando o método do modelo
+                        registro.horario_fim = timezone.make_aware(fim_jornada)
+                        registro.finalizar(finalizada_por=request.user, deslogar_usuario=True)
+                        jornadas_finalizadas += 1
+                        usuarios_deslogados += 1
+                        
+                        # Limpar posto de trabalho
+                        try:
+                            from participante.views import limpar_posto_trabalho
+                            limpar_posto_trabalho(registro.user)
+                        except Exception as e:
+                            print(f"   - Erro ao limpar posto: {e}")
+                        
+                        print(f"✅ Jornada finalizada para {registro.user.username}")
+                        
+                except Exception as e:
+                    print(f"❌ Erro ao processar jornada de {registro.user.username}: {e}")
+            
+            print(f"🏁 Finalização manual concluída - {jornadas_finalizadas} jornadas finalizadas (usuários deslogados automaticamente)")
+            
+            messages.success(
+                request, 
+                f"Finalização automática executada! {jornadas_finalizadas} jornadas finalizadas, {usuarios_deslogados} usuários deslogados."
+            )
+            
+            # Log da ação
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"Finalização manual de jornadas executada por {request.user.username}: "
+                f"{jornadas_finalizadas} jornadas finalizadas, {usuarios_deslogados} usuários deslogados"
+            )
+            
+        except Exception as e:
+            messages.error(
+                request, 
+                f"Erro ao executar finalização automática: {str(e)}"
+            )
+            
+            # Log do erro
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Erro na finalização manual por {request.user.username}: {str(e)}"
+            )
+    
+    return redirect('lojista:jornadas_gestao')
+
+
+
+@require_http_methods(["GET"])
+def buscar_ramos_atividade_ajax(request):
+    """
+    View AJAX para buscar ramos de atividade disponíveis
+    """
+    from django.http import JsonResponse
+    
+    try:
+        ramos = RamoAtividade.objects.filter(ativo=True).order_by('atividade')
+        ramos_data = [{'id': ramo.id, 'nome': ramo.atividade} for ramo in ramos]
+        
+        return JsonResponse({
+            'success': True,
+            'ramos': ramos_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro ao buscar ramos de atividade: {str(e)}'
+        })
+
+
+@require_http_methods(["GET"])
+def buscar_localizacoes_ajax(request):
+    """
+    View AJAX para buscar localizações disponíveis
+    """
+    from django.http import JsonResponse
+    
+    try:
+        localizacoes = Localizacao.objects.all().order_by('nome')
+        localizacoes_data = [{'id': loc.id, 'nome': loc.nome} for loc in localizacoes]
+        
+        return JsonResponse({
+            'success': True,
+            'localizacoes': localizacoes_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Erro ao buscar localizações: {str(e)}'
+        })
+
+
+@user_passes_test(can_manage_journey_records)
+def gestao_registros_jornada(request):
+    """
+    Gestão completa de registros de jornada
+    - Visualizar todos os registros
+    - Editar horários
+    - Finalizar jornadas esquecidas
+    - Gerenciar status
+    
+    Permissões: superuser, staff, grupo 'Suporte', grupo 'Gerente Solve'
+    Tags: gestao, jornada, registros, rh
+    """
+    from participante.models import RegistroJornada, Profile, PostoTrabalho
+    from django.db.models import Q
+    from django.utils import timezone
+    from datetime import datetime, timedelta
+    
+    # Filtros
+    status_filter = request.GET.get('status', '')
+    colaborador_filter = request.GET.get('colaborador', '')
+    posto_filter = request.GET.get('posto', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    apenas_ativas = request.GET.get('apenas_ativas', '') == 'on'
+
+    # Normalização de CPF informado no filtro (aceita com ou sem máscara)
+    cpf_masked_from_digits = None
+    if colaborador_filter:
+        digits_only = ''.join(ch for ch in colaborador_filter if ch.isdigit())
+        if len(digits_only) == 11:
+            cpf_masked_from_digits = f"{digits_only[0:3]}.{digits_only[3:6]}.{digits_only[6:9]}-{digits_only[9:11]}"
+    
+    # Buscar registros apenas de colaboradores (is_staff e is_colaborador)
+    registros = RegistroJornada.objects.select_related(
+        'user__profile', 'posto_trabalho'
+    ).filter(
+        user__is_staff=True,
+        user__profile__is_colaborador=True
+    ).order_by('user__id', 'horario_inicio')
+    
+    # Aplicar filtros
+    if status_filter:
+        registros = registros.filter(status=status_filter)
+    
+    if colaborador_filter:
+        cpf_term = cpf_masked_from_digits or colaborador_filter
+        registros = registros.filter(
+            Q(user__first_name__icontains=colaborador_filter) |
+            Q(user__last_name__icontains=colaborador_filter) |
+            Q(user__username__icontains=colaborador_filter) |
+            Q(user__profile__CPF__icontains=cpf_term) |
+            Q(user__profile__nome__icontains=colaborador_filter)
+        )
+    
+    if posto_filter:
+        registros = registros.filter(posto_trabalho__id=posto_filter)
+    
+    # Validação e aplicação de intervalo de datas (corrige se invertido)
+    data_inicio_dt = None
+    data_fim_dt = None
+    if data_inicio:
+        try:
+            data_inicio_dt = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+        except ValueError:
+            data_inicio_dt = None
+    if data_fim:
+        try:
+            data_fim_dt = datetime.strptime(data_fim, '%Y-%m-%d').date()
+        except ValueError:
+            data_fim_dt = None
+
+    if data_inicio_dt and data_fim_dt and data_inicio_dt > data_fim_dt:
+        # corrige ordem invertida
+        data_inicio_dt, data_fim_dt = data_fim_dt, data_inicio_dt
+    
+    if data_inicio_dt:
+        registros = registros.filter(horario_inicio__date__gte=data_inicio_dt)
+    if data_fim_dt:
+        registros = registros.filter(horario_inicio__date__lte=data_fim_dt)
+    
+    if apenas_ativas:
+        registros = registros.filter(status='ATIVA')
+    
+    # Paginação
+    from django.core.paginator import Paginator
+    paginator = Paginator(registros, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Estatísticas
+    total_registros = registros.count()
+    registros_ativos = registros.filter(status='ATIVA').count()
+    registros_finalizados = registros.filter(status='FINALIZADA').count()
+    registros_pausados = registros.filter(status='PAUSA').count()
+    
+    # Dados para filtros - apenas colaboradores
+    colaboradores = Profile.objects.filter(
+        is_colaborador=True,
+        user__is_staff=True
+    ).order_by('user__first_name')
+    postos = PostoTrabalho.objects.all().order_by('nome')
+    
+    context = {
+        'page_obj': page_obj,
+        'total_registros': total_registros,
+        'registros_ativos': registros_ativos,
+        'registros_finalizados': registros_finalizados,
+        'registros_pausados': registros_pausados,
+        'colaboradores': colaboradores,
+        'postos': postos,
+        'status_filter': status_filter,
+        'colaborador_filter': colaborador_filter,
+        'posto_filter': posto_filter,
+        'data_inicio': data_inicio_dt.strftime('%Y-%m-%d') if data_inicio_dt else data_inicio,
+        'data_fim': data_fim_dt.strftime('%Y-%m-%d') if data_fim_dt else data_fim,
+        'apenas_ativas': apenas_ativas,
+        'has_filters': bool(status_filter or colaborador_filter or posto_filter or data_inicio or data_fim or apenas_ativas),
+    }
+    
+    return render(request, "lojista/gestao_registros_jornada.html", context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def editar_registro_jornada(request, registro_id):
+    """
+    Editar um registro de jornada específico
+    - Corrigir horários
+    - Alterar status
+    - Adicionar observações
+    
+    Permissões: superuser, staff, grupo 'Suporte', grupo 'Gerente Solve'
+    Tags: gestao, jornada, editar, rh
+    """
+    from participante.models import RegistroJornada
+    from django.utils import timezone
+    from datetime import datetime
+    
+    try:
+        registro = RegistroJornada.objects.get(id=registro_id)
+    except RegistroJornada.DoesNotExist:
+        messages.error(request, "Registro de jornada não encontrado.")
+        return redirect('lojista:gestao_registros_jornada')
+    
+    # Verificar se há ação via GET (para ações rápidas)
+    action = request.GET.get('action')
+    if action:
+        if action == 'finalizar':
+            registro.finalizar(finalizada_por=request.user)
+            messages.success(request, "Jornada finalizada com sucesso!")
+            return redirect('lojista:gestao_registros_jornada')
+        
+        elif action == 'pausar':
+            registro.pausar()
+            messages.success(request, "Jornada pausada com sucesso!")
+            return redirect('lojista:gestao_registros_jornada')
+        
+        elif action == 'retomar':
+            registro.retomar()
+            messages.success(request, "Jornada retomada com sucesso!")
+            return redirect('lojista:gestao_registros_jornada')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'salvar':
+            try:
+                # Horários
+                horario_inicio_str = request.POST.get('horario_inicio')
+                horario_fim_str = request.POST.get('horario_fim')
+                status = request.POST.get('status')
+                observacoes = request.POST.get('observacoes', '')
+                
+                # Converter strings para datetime
+                if horario_inicio_str:
+                    registro.horario_inicio = datetime.fromisoformat(horario_inicio_str.replace('Z', '+00:00'))
+                
+                if horario_fim_str:
+                    registro.horario_fim = datetime.fromisoformat(horario_fim_str.replace('Z', '+00:00'))
+                else:
+                    registro.horario_fim = None
+                
+                registro.status = status
+                registro.observacoes = observacoes
+                registro.ultimo_update = timezone.now()
+                
+                # Se foi finalizada, registrar quem finalizou
+                if status == 'FINALIZADA' and not registro.horario_fim:
+                    registro.horario_fim = timezone.now()
+                    registro.finalizada_por = request.user
+                    # Deslogar o usuário se atender aos critérios
+                    if registro._deve_deslogar_usuario(request.user):
+                        registro._deslogar_usuario()
+                
+                registro.save()
+                messages.success(request, "Registro de jornada atualizado com sucesso!")
+                return redirect('lojista:gestao_registros_jornada')
+                
+            except Exception as e:
+                messages.error(request, f"Erro ao atualizar registro: {str(e)}")
+        
+        elif action == 'finalizar':
+            registro.finalizar(finalizada_por=request.user, deslogar_usuario=True)
+            messages.success(request, "Jornada finalizada com sucesso!")
+            return redirect('lojista:gestao_registros_jornada')
+        
+        elif action == 'pausar':
+            registro.pausar()
+            messages.success(request, "Jornada pausada com sucesso!")
+            return redirect('lojista:gestao_registros_jornada')
+        
+        elif action == 'retomar':
+            registro.retomar()
+            messages.success(request, "Jornada retomada com sucesso!")
+            return redirect('lojista:gestao_registros_jornada')
+    
+    # Buscar jornada configurada do colaborador
+    jornada_configurada = None
+    try:
+        # Buscar jornada ativa do colaborador para a data do registro
+        data_registro = registro.horario_inicio.date()
+        jornada_configurada = JornadaColaborador.objects.filter(
+            colaborador=registro.user,
+            ativo=True,
+            data_inicio__lte=data_registro
+        ).filter(
+            Q(data_fim__isnull=True) | Q(data_fim__gte=data_registro)
+        ).select_related('tipo_jornada').first()
+    except Exception:
+        pass  # Se não conseguir buscar, continua sem a informação
+    
+    context = {
+        'registro': registro,
+        'jornada_configurada': jornada_configurada,
+    }
+    
+    return render(request, "lojista/editar_registro_jornada.html", context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def finalizar_jornadas_esquecidas(request):
+    """
+    Finalizar jornadas que foram esquecidas (ativas há mais de 24h)
+    
+    Permissões: superuser, staff, grupo 'Suporte', grupo 'Gerente Solve'
+    Tags: gestao, jornada, finalizar, rh
+    """
+    from participante.models import RegistroJornada
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    if request.method == 'POST':
+        # Buscar jornadas ativas há mais de 24h - apenas colaboradores
+        limite_24h = timezone.now() - timedelta(hours=24)
+        jornadas_esquecidas = RegistroJornada.objects.filter(
+            status='ATIVA',
+            horario_inicio__lt=limite_24h,
+            user__is_staff=True,
+            user__profile__is_colaborador=True
+        )
+        
+        count = 0
+        for jornada in jornadas_esquecidas:
+            jornada.finalizar(finalizada_por=request.user, deslogar_usuario=True)
+            count += 1
+        
+        if count > 0:
+            messages.success(request, f"{count} jornada(s) finalizada(s) automaticamente!")
+        else:
+            messages.info(request, "Nenhuma jornada esquecida encontrada.")
+        
+        return redirect('lojista:gestao_registros_jornada')
+    
+    # Mostrar preview das jornadas que seriam finalizadas - apenas colaboradores
+    limite_24h = timezone.now() - timedelta(hours=24)
+    jornadas_esquecidas = RegistroJornada.objects.filter(
+        status='ATIVA',
+        horario_inicio__lt=limite_24h,
+        user__is_staff=True,
+        user__profile__is_colaborador=True
+    ).select_related('user__profile', 'posto_trabalho')
+    
+    context = {
+        'jornadas_esquecidas': jornadas_esquecidas,
+        'count': jornadas_esquecidas.count(),
+    }
+    
+    return render(request, "lojista/finalizar_jornadas_esquecidas.html", context)
+
+
+@login_required
+@user_passes_test(can_manage_journey_records)
+def exportar_registros_jornada_pdf(request):
+    """
+    Exporta os registros de jornada (com os mesmos filtros) para PDF.
+    Usa xhtml2pdf para renderizar um template simples e devolve application/pdf.
+    """
+    from participante.models import RegistroJornada, Profile, PostoTrabalho
+    from django.template.loader import render_to_string
+    from xhtml2pdf import pisa
+    from io import BytesIO
+    from datetime import datetime
+
+    # Filtros (mesma lógica da listagem)
+    status_filter = request.GET.get('status', '')
+    colaborador_filter = request.GET.get('colaborador', '')
+    posto_filter = request.GET.get('posto', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    apenas_ativas = request.GET.get('apenas_ativas', '') == 'on'
+
+    # Normalização de CPF informado (aceita com ou sem máscara)
+    cpf_masked_from_digits = None
+    if colaborador_filter:
+        digits_only = ''.join(ch for ch in colaborador_filter if ch.isdigit())
+        if len(digits_only) == 11:
+            cpf_masked_from_digits = f"{digits_only[0:3]}.{digits_only[3:6]}.{digits_only[6:9]}-{digits_only[9:11]}"
+
+    registros = RegistroJornada.objects.select_related(
+        'user__profile', 'posto_trabalho'
+    ).filter(
+        user__is_staff=True,
+        user__profile__is_colaborador=True
+    ).order_by('-horario_inicio')
+
+    if status_filter:
+        registros = registros.filter(status=status_filter)
+
+    if colaborador_filter:
+        from django.db.models import Q
+        cpf_term = cpf_masked_from_digits or colaborador_filter
+        registros = registros.filter(
+            Q(user__first_name__icontains=colaborador_filter) |
+            Q(user__last_name__icontains=colaborador_filter) |
+            Q(user__username__icontains=colaborador_filter) |
+            Q(user__profile__CPF__icontains=cpf_term) |
+            Q(user__profile__nome__icontains=colaborador_filter)
+        )
+
+    if posto_filter:
+        registros = registros.filter(posto_trabalho__id=posto_filter)
+
+    # Validação e aplicação de intervalo (corrige invertido)
+    data_inicio_dt = None
+    data_fim_dt = None
+    if data_inicio:
+        try:
+            data_inicio_dt = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+        except ValueError:
+            data_inicio_dt = None
+    if data_fim:
+        try:
+            data_fim_dt = datetime.strptime(data_fim, '%Y-%m-%d').date()
+        except ValueError:
+            data_fim_dt = None
+
+    if data_inicio_dt and data_fim_dt and data_inicio_dt > data_fim_dt:
+        data_inicio_dt, data_fim_dt = data_fim_dt, data_inicio_dt
+
+    if data_inicio_dt:
+        registros = registros.filter(horario_inicio__date__gte=data_inicio_dt)
+    if data_fim_dt:
+        registros = registros.filter(horario_inicio__date__lte=data_fim_dt)
+
+    if apenas_ativas:
+        registros = registros.filter(status='ATIVA')
+
+    # Preparar dados para PDF agrupados por colaborador (sem cortar grupos)
+    agora = timezone.now()
+    from collections import OrderedDict
+    grupos = OrderedDict()
+
+    # Ordenar por colaborador e data/hora para garantir agrupamento estável
+    registros = registros.order_by('user__id', 'horario_inicio')
+
+    for r in registros.iterator():
+        # calcular duração de exibição
+        if r.horario_inicio:
+            fim = r.horario_fim or agora
+            duracao = fim - r.horario_inicio
+            if duracao.total_seconds() < 0:
+                from datetime import timedelta as _td
+                duracao = _td(0)
+            r.duracao_exibicao = RegistroJornada.formatar_duracao(duracao)
+        else:
+            r.duracao_exibicao = "N/A"
+
+        uid = r.user_id
+        if uid not in grupos:
+            grupos[uid] = {
+                'user': r.user,
+                'registros': [],
+                'total_segundos': 0,
+            }
+        grupos[uid]['registros'].append(r)
+        if r.horario_inicio:
+            fim_calc = r.horario_fim or agora
+            grupos[uid]['total_segundos'] += int((fim_calc - r.horario_inicio).total_seconds())
+
+    # Construir páginas já prontas
+    from datetime import timedelta as _td
+    pages = []
+    for data in grupos.values():
+        total_str = RegistroJornada.formatar_duracao(_td(seconds=max(0, data['total_segundos'])))
+        pages.append({
+            'user': data['user'],
+            'registros': data['registros'],
+            'total_duracao': total_str,
+        })
+
+    context = {
+        'pages': pages,
+        'gerado_em': agora,
+        'periodo_inicio': data_inicio_dt,
+        'periodo_fim': data_fim_dt,
+        'status_filter': status_filter,
+        'colaborador_filter': colaborador_filter,
+        'posto_filter': posto_filter,
+        'apenas_ativas': apenas_ativas,
+    }
+
+    html = render_to_string('lojista/registros_jornada_pdf.html', context)
+    result = BytesIO()
+    pdf_status = pisa.CreatePDF(src=html, dest=result)
+
+    if pdf_status.err:
+        messages.error(request, 'Falha ao gerar PDF de registros de jornada.')
+        return redirect('lojista:gestao_registros_jornada')
+
+    # Nome de arquivo informativo conforme filtros
+    nome_parts = ["registros_jornada"]
+    if data_inicio_dt or data_fim_dt:
+        nome_parts.append((data_inicio_dt or 'ini').__str__())
+        nome_parts.append((data_fim_dt or 'fim').__str__())
+    if colaborador_filter:
+        # usa somente dígitos do CPF para não ter caracteres especiais
+        safe_cpf = ''.join(ch for ch in colaborador_filter if ch.isdigit())
+        if safe_cpf:
+            nome_parts.append(safe_cpf)
+    filename = "_".join(str(p) for p in nome_parts) + ".pdf"
+
+    response = HttpResponse(result.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response

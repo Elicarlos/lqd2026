@@ -1,0 +1,215 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+{% load dashboard_cards %}
+
+{% block title %}Dashboard - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <div class="row">
+        <div class="col-12">
+            
+
+            <!-- Estatísticas (se existirem) -->
+            {% if stats %}
+            <div class="row g-4 mb-5">
+                <!-- Documentos Pendentes -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Pendentes</p>
+                                <p class="text-2xl fw-bold text-gray-900">{{ stats.pendentes|default:"0" }}</p>
+                                <p class="text-xs text-warning mt-1">
+                                    <i class="fas fa-clock me-1"></i>Aguardando validação
+                                </p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-warning bg-opacity-10 rounded-lg d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-file-alt text-xl text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cupons Gerados -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Cupons</p>
+                                <p class="text-2xl fw-bold text-gray-900">{{ stats.cupons|default:"0" }}</p>
+                                <p class="text-xs text-success mt-1">
+                                    <i class="fas fa-ticket-alt me-1"></i>Gerados hoje
+                                </p>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-success bg-opacity-10 rounded-lg d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-ticket-alt text-xl text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Seções de Funcionalidades Dinâmicas -->
+            {% comment %}
+            Calcular quantas seções ativas existem para determinar o layout
+            {% endcomment %}
+            {% with total_sections=participantes_cards|length|add:lojistas_cards|length|add:configuracoes_cards|length|add:backoffice_cards|length|add:relatorios_cards|length|add:usuarios_cards|length|add:operacoes_cards|length %}
+            
+            {% if total_sections == 1 %}
+                <!-- Layout para apenas uma seção - centralizar com largura limitada -->
+                <div class="d-flex justify-content-center">
+                    <div class="w-100" style="max-width: 400px;">
+            {% elif total_sections == 2 %}
+                <!-- Layout para duas seções -->
+                <div class="row g-4">
+            {% elif total_sections == 3 %}
+                <!-- Layout para três seções -->
+                <div class="row g-4">
+            {% else %}
+                <!-- Layout para múltiplas seções -->
+                <div class="row g-4">
+            {% endif %}
+            
+                <!-- Participantes -->
+                {% if participantes_cards %}
+                    {% get_section_config 'participantes' as config %}
+                    {% if total_sections == 1 %}
+                        <div class="col-12">
+                    {% elif total_sections == 2 %}
+                        <div class="col-md-6">
+                    {% elif total_sections == 3 %}
+                        <div class="col-lg-4">
+                    {% else %}
+                        <div class="col-lg-3 col-md-6">
+                    {% endif %}
+                        {% render_card_section participantes_cards config.title config.icon config.color %}
+                    </div>
+                {% endif %}
+
+                <!-- Lojistas -->
+                {% if lojistas_cards %}
+                    {% get_section_config 'lojistas' as config %}
+                    {% if total_sections == 1 %}
+                        <div class="col-12">
+                    {% elif total_sections == 2 %}
+                        <div class="col-md-6">
+                    {% elif total_sections == 3 %}
+                        <div class="col-lg-4">
+                    {% else %}
+                        <div class="col-lg-3 col-md-6">
+                    {% endif %}
+                        {% render_card_section lojistas_cards config.title config.icon config.color %}
+                    </div>
+                {% endif %}
+
+                <!-- Configurações -->
+                {% if configuracoes_cards %}
+                    {% get_section_config 'configuracoes' as config %}
+                    {% if total_sections == 1 %}
+                        <div class="col-12">
+                    {% elif total_sections == 2 %}
+                        <div class="col-md-6">
+                    {% elif total_sections == 3 %}
+                        <div class="col-lg-4">
+                    {% else %}
+                        <div class="col-lg-3 col-md-6">
+                    {% endif %}
+                        {% render_card_section configuracoes_cards config.title config.icon config.color %}
+                    </div>
+                {% endif %}
+
+                <!-- Backoffice -->
+                {% if backoffice_cards %}
+                    {% get_section_config 'backoffice' as config %}
+                    {% if total_sections == 1 %}
+                        <div class="col-12">
+                    {% elif total_sections == 2 %}
+                        <div class="col-md-6">
+                    {% elif total_sections == 3 %}
+                        <div class="col-lg-4">
+                    {% else %}
+                        <div class="col-lg-3 col-md-6">
+                    {% endif %}
+                        {% render_card_section backoffice_cards config.title config.icon config.color %}
+                    </div>
+                {% endif %}
+
+                <!-- Relatórios -->
+                {% if relatorios_cards %}
+                    {% get_section_config 'relatorios' as config %}
+                    {% if total_sections == 1 %}
+                        <div class="col-12">
+                    {% elif total_sections == 2 %}
+                        <div class="col-md-6">
+                    {% elif total_sections == 3 %}
+                        <div class="col-lg-4">
+                    {% else %}
+                        <div class="col-lg-3 col-md-6">
+                    {% endif %}
+                        {% render_card_section relatorios_cards config.title config.icon config.color %}
+                    </div>
+                {% endif %}
+
+                <!-- Usuários -->
+                {% if usuarios_cards %}
+                    {% get_section_config 'usuarios' as config %}
+                    {% if total_sections == 1 %}
+                        <div class="col-12">
+                    {% elif total_sections == 2 %}
+                        <div class="col-md-6">
+                    {% elif total_sections == 3 %}
+                        <div class="col-lg-4">
+                    {% else %}
+                        <div class="col-lg-3 col-md-6">
+                    {% endif %}
+                        {% render_card_section usuarios_cards config.title config.icon config.color %}
+                    </div>
+                {% endif %}
+
+                <!-- Operações -->
+                {% if operacoes_cards %}
+                    {% get_section_config 'operacoes' as config %}
+                    {% if total_sections == 1 %}
+                        <div class="col-12">
+                    {% elif total_sections == 2 %}
+                        <div class="col-md-6">
+                    {% elif total_sections == 3 %}
+                        <div class="col-lg-4">
+                    {% else %}
+                        <div class="col-lg-3 col-md-6">
+                    {% endif %}
+                        {% render_card_section operacoes_cards config.title config.icon config.color %}
+                    </div>
+                {% endif %}
+            
+            {% if total_sections == 1 %}
+                    </div>
+                </div>
+            {% else %}
+            </div>
+            {% endif %}
+            
+            {% endwith %}
+
+            <!-- Mensagem quando não há cards -->
+            {% if not participantes_cards and not lojistas_cards and not configuracoes_cards and not backoffice_cards and not relatorios_cards and not usuarios_cards and not operacoes_cards %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                <div class="max-w-md mx-auto">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full d-flex align-items-center justify-content-center mx-auto mb-4">
+                        <i class="fas fa-info-circle text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhum card disponível</h3>
+                    <p class="text-gray-500">Você não tem permissão para acessar nenhuma funcionalidade no momento.</p>
+                </div>
+            </div>
+            {% endif %}        
+        </div>
+    </div>
+</div>
+{% endblock %}

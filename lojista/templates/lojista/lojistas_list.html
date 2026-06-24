@@ -1,0 +1,156 @@
+{% extends 'mobile.html' %}
+
+{% load widget_tweaks %}
+{% block title %}Lojistas{% endblock %}
+{% block content %}
+  <form method="get">
+    <div class="well" style="margin-top: 70px;">
+      <h4 style="margin-top: 0"></h4>
+      <div class="row" style="display: flex; align-items: center;">
+        <div class="form-group col-sm-4 col-md-3">
+          {{ filter.form.CNPJLojista.label_tag }}
+          {% render_field filter.form.CNPJLojista class="form-control cnpj" %}
+        </div>
+        <button type="submit" class="btn btn-primary" style=" margin-top: 0px;">
+          <span class="glyphicon glyphicon-search"></span> Buscar
+        </button>
+      </div>
+    </div>
+  </form>
+<div class="table-responsive">
+  {% include 'lojista/partials/lojistas_table.html' %}
+</div>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalLabel">Confirmação de Autorização</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Você tem certeza de que deseja autorizar o lojista <strong id="lojistaNome"></strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirmAuthorize">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="editLojistaModal" tabindex="-1" role="dialog" aria-labelledby="editLojistaModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editLojistaModalLabel">Editar Lojista</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editLojistaForm">
+          <input type="hidden" id="lojistaId" name="lojista_id">
+          <div id="formContainer">          
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveLojista">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    let lojistaId;
+
+    // Abrir modal de edição
+    $('.editar-lojista-btn').click(function () {
+    lojistaId = $(this).data('id');
+
+    $.ajax({
+        url: `/lojista/editar-lojista/${lojistaId}/`,
+        method: 'GET',
+        success: function (response) {
+            console.log(response); // Adicionado para depuração
+            $('#formContainer').html(response.form_html);
+            $('#editLojistaModal').modal('show');
+        },
+        error: function (xhr, status, error) {
+            console.error('Erro:', error, 'Status:', status, 'Resposta:', xhr.responseText);
+            alert('Erro ao carregar o formulário de edição.');
+        },
+      });
+    });
+
+
+
+    $('#saveLojista').click(function () {
+    const formData = $('#editLojistaForm').serialize(); 
+
+    $.ajax({
+        url: `/lojista/editar-lojista/${lojistaId}/`, 
+        method: 'POST',
+        data: formData, // Envia os dados corretamente
+        success: function (response) {
+            if (response.success) {
+                alert('Lojista atualizado com sucesso!');
+                $('#editLojistaModal').modal('hide');
+                location.reload(); 
+            } else {
+                alert('Erro ao salvar alterações.');
+            }
+        },
+        error: function (xhr) {
+            const errors = xhr.responseJSON.errors || {};
+            let errorMessage = 'Erro ao salvar as alterações:\n';
+            for (const field in errors) {
+                errorMessage += `${field}: ${errors[field]}\n`;
+            }
+            alert(errorMessage);
+        },
+    });
+});
+
+
+    // Alterar status diretamente no select
+    $('.status-select').change(function () {
+        const lojistaId = $(this).data('id'); // Captura o ID do lojista
+        const novoStatus = $(this).val(); // Captura o status selecionado
+
+        if (novoStatus) {
+            $.ajax({
+                url: `/lojista/autorizar-lojista/${lojistaId}/`, // URL para atualizar o status
+                method: 'POST',
+                data: {
+                    status: novoStatus,
+                    csrfmiddlewaretoken: '{{ csrf_token }}', // Token CSRF
+                },
+                success: function (response) {
+                    if (response.success) {
+                        alert('Status atualizado com sucesso!');
+                        location.reload(); // Atualiza a tabela
+                    } else {
+                        alert(response.message || 'Erro ao atualizar o status.');
+                    }
+                },
+                error: function () {
+                    alert('Erro ao atualizar o status.');
+                },
+            });
+        } else {
+            alert('Selecione um status válido.');
+        }
+    });
+});
+
+
+</script>
+{% endblock %}

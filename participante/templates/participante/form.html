@@ -1,0 +1,35 @@
+<form method="post" class="form-horizontal ws-validate">
+    <!-- Outros campos do formulário -->
+
+    <div class="form-group">
+        <label for="id_cep">CEP</label>
+        <input type="text" id="{{ form.nome.id_for_label }}id_cep" name="cep" class="form-control" autocomplete="off">
+    </div>
+    
+    <div class="form-group">
+        <label for="id_logradouro">Logradouro</label>
+        <input type="text" id="id_logradouro" name="{{ form.nome.id_for_label }}logradouro" class="form-control" autocomplete="off">
+    </div>
+    
+    <div class="form-group">
+        <label for="id_bairro">Bairro</label>
+        <input type="text" id="id_bairro" name="bairro" class="form-control" autocomplete="off">
+    </div>
+    
+    <div class="form-group">
+        <label for="id_cidade">Cidade</label>
+        <input type="text" id="id_cidade" name="cidade" class="form-control" autocomplete="off">
+    </div>
+    
+    <div class="form-group">
+        <label for="id_estado">Estado</label>
+        <input type="text" id="id_estado" name="estado" class="form-control" autocomplete="off">
+    </div>
+
+    <!-- Outros campos do formulário -->
+
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">Enviar</button>
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

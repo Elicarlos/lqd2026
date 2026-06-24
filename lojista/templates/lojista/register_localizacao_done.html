@@ -1,0 +1,12 @@
+{% extends "lojista/dashboard.html" %}
+{% load static %}
+
+{% block title %}Localização adicionado{% endblock %}
+
+{% block content %}
+    <h1 style="margin-top: 70px;">Localização {{ nova_localizacao.nome }} adicionado com sucesso!</h1>
+    <p>Localização criada.</p>
+    <p><a type="button" id="mymodal" class="btn btn-primary btn-lg" data-toggle="modal" href="{% url "lojista:register_localizacao" %}">
+  Adicionar outra Localização
+</a><a type="button" class="btn" href="{% url 'lojista:homepage' %}">Voltar</button></p>
+{% endblock %}

@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    /* Breakpoint personalizado para telas muito pequenas */
+    @media (min-width: 475px) {
+        .xs\:inline {
+            display: inline !important;
+        }
+        .xs\:hidden {
+            display: none !important;
+        }
+    }
+    
+    /* Melhorias de responsividade para mobile */
+    @media (max-width: 640px) {
+        .card {
+            margin-bottom: 1rem;
+        }
+        
+        .card-header {
+            padding: 1.5rem !important;
+        }
+        
+        /* Ajuste para botões em mobile */
+        .btn-mobile-optimized {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Melhor espaçamento em mobile */
+        .mobile-spacing {
+            padding: 1rem 0;
+        }
+        
+        /* Texto mais legível em mobile */
+        .mobile-text {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        /* Cards mais compactos em mobile */
+        .mobile-card {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+    }
+    
+    /* Melhorias para tablets */
+    @media (min-width: 641px) and (max-width: 1024px) {
+        .tablet-optimized {
+            padding: 2rem 0;
+        }
+        
+        .tablet-text {
+            font-size: 1rem;
+        }
+    }
+    
+    /* Animações suaves */
+    .animate-fade-in {
+        animation: fadeIn 0.8s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Melhorias de acessibilidade */
+    .focus-visible:focus {
+        outline: 2px solid #11B3EE;
+        outline-offset: 2px;
+    }
+    
+    /* Melhor contraste para textos */
+    .text-contrast {
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+        <!-- Hero Section -->
+        <section id="inicio" class="relative min-h-screen pt-16 sm:pt-20 flex items-center justify-center text-white overflow-hidden">
+            <!-- Background Image -->
+            <div class="absolute inset-0 z-0">
+                <img src="{% static 'img/2023/banner-princial-1444.png' %}" 
+                     alt="Banner principal da Natal de Luz e Prêmios" 
+                     class="w-full h-full object-cover object-center">
+            </div>
+
+            <!-- CTA Content -->
+            <div class="relative z-10 flex flex-col items-center justify-center h-full px-4 sm:px-6 lg:px-8">
+                <div class="text-center space-y-6 sm:space-y-8 max-w-4xl">
+                    <!-- CTA Button -->
+                    <div class="flex justify-center">
+                        <a href="{% url 'participante:cadastro-participante-operador' %}" 
+                           class="group relative inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold text-white bg-gradient-to-r from-[#8e005c] to-[#b8006e] rounded-xl shadow-2xl transform transition-all duration-300 hover:scale-105 hover:shadow-3xl focus:outline-none focus:ring-4 focus:ring-[#8e005c]/50">
+                            <span class="relative z-10 flex items-center">
+                                <i class="fas fa-trophy mr-2 sm:mr-3 text-lg sm:text-xl"></i>
+                                <span class="hidden xs:inline">Quero Participar Agora!</span>
+                                <span class="xs:hidden">Participar!</span>
+                            </span>
+                            <!-- Hover overlay -->
+                            <div class="absolute inset-0 bg-gradient-to-r from-[#7a004f] to-[#a3005d] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scroll Down Hint -->
+            <div class="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-10 hidden sm:block animate-bounce">
+                <a href="#como-participar" 
+                   aria-label="Rolar para baixo" 
+                   class="text-white hover:text-[hsl(var(--neutral-200))] transition-colors">
+                    <i class="fas fa-chevron-down text-2xl sm:text-3xl"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- Patrocinadores Section -->
+        <section class="py-6 sm:py-8 bg-white relative overflow-hidden h-24 sm:h-32 md:h-40 lg:h-48">
+            <img src="{% static 'img/2023/patron.png' %}" 
+                 alt="Patrocinadores da Natal de Luz e Prêmios" 
+                 class="w-full h-full object-contain"
+                 loading="lazy">
+        </section>
+
+        <!-- Como Funciona Section -->
+        <section id="como-funciona" class="py-16 sm:py-24 lg:py-32 bg-[#11B3EE]/5 relative overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16 sm:mb-20 lg:mb-24">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-neutral-900 animate-fade-in mb-4 sm:mb-6">
+                        Como Funciona
+                    </h2>
+                    <p class="text-base sm:text-lg text-neutral-900 animate-fade-in max-w-2xl mx-auto px-4">
+                        Entenda o processo da Natal de Luz e Prêmios de forma simples e rápida
+                    </p>
+                </div>
+                
+                <div class="max-w-4xl mx-auto text-center px-4">
+                    <img src="{% static 'img/2023/maquineta.png' %}" 
+                         alt="Máquina Cielo - Como funciona" 
+                         class="w-full max-w-sm sm:max-w-md lg:max-w-lg mx-auto rounded-lg shadow-2xl"
+                         loading="lazy">
+                </div>
+            </div>
+        </section>
+
+        <!-- Como Participar Section -->
+        <section id="como-participar" class="py-16 sm:py-24 lg:py-32 bg-[#11B3EE]/5 relative overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16 sm:mb-20 lg:mb-24">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-neutral-900 animate-fade-in mb-4 sm:mb-6">
+                        Como Participar
+                    </h2>
+                    <p class="text-base sm:text-lg text-neutral-900 animate-fade-in max-w-2xl mx-auto px-4">
+                        Em apenas 4 passos simples você pode concorrer a prêmios incríveis!
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-8 max-w-6xl mx-auto">
+                    <!-- Card 1 -->
+                    <div class="card animate-fade-in mobile-card">
+                        <div class="card-header p-6 sm:p-8 mobile-spacing">
+                            <div class="mx-auto bg-[#11B3EE] text-white rounded-full h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 flex items-center justify-center mb-4 sm:mb-6">
+                                <i class="fas fa-shopping-cart text-xl sm:text-2xl lg:text-3xl"></i>
+                            </div>
+                            <h3 class="card-title text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-4">1. Compre</h3>
+                            <p class="card-description text-sm sm:text-base mobile-text">Faça suas compras normalmente nas lojas parceiras. A cada R${{ campanha.valor|floatformat:0 }} você ganha 1 cupom da sorte automaticamente!</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="card animate-fade-in mobile-card">
+                        <div class="card-header p-6 sm:p-8 mobile-spacing">
+                            <div class="mx-auto bg-[#11B3EE] text-white rounded-full h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 flex items-center justify-center mb-4 sm:mb-6">
+                                <i class="fas fa-user-plus text-xl sm:text-2xl lg:text-3xl"></i>
+                            </div>
+                            <h3 class="card-title text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-4">2. Cadastre-se</h3>
+                            <p class="card-description text-sm sm:text-base mobile-text">Crie sua conta gratuita em menos de 2 minutos e comece a participar imediatamente!</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="card animate-fade-in mobile-card">
+                        <div class="card-header p-6 sm:p-8 mobile-spacing">
+                            <div class="mx-auto bg-[#11B3EE] text-white rounded-full h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 flex items-center justify-center mb-4 sm:mb-6">
+                                <i class="fas fa-ticket-alt text-xl sm:text-2xl lg:text-3xl"></i>
+                            </div>
+                            <h3 class="card-title text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-4">3. Deposite</h3>
+                            <p class="card-description text-sm sm:text-base mobile-text">Envie suas notas fiscais pelo WhatsApp ou site e receba seus cupons digitais instantaneamente!</p>
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div class="card animate-fade-in mobile-card">
+                        <div class="card-header p-6 sm:p-8 mobile-spacing">
+                            <div class="mx-auto bg-[#11B3EE] text-white rounded-full h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 flex items-center justify-center mb-4 sm:mb-6">
+                                <i class="fas fa-gift text-xl sm:text-2xl lg:text-3xl"></i>
+                            </div>
+                            <h3 class="card-title text-lg sm:text-xl lg:text-2xl mb-3 sm:mb-4">4. Concorra</h3>
+                            <p class="card-description text-sm sm:text-base mobile-text">Acompanhe os sorteios e torça para ser um dos ganhadores!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Prizes Section -->
+        <section id="premios" class="py-16 sm:py-24 lg:py-32 bg-gradient-to-br from-neutral-50 to-white relative overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16 sm:mb-20 lg:mb-24">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold text-neutral-900 animate-fade-in mb-4 sm:mb-6">
+                        Prêmios Incríveis
+                    </h2>
+                    <p class="text-base sm:text-lg text-neutral-900 animate-fade-in max-w-2xl mx-auto px-4">
+                        Confira os prêmios que você pode ganhar na Natal de Luz e Prêmios
+                    </p>
+                </div>
+
+                <div class="space-y-8 lg:space-y-12">
+                    <!-- Main Prize Card -->
+                    <div class="relative group">
+                        <div class="bg-[#11B3EE] rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 text-white text-center">
+                            <div class="max-w-4xl mx-auto">
+                                <div class="mb-6 sm:mb-8">
+                                    <i class="fas fa-car text-4xl sm:text-6xl lg:text-8xl mb-4 sm:mb-6 text-white"></i>
+                                </div>
+                                <h3 class="text-2xl sm:text-4xl lg:text-6xl xl:text-7xl font-display font-bold mb-4 sm:mb-6 leading-tight text-white">
+                                    1 PEUGEOT 208
+                                </h3>
+                                <p class="text-lg sm:text-xl lg:text-2xl mb-6 sm:mb-8 text-white max-w-3xl mx-auto px-4">
+                                    Imagine você dirigindo um Peugeot 208 0km! Este super prêmio pode ser seu.
+                                </p>
+                                <div class="inline-flex items-center bg-white text-[#11B3EE] px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:bg-neutral-100 transition-all">
+                                    <i class="fas fa-trophy mr-2 sm:mr-3 text-xl sm:text-2xl"></i>
+                                    <span class="hidden sm:inline">PRÊMIO PRINCIPAL</span>
+                                    <span class="sm:hidden">PRÊMIO</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Prizes Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
+                        <!-- Vale-compras Card -->
+                        <div class="group">
+                            <div class="bg-white rounded-2xl p-6 sm:p-8 border border-neutral-200">
+                                <div class="text-center">
+                                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-[#11B3EE] rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                                        <i class="fas fa-ticket-alt text-white text-2xl sm:text-3xl"></i>
+                                    </div>
+                                    <h4 class="text-xl sm:text-2xl font-bold text-neutral-900 mb-3 sm:mb-4">05 VALE-COMPRAS</h4>
+                                    <p class="text-neutral-600 leading-relaxed text-sm sm:text-base">
+                                        No valor de <span class="font-bold text-[#11B3EE]">R$ 1.000,00</span> cada para você gastar como quiser!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Caminhão de Prêmios Card -->
+                        <div class="group">
+                            <div class="bg-white rounded-2xl p-6 sm:p-8 border border-neutral-200">
+                                <div class="text-center">
+                                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-[#8e005c] rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                                        <i class="fas fa-truck text-white text-2xl sm:text-3xl"></i>
+                                    </div>
+                                    <h4 class="text-xl sm:text-2xl font-bold text-neutral-900 mb-3 sm:mb-4">01 CAMINHÃO DE PRÊMIOS</h4>
+                                    <p class="text-neutral-600 leading-relaxed text-sm sm:text-base">
+                                        Um caminhão repleto de <span class="font-bold text-[#8e005c]">eletrodomésticos e eletrônicos</span> para você!
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lojista CTA Section -->
+        <section class="py-16 sm:py-24 lg:py-32 bg-[#11B3EE] text-white relative overflow-hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="max-w-4xl mx-auto text-center">
+                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold mb-6 sm:mb-8 animate-fade-in">
+                        Você é lojista?
+                    </h2>
+                    <p class="text-base sm:text-lg text-white/90 mb-8 sm:mb-12 animate-fade-in max-w-3xl mx-auto px-4">
+                        Faça parte da maior campanha de varejo de Teresina e aumente suas vendas. 
+                        Cadastre sua loja e nossa equipe entrará em contato.
+                    </p>
+
+                    <form id="lojistaForm" method="POST" class="max-w-lg mx-auto bg-white rounded-lg p-6 sm:p-8 space-y-4 sm:space-y-6 shadow-lg">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="form_adesao">
+                        
+                        <h3 class="text-xl sm:text-2xl font-display font-bold text-neutral-900 text-center mb-4 sm:mb-6">
+                            Quero ser um parceiro
+                        </h3>
+                        
+                        <!-- CNPJ Field -->
+                        <div>
+                            <label for="{{ form_adesao.cnpj.id_for_label }}" class="block text-sm font-medium text-neutral-700 mb-2 text-left">
+                                CNPJ
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-building text-neutral-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="cnpj" 
+                                       id="{{ form_adesao.cnpj.id_for_label }}" 
+                                       class="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-md focus:ring-2 focus:ring-[#11B3EE] focus:border-transparent text-neutral-900 cnpj-mask" 
+                                       placeholder="00.000.000/0000-00" 
+                                       required>
+                            </div>
+                            <div id="cnpj-error" class="hidden mt-1 text-sm text-red-600"></div>
+                        </div>
+
+                        <!-- Nome Fantasia Field -->
+                        <div>
+                            <label for="{{ form_adesao.fantasia.id_for_label }}" class="block text-sm font-medium text-neutral-700 mb-2 text-left">
+                                Nome da Loja
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-store text-neutral-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="fantasia" 
+                                       id="{{ form_adesao.fantasia.id_for_label }}" 
+                                       class="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-md focus:ring-2 focus:ring-[#11B3EE] focus:border-transparent text-neutral-900" 
+                                       placeholder="Ex: Loja do Zé" 
+                                       required>
+                            </div>
+                            <div id="fantasia-error" class="hidden mt-1 text-sm text-red-600"></div>
+                        </div>
+
+                        <!-- Razão Social Field -->
+                        <div>
+                            <label for="{{ form_adesao.razao_social.id_for_label }}" class="block text-sm font-medium text-neutral-700 mb-2 text-left">
+                                Razão Social
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-user text-neutral-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="razao_social" 
+                                       id="{{ form_adesao.razao_social.id_for_label }}" 
+                                       class="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-md focus:ring-2 focus:ring-[#11B3EE] focus:border-transparent text-neutral-900" 
+                                       placeholder="Ex: José da Silva" 
+                                       required>
+                            </div>
+                            <div id="razao_social-error" class="hidden mt-1 text-sm text-red-600"></div>
+                        </div>
+
+                        <!-- Telefone Field -->
+                        <div>
+                            <label for="{{ form_adesao.telefone.id_for_label }}" class="block text-sm font-medium text-neutral-700 mb-2 text-left">
+                                WhatsApp
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <i class="fab fa-whatsapp text-neutral-400"></i>
+                                </div>
+                                <input type="tel" 
+                                       name="telefone" 
+                                       id="{{ form_adesao.telefone.id_for_label }}" 
+                                       class="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-md focus:ring-2 focus:ring-[#11B3EE] focus:border-transparent text-neutral-900 phone-mask" 
+                                       placeholder="(86) 99999-9999" 
+                                       required>
+                            </div>
+                            <div id="telefone-error" class="hidden mt-1 text-sm text-red-600"></div>
+                        </div>
+
+                        <!-- Email Field -->
+                        <div>
+                            <label for="{{ form_adesao.email.id_for_label }}" class="block text-sm font-medium text-neutral-700 mb-2 text-left">
+                                E-mail
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-envelope text-neutral-400"></i>
+                                </div>
+                                <input type="email" 
+                                       name="email" 
+                                       id="{{ form_adesao.email.id_for_label }}" 
+                                       class="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-md focus:ring-2 focus:ring-[#11B3EE] focus:border-transparent text-neutral-900" 
+                                       placeholder="seu@email.com" 
+                                       required>
+                            </div>
+                            <div id="email-error" class="hidden mt-1 text-sm text-red-600"></div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-[#8e005c] hover:bg-[#7a004f] text-white font-bold py-3 px-6 rounded-md transition-colors">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Enviar Cadastro
+                        </button>
+
+                        <div id="lojistaFeedback" class="hidden text-center text-sm font-medium"></div>
+                    </form>
+                </div>
+            </div>
+        </section>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+    // Abrir modal de login automaticamente se ?login=1
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('login') === '1') {
+        if (typeof openLoginModal === 'function') {
+          openLoginModal();
+        } else {
+          var loginBtn = document.querySelector('[data-open-modal="login"]');
+          if (loginBtn) loginBtn.click();
+        }
+        // Limpa mensagens da sessão via AJAX
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        }
+        fetch('/limpar-mensagens/', {
+          method: 'POST',
+          headers: {'X-CSRFToken': getCookie('csrftoken')}
+        });
+      }
+    });
+    $(document).ready(function() {
+        // Máscara de CNPJ
+        $('.cnpj-mask').mask('00.000.000/0000-00', {
+            reverse: false,
+                clearIfNotMatch: true
+            });
+            
+        // Máscara de telefone dinâmica (8 ou 9 dígitos)
+        var SPMaskBehavior = function (val) {
+            return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+        },
+        spOptions = {
+            onKeyPress: function(val, e, field, options) {
+                field.mask(SPMaskBehavior.apply({}, arguments), options);
+            }
+        };
+
+        $('.phone-mask').mask(SPMaskBehavior, spOptions);
+
+        // Handle form submission
+        $('#lojistaForm').on('submit', function(e) {
+                    e.preventDefault();
+            
+            // Remove qualquer mensagem de erro anterior
+            $('.form-error').addClass('hidden').text('');
+            
+            $.ajax({
+                url: "{% url 'participante:homepage' %}",
+                type: "POST",
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#lojistaForm').trigger('reset');
+                        $('#lojistaFeedback')
+                            .removeClass('hidden text-red-600')
+                            .addClass('text-[hsl(var(--success-500))]')
+                            .text(response.message);
+                    } else {
+                        if (response.message) {
+                            $('#lojistaFeedback')
+                                .removeClass('hidden text-[hsl(var(--success-500))]')
+                                .addClass('text-[hsl(var(--error-500))]')
+                                .text(response.message);
+                        }
+                        if (response.errors) {
+                            Object.keys(response.errors).forEach(function(key) {
+                                $('#' + key + '-error').text(response.errors[key]).removeClass('hidden');
+                            });
+                        }
+                    }
+                },
+                error: function() {
+                    $('#lojistaFeedback')
+                        .removeClass('hidden text-[hsl(var(--success-500))]')
+                        .addClass('text-[hsl(var(--error-500))]')
+                        .text('Erro ao enviar o cadastro. Por favor, tente novamente.');
+                }
+            });
+        });
+        });
+    </script>
+{% endblock %}

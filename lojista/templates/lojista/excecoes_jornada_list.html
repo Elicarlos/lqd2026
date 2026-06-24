@@ -1,0 +1,478 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for excecoes jornada list */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar tabela */
+    .table-modern {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .table-modern .table {
+        margin-bottom: 0;
+    }
+    
+    .table-modern .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-modern .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .table-modern .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: translateX(4px);
+    }
+    
+    .table-modern .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .table-modern .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    /* Melhorar badges */
+    .badge-modern {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-modern.badge-success {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .badge-modern.badge-danger {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .badge-modern.badge-warning {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+    
+    .badge-modern.badge-info {
+        background: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+    }
+    
+    .badge-modern.badge-secondary {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+    
+    /* Melhorar botões de ação */
+    .btn-action {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .table-modern .table thead th,
+        .table-modern .table tbody td {
+            padding: 0.75rem 1rem;
+        }
+        
+        .table-modern .table thead th {
+            font-size: 0.75rem;
+        }
+        
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- CSRF Token para AJAX -->
+{% csrf_token %}
+
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:jornadas_gestao' %}" class="text-decoration-none">
+                            Gestão de Jornadas
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-exclamation-triangle text-xl text-warning"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">{{ page_title }}</h1>
+                                <p class="text-muted mb-0">Gerenciar exceções de jornada por usuário</p>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="d-flex flex-column flex-sm-row gap-2">
+                                <a href="{% url 'lojista:jornadas_gestao' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                                </a>
+                                <a href="{% url 'lojista:excecao_jornada_create' %}" class="btn btn-gradient">
+                                    <i class="fas fa-plus me-2"></i>Nova Exceção
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card-standard mb-4">
+            <div class="card-header bg-white border-bottom p-4">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="fas fa-filter me-2"></i>Filtros de Busca
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="get" class="row g-3">
+                    <!-- Filtro por usuário -->
+                    <div class="col-12 col-md-4">
+                        <label for="usuario" class="form-label fw-semibold">
+                            <i class="fas fa-user me-1"></i>Usuário
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="usuario" 
+                               id="usuario" 
+                               value="{{ usuario_filter }}"
+                               placeholder="Nome ou username">
+                    </div>
+                    
+                    <!-- Filtro por tipo -->
+                    <div class="col-12 col-md-4">
+                        <label for="tipo" class="form-label fw-semibold">
+                            <i class="fas fa-tag me-1"></i>Tipo de Exceção
+                        </label>
+                        <select class="form-select" name="tipo" id="tipo">
+                            <option value="">Todos os tipos</option>
+                            <option value="SEM_JORNADA" {% if tipo_filter == 'SEM_JORNADA' %}selected{% endif %}>Sem controle de jornada</option>
+                            <option value="JORNADA_FLEXIVEL" {% if tipo_filter == 'JORNADA_FLEXIVEL' %}selected{% endif %}>Jornada flexível</option>
+                            <option value="HORARIO_ESPECIAL" {% if tipo_filter == 'HORARIO_ESPECIAL' %}selected{% endif %}>Horário especial</option>
+                            <option value="FERIADO" {% if tipo_filter == 'FERIADO' %}selected{% endif %}>Feriado/Evento</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Filtro por status -->
+                    <div class="col-12 col-md-4">
+                        <label for="ativo" class="form-label fw-semibold">
+                            <i class="fas fa-toggle-on me-1"></i>Status
+                        </label>
+                        <select class="form-select" name="ativo" id="ativo">
+                            <option value="all" {% if ativo_filter == 'all' %}selected{% endif %}>Todos</option>
+                            <option value="true" {% if ativo_filter == 'true' %}selected{% endif %}>Ativos</option>
+                            <option value="false" {% if ativo_filter == 'false' %}selected{% endif %}>Inativos</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-gradient">
+                            <i class="fas fa-search me-2"></i>Filtrar
+                        </button>
+                        <a href="{% url 'lojista:excecoes_jornada_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de exceções -->
+        <div class="card-standard">
+            <div class="card-header bg-white border-bottom p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-list me-2"></i>Exceções de Jornada
+                        <span class="text-muted fw-normal">({{ page_obj.paginator.count }} total)</span>
+                    </h5>
+                </div>
+            </div>
+            
+            {% if page_obj %}
+            <div class="table-modern">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-user me-2"></i>Usuário
+                                </th>
+                                <th>
+                                    <i class="fas fa-tag me-2"></i>Tipo
+                                </th>
+                                <th>
+                                    <i class="fas fa-calendar me-2"></i>Período
+                                </th>
+                                <th>
+                                    <i class="fas fa-clock me-2"></i>Horário
+                                </th>
+                                <th>
+                                    <i class="fas fa-toggle-on me-2"></i>Status
+                                </th>
+                                <th>
+                                    <i class="fas fa-cogs me-2"></i>Ações
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for excecao in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-user text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ excecao.usuario.username }}</div>
+                                            <div class="text-muted small">{{ excecao.usuario.first_name }} {{ excecao.usuario.last_name }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-modern badge-info">
+                                        {{ excecao.get_tipo_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ excecao.data_inicio|date:"d/m/Y" }}</div>
+                                    {% if excecao.data_fim %}
+                                    <div class="text-muted small">até {{ excecao.data_fim|date:"d/m/Y" }}</div>
+                                    {% else %}
+                                    <div class="text-muted small">Indefinido</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if excecao.horario_inicio and excecao.horario_fim %}
+                                    <div class="fw-semibold text-dark">{{ excecao.horario_inicio|time:"H:i" }} - {{ excecao.horario_fim|time:"H:i" }}</div>
+                                    {% else %}
+                                    <div class="text-muted small">Não especificado</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if excecao.ativo %}
+                                    <span class="badge badge-modern badge-success">
+                                        <i class="fas fa-check-circle me-1"></i>Ativo
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-modern badge-danger">
+                                        <i class="fas fa-times-circle me-1"></i>Inativo
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'lojista:excecao_jornada_edit' excecao.pk %}" 
+                                           class="btn btn-outline-primary btn-action" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-action {% if excecao.ativo %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
+                                                onclick="toggleStatusExcecao({{ excecao.pk }}, {{ excecao.ativo|lower }})" 
+                                                id="btn-status-{{ excecao.pk }}"
+                                                title="{% if excecao.ativo %}Inativar{% else %}Ativar{% endif %}">
+                                            <i class="fas {% if excecao.ativo %}fa-times{% else %}fa-check{% endif %}"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer bg-white border-top p-4">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+                    <div class="text-muted small">
+                        Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} resultados
+                    </div>
+                    <nav aria-label="Paginação">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&usuario={{ usuario_filter }}&tipo={{ tipo_filter }}&ativo={{ ativo_filter }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_obj.number }}</span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}&usuario={{ usuario_filter }}&tipo={{ tipo_filter }}&ativo={{ ativo_filter }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-exclamation-triangle text-muted" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                <h3 class="h5 fw-bold text-dark mb-2">Nenhuma exceção encontrada</h3>
+                <p class="text-muted mb-4">Comece criando uma exceção para um usuário.</p>
+                <a href="{% url 'lojista:excecao_jornada_create' %}" class="btn btn-gradient">
+                    <i class="fas fa-plus me-2"></i>Criar Primeira Exceção
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+<script>
+function toggleStatusExcecao(id, ativo) {
+    const acao = ativo ? 'inativar' : 'ativar';
+    const confirmacao = confirm(`Tem certeza que deseja ${acao} esta exceção de jornada?`);
+    
+    if (!confirmacao) return;
+    
+    // Mostrar loading no botão
+    const btn = document.getElementById(`btn-status-${id}`);
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    // Fazer requisição AJAX
+    fetch(`/lojista/jornadas/excecoes/${id}/toggle-status/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Atualizar botão
+            const novoStatus = !ativo;
+            btn.className = `btn btn-action ${novoStatus ? 'btn-outline-danger' : 'btn-outline-success'}`;
+            btn.innerHTML = `<i class="fas ${novoStatus ? 'fa-times' : 'fa-check'}"></i>`;
+            btn.onclick = () => toggleStatusExcecao(id, novoStatus);
+            
+            // Mostrar mensagem de sucesso
+            showNotification(data.message, 'success');
+            
+            // Recarregar página após 1 segundo para atualizar status
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(data.message, 'error');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showNotification('Erro ao processar a solicitação', 'error');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function showNotification(message, type) {
+    // Criar notificação
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover após 5 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

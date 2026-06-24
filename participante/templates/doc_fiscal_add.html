@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8 p-4 md:p-8">
+
+  {# Coluna Esquerda: Formulário #}
+  <div class="w-full md:w-2/3 lg:w-1/2">
+    <div class="bg-white p-6 rounded-lg shadow-md">
+      <h2 class="text-2xl font-bold mb-6 text-gray-800">Adicionar Documento Fiscal</h2>
+      
+      {% if messages %}
+        <div class="mb-4">
+          {% for message in messages %}
+            <div class="p-4 rounded-md {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}" role="alert">
+              {{ message|safe }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" enctype="multipart/form-data" id="docFiscalForm" novalidate>
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 gap-6">
+          
+          {# CNPJ do Lojista #}
+          <div>
+            <label for="{{ documentoFiscal_form.lojista_cnpj.id_for_label }}" class="block text-sm font-medium text-gray-700">
+              CNPJ do Lojista
+            </label>
+            {% render_field documentoFiscal_form.lojista_cnpj class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Digite o CNPJ do lojista" %}
+            {% for error in documentoFiscal_form.lojista_cnpj.errors %}
+              <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          {# Número do Documento #}
+          <div>
+            <label for="{{ documentoFiscal_form.numeroDocumento.id_for_label }}" class="block text-sm font-medium text-gray-700">
+              Número do Documento
+            </label>
+            {% render_field documentoFiscal_form.numeroDocumento class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Ex: 001234" %}
+            {% for error in documentoFiscal_form.numeroDocumento.errors %}
+              <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          {# Valor do Documento #}
+          <div>
+            <label for="{{ documentoFiscal_form.valorDocumento.id_for_label }}" class="block text-sm font-medium text-gray-700">
+              Valor da Compra
+            </label>
+            {% render_field documentoFiscal_form.valorDocumento class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="R$ 0,00" %}
+            {% for error in documentoFiscal_form.valorDocumento.errors %}
+              <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          {# Data do Documento #}
+          <div>
+            <label for="{{ documentoFiscal_form.dataDocumento.id_for_label }}" class="block text-sm font-medium text-gray-700">
+              Data da Compra
+            </label>
+            {% render_field documentoFiscal_form.dataDocumento class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" %}
+            {% for error in documentoFiscal_form.dataDocumento.errors %}
+              <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+          {# Imagem do Documento #}
+          <div>
+            <label for="{{ documentoFiscal_form.imagem.id_for_label }}" class="block text-sm font-medium text-gray-700">
+              Foto do Cupom/Nota Fiscal
+            </label>
+            {% render_field documentoFiscal_form.imagem class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100" %}
+            {% for error in documentoFiscal_form.imagem.errors %}
+              <p class="text-red-500 text-xs mt-1">{{ error }}</p>
+            {% endfor %}
+          </div>
+
+        </div>
+
+        <div class="mt-8 flex justify-end">
+          <button type="submit" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Enviar Documento
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# Coluna Direita: Informações #}
+  <div class="w-full md:w-1/3 lg:w-1/2">
+    <div class="bg-gray-50 p-6 rounded-lg shadow-md">
+      <h3 class="text-xl font-bold mb-4 text-gray-700">Instruções</h3>
+      <div class="prose prose-sm text-gray-600">
+        <p>Preencha o formulário ao lado com os dados do seu cupom ou nota fiscal.</p>
+        <ul>
+          <li><strong>CNPJ do Lojista:</strong> Encontrado no topo do seu cupom fiscal.</li>
+          <li><strong>Número do Documento:</strong> Geralmente identificado como COO (Cupom de Operação) ou NFC-e.</li>
+          <li><strong>Valor da Compra:</strong> O valor total da sua compra.</li>
+          <li><strong>Data da Compra:</strong> A data em que a compra foi realizada.</li>
+          <li><strong>Foto do Cupom:</strong> Tire uma foto legível do seu cupom fiscal. Certifique-se de que todos os dados estão visíveis.</li>
+        </ul>
+        <p class="mt-4">Após o envio, seus documentos serão analisados e, se validados, você receberá seus cupons para concorrer aos prêmios.</p>
+        <p class="mt-2 font-semibold">Boa sorte!</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara para CNPJ
+    const cnpjInput = document.querySelector('input[name="lojista_cnpj"]');
+    if (cnpjInput) {
+        cnpjInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+            value = value.replace(/^(\d{2}\.\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\.\d{3})(\d)/, '$1/$2');
+            value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            e.target.value = value.slice(0, 18);
+        });
+    }
+
+    // Máscara para Valor (dinheiro)
+    const valorInput = document.querySelector('input[name="valorDocumento"]');
+    if (valorInput) {
+        valorInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            value = (parseInt(value) / 100).toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            });
+            e.target.value = value;
+        });
+    }
+});
+</script>
+{% endblock %}

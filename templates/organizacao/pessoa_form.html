@@ -1,0 +1,56 @@
+{% extends "base-dashboard.html" %}
+{% load widget_tweaks %}
+{% block title %}{% if is_new %}Nova{% else %}Editar{% endif %} Pessoa{% endblock %}
+{% block content %}
+<main class="pt-5 mt-5">
+  <div class="container py-4">
+    <nav class="mb-3">
+      <ol class="breadcrumb breadcrumb-standard">
+        <li class="breadcrumb-item"><a href="{% url 'lojista:homepage' %}" class="text-decoration-none"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'organizacao:pessoas_list' %}" class="text-decoration-none">Organização</a></li>
+        <li class="breadcrumb-item active">{% if is_new %}Nova{% else %}Editar{% endif %} Pessoa</li>
+      </ol>
+    </nav>
+    <div class="card">
+      <div class="card-body">
+    <h5 class="mb-3">{% if is_new %}Nova{% else %}Editar{% endif %} Pessoa</h5>
+    <form method="post" class="row g-3" novalidate>
+      {% csrf_token %}
+      <div class="col-md-6">
+        <label class="form-label">Nome</label>
+        {{ form.nome }}
+        {% if form.nome.errors %}<div class="invalid-feedback d-block">{{ form.nome.errors }}</div>{% endif %}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">CPF</label>
+        {{ form.cpf|add_class:"cpf-mask" }}
+        {% if form.cpf.errors %}<div class="invalid-feedback d-block">{{ form.cpf.errors }}</div>{% endif %}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Origem</label>
+        {{ form.origem }}
+        {% if form.origem.errors %}<div class="invalid-feedback d-block">{{ form.origem.errors }}</div>{% endif %}
+      </div>
+      <div class="col-12 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{% url 'organizacao:pessoas_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+      </div>
+    </form>
+      </div>
+    </div>
+  </div>
+  </main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/masks.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    if (window.jQuery && jQuery.fn.mask) {
+      jQuery('.cpf-mask').mask('000.000.000-00', {reverse: true});
+    }
+  });
+</script>
+{% endblock %}
+
+

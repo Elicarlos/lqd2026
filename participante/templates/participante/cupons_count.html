@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantidade de Cupons por Documento Fiscal</title>
+</head>
+<body>
+    <h1>Quantidade de Cupons por Documento Fiscal</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID do Documento Fiscal</th>
+                <th>Número do Documento Fiscal</th>
+                <th>Total de Cupons</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cupons_por_documento %}
+                <tr>
+                    <td>{{ item.documentoFiscal__id }}</td>
+                    <td>{{ item.documentoFiscal__numeroDocumento }}</td>
+                    <td>{{ item.total_cupons }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

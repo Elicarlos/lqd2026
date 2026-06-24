@@ -1,0 +1,58 @@
+{% extends 'mobile.html' %}
+
+{% block title %}Buscar por Documento{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Buscar por Documento</h1>
+        <p class="mt-2 text-sm text-gray-600">
+          Digite o CPF do participante para buscar seus documentos
+        </p>
+      </div>
+
+      <form method="get" class="max-w-md mx-auto">
+        <div class="space-y-4">
+          <!-- Campo CPF -->
+          <div>
+            <label for="cpf" class="block text-sm font-medium text-gray-700">
+              CPF do Participante
+              <span class="text-red-500">*</span>
+            </label>
+            <div class="mt-1">
+              <input 
+                type="text" 
+                name="q" 
+                id="cpf"
+                class="cpf shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" 
+                placeholder="000.000.000-00"
+                required
+              >
+            </div>
+          </div>
+
+          <!-- Botões -->
+          <div class="flex items-center justify-end space-x-4 pt-4">
+            <a href="{% url 'lojista:homepage' %}" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Voltar
+            </a>
+            <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function() {
+  // Máscara para CPF
+  $('.cpf').mask('000.000.000-00');
+});
+</script>
+
+{% endblock %} 

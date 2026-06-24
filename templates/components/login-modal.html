@@ -1,0 +1,312 @@
+{% load static %}
+
+<!-- Login Modal Component -->
+<div class="modal fade modal-standard" id="loginModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+        <div class="modal-content">
+            <div class="modal-header border-0" style="background: white !important; color: #333 !important;">
+                <span></span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 p-md-5">
+                <!-- Header do Modal - Mesmo padrão da página de reset -->
+                <div class="text-center mb-4">
+                    <div class="mb-3">
+                        <img src="{% static 'img/2023/logo.png' %}" alt="Natal de Luz e Prêmios" 
+                             class="img-fluid" style="max-height: 60px;">
+                    </div>                    
+                    <h2 class="h3 fw-bold text-dark mb-2">Acesse sua conta</h2>
+                    <p class="text-muted mb-0">
+                        Digite seu CPF e senha para acessar sua conta
+                    </p>
+                </div>
+
+                <form id="loginForm" method="post" class="form-standard">
+                    {% csrf_token %}
+                    
+                    <!-- CPF Field -->
+                    <div class="form-floating mb-4">
+                        <input type="text" 
+                               class="form-control cpf-mask" 
+                               name="username" 
+                               id="id_username_login" 
+                               placeholder="000.000.000-00" 
+                               required>
+                        <label for="id_username_login" class="fw-semibold">
+                            <i class="fas fa-user me-2"></i>CPF <span class="text-danger">*</span>
+                        </label>
+                        <div id="username-login-error" class="invalid-feedback d-none"></div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="form-floating mb-4">
+                        <input type="password" 
+                               class="form-control" 
+                               name="password" 
+                               id="id_password_login" 
+                               placeholder="Digite sua senha" 
+                               required>
+                        <label for="id_password_login" class="fw-semibold">
+                            <i class="fas fa-lock me-2"></i>Senha <span class="text-danger">*</span>
+                        </label>
+                        <div id="password-login-error" class="invalid-feedback d-none"></div>
+                    </div>
+
+                    <div class="text-end mb-4">
+                        <a href="{% url 'participante:password_reset' %}" class="text-decoration-none text-primary">
+                            <i class="fas fa-key me-1"></i>Esqueceu a senha?
+                        </a>
+                    </div>
+
+                    <!-- Botão seguindo o padrão estabelecido -->
+                    <div class="d-grid gap-2 mb-4">
+                        <button type="submit" class="btn btn-gradient btn-action">
+                            <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                        </button>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="text-center mb-4">
+                        <div class="position-relative">
+                            <hr class="my-0">
+                            <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
+                                ou
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Register Link -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'participante:register' %}" class="btn btn-outline-secondary btn-action">
+                            <i class="fas fa-user-plus me-2"></i>Cadastre-se aqui
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Help Text -->
+                <div class="text-center mt-4">
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-question-circle me-1"></i>
+                        Precisa de ajuda? Entre em contato com nosso suporte
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Custom styles for login modal - same as other pages */
+.modal-standard .modal-content {
+    border-radius: 1rem;
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.modal-standard .modal-header {
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    padding: 1.5rem 1.5rem 0;
+}
+
+.modal-standard .modal-body {
+    padding: 1.5rem;
+}
+
+/* Melhorar form controls */
+.modal-standard .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Melhorar botões */
+.modal-standard .btn-action {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modal-standard .btn-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Melhorar alertas */
+.modal-standard .alert-standard {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(0,0,0,.08);
+    padding: 1rem 1.5rem;
+}
+
+.modal-standard .alert-success {
+    background: rgba(25, 135, 84, 0.1);
+    border-color: rgba(25, 135, 84, 0.2);
+    color: #198754;
+}
+
+.modal-standard .alert-danger {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.modal-standard .alert-warning {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.modal-standard .alert-info {
+    background: rgba(13, 202, 240, 0.1);
+    border-color: rgba(13, 202, 240, 0.2);
+    color: #0dcaf0;
+}
+
+/* Melhorar invalid feedback */
+.modal-standard .invalid-feedback {
+    font-size: 0.875rem;
+    color: #dc3545;
+    margin-top: 0.25rem;
+}
+
+.modal-standard .form-control.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Melhorar links */
+.modal-standard .text-primary {
+    color: #667eea !important;
+    transition: color 0.2s ease;
+}
+
+.modal-standard .text-primary:hover {
+    color: #5a6fd8 !important;
+}
+
+/* Melhorar divider */
+.modal-standard hr {
+    border-color: rgba(0,0,0,.1);
+}
+
+.modal-standard .position-absolute {
+    background: white;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Melhorias de responsividade */
+@media (max-width: 768px) {
+    .modal-standard .modal-dialog {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+    
+    .modal-standard .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-standard .btn-action {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Animação de entrada do modal */
+.modal-standard.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+    transform: translate(0, -50px);
+}
+
+.modal-standard.show .modal-dialog {
+    transform: none;
+}
+
+/* Foco automático no primeiro campo */
+.modal-standard .form-control:first-of-type {
+    animation: focusIn 0.3s ease;
+}
+
+@keyframes focusIn {
+    from { 
+        opacity: 0.8; 
+        transform: scale(0.98); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    // Initialize masks for login modal
+    $('#loginModal .cpf-mask').mask('000.000.000-00');
+    
+    // Auto-focus on CPF field when modal opens
+    $('#loginModal').on('shown.bs.modal', function() {
+        $('#id_username_login').focus();
+    });
+    
+    // Form validation
+    $('#loginForm').on('submit', function(e) {
+        let isValid = true;
+        
+        // Clear previous errors
+        $('.invalid-feedback').addClass('d-none');
+        $('.form-control').removeClass('is-invalid');
+        
+        // Validate CPF
+        const cpf = $('#id_username_login').val().replace(/\D/g, '');
+        if (cpf.length !== 11) {
+            $('#id_username_login').addClass('is-invalid');
+            $('#username-login-error').removeClass('d-none').text('CPF deve ter 11 dígitos');
+            isValid = false;
+        }
+        
+        // Validate password
+        const password = $('#id_password_login').val();
+        if (password.length < 1) {
+            $('#id_password_login').addClass('is-invalid');
+            $('#password-login-error').removeClass('d-none').text('Senha é obrigatória');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // Real-time validation
+    $('#id_username_login').on('blur', function() {
+        const cpf = $(this).val().replace(/\D/g, '');
+        if (cpf.length > 0 && cpf.length !== 11) {
+            $(this).addClass('is-invalid');
+            $('#username-login-error').removeClass('d-none').text('CPF deve ter 11 dígitos');
+        } else {
+            $(this).removeClass('is-invalid');
+            $('#username-login-error').addClass('d-none');
+        }
+    });
+    
+    $('#id_password_login').on('blur', function() {
+        const password = $(this).val();
+        if (password.length === 0) {
+            $(this).addClass('is-invalid');
+            $('#password-login-error').removeClass('d-none').text('Senha é obrigatória');
+        } else {
+            $(this).removeClass('is-invalid');
+            $('#password-login-error').addClass('d-none');
+        }
+    });
+    
+    // Clear errors when user starts typing
+    $('.form-control').on('input', function() {
+        $(this).removeClass('is-invalid');
+        $(this).siblings('.invalid-feedback').addClass('d-none');
+    });
+});
+</script>

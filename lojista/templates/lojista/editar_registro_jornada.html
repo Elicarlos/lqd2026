@@ -1,0 +1,401 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Editar Registro de Jornada - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    .status-badge {
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+    }
+    
+    .status-ativa { background-color: #d1e7dd; color: #0f5132; }
+    .status-finalizada { background-color: #cfe2ff; color: #084298; }
+    .status-pausa { background-color: #fff3cd; color: #664d03; }
+    .status-cancelada { background-color: #f8d7da; color: #721c24; }
+    
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        color: #667eea;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-action {
+        min-width: 120px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_registros_jornada' %}" class="text-decoration-none">
+                            Registros de Jornada
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Editar Registro</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">
+                                <i class="fas fa-edit text-primary me-2"></i>Editar Registro de Jornada
+                            </h1>
+                            <p class="text-muted mb-0">Corrija horários, status e observações do registro</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:gestao_registros_jornada' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Informações do Registro -->
+            <div class="col-md-4">
+                <div class="card card-standard h-100">
+                    <div class="card-header bg-white border-0 p-4">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fas fa-info-circle text-info me-2"></i>Informações do Registro
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <div class="mb-3">
+                                <h6 class="fw-bold mb-1">
+                                    {% if registro.user.profile.nome %}
+                                        {{ registro.user.profile.nome }}
+                                    {% elif registro.user.get_full_name %}
+                                        {{ registro.user.get_full_name }}
+                                    {% else %}
+                                        {{ registro.user.username }}
+                                    {% endif %}
+                                </h6>
+                                {% if registro.user.profile.CPF %}
+                                <p class="text-muted mb-0">{{ registro.user.profile.CPF }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            {% if registro.posto_trabalho %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Posto de Trabalho</label>
+                                <div class="badge bg-light text-dark fs-6">{{ registro.posto_trabalho.nome }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if jornada_configurada %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Horário Configurado</label>
+                                <div class="alert alert-info py-2 px-3 mb-0">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-clock text-info me-2"></i>
+                                        <div>
+                                            <div class="fw-semibold">{{ jornada_configurada.tipo_jornada.nome }}</div>
+                                            <div class="small">
+                                                {{ jornada_configurada.tipo_jornada.hora_inicio|time:"H:i" }} - {{ jornada_configurada.tipo_jornada.hora_fim|time:"H:i" }}
+                                            </div>
+                                            <div class="small text-muted">
+                                                {{ jornada_configurada.tipo_jornada.get_dias_semana_display }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Status Atual</label>
+                                <div>
+                                    <span class="status-badge status-{{ registro.status|lower }}">
+                                        {% if registro.status == 'ATIVA' %}
+                                        <i class="fas fa-play me-1"></i>Ativa
+                                        {% elif registro.status == 'FINALIZADA' %}
+                                        <i class="fas fa-check me-1"></i>Finalizada
+                                        {% elif registro.status == 'PAUSA' %}
+                                        <i class="fas fa-pause me-1"></i>Pausada
+                                        {% elif registro.status == 'CANCELADA' %}
+                                        <i class="fas fa-times me-1"></i>Cancelada
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Duração Atual</label>
+                                <div class="h5 fw-bold text-primary">{{ registro.get_duracao_formatada }}</div>
+                            </div>
+                            
+                            {% if registro.finalizada_por %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Finalizada por</label>
+                                <div class="small">{{ registro.finalizada_por.get_full_name|default:registro.finalizada_por.username }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Última Atualização</label>
+                                <div class="small">{{ registro.ultimo_update|date:"d/m/Y H:i" }}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Ações Rápidas -->
+                        <div class="border-top pt-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-bolt text-warning me-2"></i>Ações Rápidas
+                            </h6>
+                            
+                            <div class="d-grid gap-2">
+                                {% if registro.status == 'ATIVA' %}
+                                <form method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="pausar">
+                                    <button type="submit" class="btn btn-outline-warning btn-action">
+                                        <i class="fas fa-pause me-2"></i>Pausar Jornada
+                                    </button>
+                                </form>
+                                
+                                <form method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="finalizar">
+                                    <button type="submit" class="btn btn-outline-success btn-action">
+                                        <i class="fas fa-stop me-2"></i>Finalizar Jornada
+                                    </button>
+                                </form>
+                                {% elif registro.status == 'PAUSA' %}
+                                <form method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="retomar">
+                                    <button type="submit" class="btn btn-outline-primary btn-action">
+                                        <i class="fas fa-play me-2"></i>Retomar Jornada
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formulário de Edição -->
+            <div class="col-md-8">
+                <div class="card card-standard">
+                    <div class="card-header bg-white border-0 p-4">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fas fa-edit text-primary me-2"></i>Editar Registro
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        {% if jornada_configurada %}
+                        <div class="alert alert-light border-info mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                <div>
+                                    <strong>Dica:</strong> O horário configurado para este colaborador é 
+                                    <span class="badge bg-info text-white">{{ jornada_configurada.tipo_jornada.hora_inicio|time:"H:i" }} - {{ jornada_configurada.tipo_jornada.hora_fim|time:"H:i" }}</span>
+                                    ({{ jornada_configurada.tipo_jornada.nome }}). Use como referência ao corrigir os horários.
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="salvar">
+                            
+                            <div class="row g-4">
+                                <!-- Horário de Início -->
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="datetime-local" 
+                                               class="form-control" 
+                                               id="horario_inicio" 
+                                               name="horario_inicio"
+                                               value="{{ registro.horario_inicio|date:'Y-m-d\TH:i' }}"
+                                               required>
+                                        <label for="horario_inicio" class="fw-semibold">
+                                            <i class="fas fa-clock me-2"></i>Horário de Início
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Horário de Fim -->
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="datetime-local" 
+                                               class="form-control" 
+                                               id="horario_fim" 
+                                               name="horario_fim"
+                                               value="{% if registro.horario_fim %}{{ registro.horario_fim|date:'Y-m-d\TH:i' }}{% endif %}">
+                                        <label for="horario_fim" class="fw-semibold">
+                                            <i class="fas fa-clock me-2"></i>Horário de Fim (opcional)
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Status -->
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="status" name="status" required>
+                                            <option value="ATIVA" {% if registro.status == 'ATIVA' %}selected{% endif %}>Ativa</option>
+                                            <option value="FINALIZADA" {% if registro.status == 'FINALIZADA' %}selected{% endif %}>Finalizada</option>
+                                            <option value="PAUSA" {% if registro.status == 'PAUSA' %}selected{% endif %}>Pausada</option>
+                                            <option value="CANCELADA" {% if registro.status == 'CANCELADA' %}selected{% endif %}>Cancelada</option>
+                                        </select>
+                                        <label for="status" class="fw-semibold">
+                                            <i class="fas fa-tag me-2"></i>Status
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Duração Calculada -->
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="duracao_calculada" 
+                                               value="{{ registro.get_duracao_formatada }}"
+                                               readonly>
+                                        <label for="duracao_calculada" class="fw-semibold">
+                                            <i class="fas fa-hourglass-half me-2"></i>Duração Calculada
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Observações -->
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <textarea class="form-control" 
+                                                  id="observacoes" 
+                                                  name="observacoes" 
+                                                  style="height: 120px"
+                                                  placeholder="Observações sobre esta jornada">{{ registro.observacoes }}</textarea>
+                                        <label for="observacoes" class="fw-semibold">
+                                            <i class="fas fa-sticky-note me-2"></i>Observações
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Botões de Ação -->
+                            <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                                <div>
+                                    <a href="{% url 'lojista:gestao_registros_jornada' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancelar
+                                    </a>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-gradient">
+                                        <i class="fas fa-save me-2"></i>Salvar Alterações
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const horarioInicio = document.getElementById('horario_inicio');
+    const horarioFim = document.getElementById('horario_fim');
+    const duracaoCalculada = document.getElementById('duracao_calculada');
+    
+    function calcularDuracao() {
+        if (horarioInicio.value && horarioFim.value) {
+            const inicio = new Date(horarioInicio.value);
+            const fim = new Date(horarioFim.value);
+            
+            if (fim > inicio) {
+                const diff = fim - inicio;
+                const horas = Math.floor(diff / (1000 * 60 * 60));
+                const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const segundos = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                duracaoCalculada.value = `${horas}h ${minutos}m ${segundos}s`;
+            } else {
+                duracaoCalculada.value = 'Horário inválido';
+            }
+        } else {
+            duracaoCalculada.value = 'N/A';
+        }
+    }
+    
+    horarioInicio.addEventListener('change', calcularDuracao);
+    horarioFim.addEventListener('change', calcularDuracao);
+    
+    // Calcular duração inicial
+    calcularDuracao();
+    
+    // Validação de horários
+    function validarHorarios() {
+        if (horarioInicio.value && horarioFim.value) {
+            const inicio = new Date(horarioInicio.value);
+            const fim = new Date(horarioFim.value);
+            
+            if (fim <= inicio) {
+                alert('O horário de fim deve ser maior que o horário de início!');
+                horarioFim.value = '';
+                calcularDuracao();
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    horarioFim.addEventListener('change', validarHorarios);
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!validarHorarios()) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

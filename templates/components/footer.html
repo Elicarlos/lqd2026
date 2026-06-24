@@ -1,0 +1,394 @@
+{% load static %}
+<!-- Footer -->
+<footer class="footer py-4 py-md-5" style="background: linear-gradient(135deg, #0d6efd 100%);">
+    <div class="container">
+        <div class="row gy-4 gx-4">
+            <!-- Brand Section -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="brand-section text-center text-md-start">
+                    <img src="{% static 'img/2023/logo-cdl.png' %}" alt="CDL Teresina" class="mb-3 footer-logo" height="48">
+                    <p class="text-white-75 mb-4 text-white footer-description">
+                        A maior campanha de varejo de Teresina, promovendo o comércio local e premiando os consumidores.
+                    </p>
+                    <div class="social-links d-flex gap-3 justify-content-center justify-content-md-start">
+                        <a href="https://www.instagram.com/cdlteresina/" target="_blank" 
+                           class="social-link">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="https://www.facebook.com/cdlteresina/" target="_blank"
+                           class="social-link">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="http://www.cdlteresina.com.br/" target="_blank"
+                           class="social-link">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="text-center text-md-start">
+                    <h5 class="text-white fw-bold mb-3">Links Rápidos</h5>
+                    <ul class="nav flex-column footer-links">
+                        <li class="nav-item">
+                            <a href="{% url 'participante:homepage' %}#como-participar" class="nav-link px-0">
+                                <i class="fas fa-play-circle me-2"></i>Como Participar
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'participante:homepage' %}#premios" class="nav-link px-0">
+                                <i class="fas fa-trophy me-2"></i>Prêmios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'participante:register' %}" class="nav-link px-0">
+                                <i class="fas fa-user-plus me-2"></i>Cadastre-se
+                            </a> 
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% static 'docs/regulamento.pdf' %}" target="_blank" class="nav-link px-0">
+                                <i class="fas fa-file-text me-2"></i>Regulamento
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Support -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="text-center text-md-start">
+                    <h5 class="text-white fw-bold mb-3">Suporte</h5>
+                    <ul class="nav flex-column footer-links">
+                        <li class="nav-item">
+                            <a href="tel:+5586999285100" class="nav-link px-0">
+                                <i class="fab fa-whatsapp me-2"></i>(86) 9 9928-5100
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="tel:+558631420747" class="nav-link px-0">
+                                <i class="fas fa-phone me-2"></i>(86) 3142-0747
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="mailto:liquidateresina@cdlteresina.com.br" class="nav-link px-0">
+                                <i class="fas fa-envelope me-2"></i>Liquidateresina@cdlteresina.com.br
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/ajuda" class="nav-link px-0">
+                                <i class="fas fa-question-circle me-2"></i>Central de Ajuda
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/faq" class="nav-link px-0">
+                                <i class="fas fa-comments me-2"></i>Perguntas Frequentes
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="text-center text-md-start">
+                    <h5 class="text-white fw-bold mb-3">Participe Agora</h5>
+                    <p class="text-white-75 mb-4 text-white footer-description">
+                        Junte-se à maior campanha de varejo de Teresina e concorra a prêmios incríveis!
+                    </p>
+                    <div class="d-flex justify-content-center justify-content-md-start">
+                        <!-- <a href="{% url 'participante:register' %}" class="btn btn-light fw-semibold footer-cta-btn">
+                            <i class="fas fa-user-plus me-2"></i>
+                            Cadastre-se
+                        </a> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="footer-bottom mt-4 mt-md-5 pt-4 border-top border-white border-opacity-25">
+            <div class="row align-items-center gy-3">
+                <div class="col-12 col-md-6 text-center text-md-start">
+                    <p class="text-white-75 mb-0">
+                        &copy; {% now "Y" %} Natal de Luz e Prêmios. Todos os direitos reservados.
+                    </p>
+                </div>
+                <div class="col-12 col-md-6 text-center text-md-end text-white" style="color: white;">
+                    <a href="{% url 'participante:politica-privacidade' %}" class="text-white text-decoration-none me-3 footer-link">
+                        Política de Privacidade
+                    </a>
+                    <a href="{% url 'participante:termos-uso' %}" class="text-white text-decoration-none footer-link">
+                        Termos de Uso
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<style>
+.footer {
+    position: relative;
+    overflow: hidden;
+}
+
+.footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" stroke-width="0.3" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    pointer-events: none;
+}
+
+.footer .container {
+    position: relative;
+    z-index: 1;
+}
+
+.footer-logo {
+    filter: brightness(0) invert(1);
+    transition: transform 0.3s ease;
+}
+
+.footer-logo:hover {
+    transform: scale(1.05);
+}
+
+.footer-description {
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.social-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links .nav-link {
+    color: rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.3s ease;
+    padding: 0.5rem 0;
+    border-radius: 0.5rem;
+    margin-bottom: 0.25rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.footer-links .nav-link:hover {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.footer-links .nav-link i {
+    width: 16px;
+    text-align: center;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.footer-links .nav-link:hover i {
+    transform: scale(1.2);
+}
+
+.footer-cta-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.footer-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.footer-bottom {
+    position: relative;
+}
+
+.footer-bottom::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+.footer-link {
+    transition: all 0.3s ease;
+    position: relative;
+    font-size: 0.85rem;
+}
+
+.footer-link:hover {
+    color: white !important;
+}
+
+.footer-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: white;
+    transition: width 0.3s ease;
+}
+
+.footer-link:hover::after {
+    width: 100%;
+}
+
+/* Responsividade para tablets */
+@media (min-width: 768px) and (max-width: 991px) {
+    .footer .col-md-6 {
+        margin-bottom: 2rem;
+    }
+    
+    .footer-links .nav-link {
+        justify-content: flex-start;
+    }
+    
+    .social-links {
+        justify-content: flex-start !important;
+    }
+    
+    .brand-section,
+    .text-center.text-md-start {
+        text-align: left !important;
+    }
+}
+
+/* Responsividade para mobile */
+@media (max-width: 767px) {
+    .footer {
+        padding: 2rem 0 !important;
+    }
+    
+    .footer .col-12 {
+        margin-bottom: 2rem;
+    }
+    
+    .footer .col-12:last-child {
+        margin-bottom: 0;
+    }
+    
+    .footer-links .nav-link {
+        justify-content: center;
+        padding: 0.75rem 0;
+        font-size: 0.95rem;
+    }
+    
+    .footer-links .nav-link:hover {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.75rem 1rem;
+    }
+    
+    .social-links {
+        justify-content: center !important;
+        margin-bottom: 1rem;
+    }
+    
+    .social-link {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .footer-cta-btn {
+        width: 100%;
+        max-width: 250px;
+        padding: 1rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .footer-description {
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .footer-bottom {
+        margin-top: 2rem !important;
+        padding-top: 2rem !important;
+    }
+    
+    .footer-bottom .row {
+        gap: 1rem;
+    }
+    
+    .footer-bottom p,
+    .footer-bottom a {
+        font-size: 0.9rem;
+    }
+}
+
+/* Responsividade para telas muito pequenas */
+@media (max-width: 480px) {
+    .footer {
+        padding: 1.5rem 0 !important;
+    }
+    
+    .footer .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .footer-links .nav-link {
+        font-size: 0.9rem;
+        padding: 0.5rem 0;
+    }
+    
+    .footer-cta-btn {
+        padding: 0.875rem 1.25rem;
+        font-size: 0.95rem;
+    }
+    
+    .social-link {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .footer-description {
+        font-size: 0.9rem;
+    }
+    
+    .footer-bottom p,
+    .footer-bottom a {
+        font-size: 0.85rem;
+    }
+}
+</style>

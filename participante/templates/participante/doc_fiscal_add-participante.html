@@ -1,0 +1,973 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+{% load widget_tweaks %}
+{% block title %}Adicionar Documento Fiscal - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for document fiscal add - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar form controls */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorar botões */
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Melhorar alertas */
+    .alert-standard {
+        border-radius: 0.75rem;
+        border: 1px solid rgba(0,0,0,.08);
+        padding: 1rem 1.5rem;
+    }
+    
+    .alert-success {
+        background: rgba(25, 135, 84, 0.1);
+        border-color: rgba(25, 135, 84, 0.2);
+        color: #198754;
+    }
+    
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.1);
+        border-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    .alert-warning {
+        background: rgba(255, 193, 7, 0.1);
+        border-color: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+    }
+    
+    .alert-info {
+        background: rgba(13, 202, 240, 0.1);
+        border-color: rgba(13, 202, 240, 0.2);
+        color: #0dcaf0;
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .btn-action {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Melhorar header em mobile */
+        .d-flex.align-items-center.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+        
+        .flex-shrink-0 {
+            align-self: stretch;
+        }
+        
+        .flex-shrink-0 .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        /* Melhorar seções em mobile */
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        /* Melhorar breadcrumb */
+        .breadcrumb {
+            font-size: 0.875rem;
+        }
+        
+        /* Melhorar títulos */
+        h1.h3 {
+            font-size: 1.5rem;
+        }
+        
+        h4.h5 {
+            font-size: 1.1rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .form-section {
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .card-body {
+            padding: 1rem !important;
+        }
+        
+        .btn-action {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Melhorar layout dos botões */
+        .d-flex.justify-content-between.gap-3 {
+            flex-direction: column;
+            gap: 0.5rem !important;
+        }
+        
+        /* Melhorar campos de input */
+        .form-floating {
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            font-size: 16px; /* Evita zoom no iOS */
+        }
+        
+        /* Melhorar upload de arquivos */
+        input[type="file"] {
+            font-size: 0.875rem;
+        }
+        
+        /* Melhorar alertas */
+        .alert {
+            padding: 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Melhorar preview de cupons */
+        .alert-info {
+            padding: 0.75rem;
+        }
+        
+        .alert-info .d-flex {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        /* Melhorar preview de cupons em mobile */
+        #preview-cupons-container {
+            margin-top: 1rem;
+        }
+        
+        #preview-cupons-container .row {
+            margin: 0;
+        }
+        
+        #preview-cupons-container .col-12,
+        #preview-cupons-container .col-md-6 {
+            padding: 0.25rem 0;
+        }
+        
+        #preview-cupons-container .d-flex.justify-content-between {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        #preview-cupons-container .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        #preview-cupons-container small {
+            font-size: 0.7rem;
+        }
+        
+        /* Melhorar responsividade do preview */
+        @media (max-width: 576px) {
+            #preview-cupons-container .d-flex.justify-content-between {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+            
+            #preview-cupons-container .badge {
+                font-size: 0.7rem;
+                padding: 0.2rem 0.4rem;
+            }
+            
+            #preview-cupons-container small {
+                font-size: 0.65rem;
+            }
+            
+            #preview-cupons-container .alert {
+                padding: 0.75rem;
+            }
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .container {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+        
+        .form-section {
+            padding: 0.5rem;
+        }
+        
+        .section-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+        }
+        
+        /* Melhorar espaçamento */
+        .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .mb-3 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .g-3 {
+            --bs-gutter-x: 0.75rem;
+            --bs-gutter-y: 0.75rem;
+        }
+        
+        /* Melhorar campos de arquivo */
+        input[type="file"] {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Melhorar feedback visual */
+        .form-control.is-valid {
+            border-color: #198754;
+            box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+        }
+        
+        .form-control.is-invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        /* Melhorar animações */
+        .form-floating {
+            transition: all 0.2s ease;
+        }
+        
+        .form-floating:focus-within {
+            transform: translateY(-2px);
+        }
+        
+        /* Melhorar acessibilidade */
+        .form-control:focus {
+            outline: 2px solid #007bff;
+            outline-offset: 2px;
+        }
+        
+        /* Animações para preview de cupons */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .animate__pulse {
+            animation: pulse 0.3s ease-in-out;
+        }
+        
+        .animate__fadeIn {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Melhorar touch targets */
+        .btn, .form-control, input[type="file"] {
+            min-height: 44px;
+        }
+        
+        /* Melhorar espaçamento em telas muito pequenas */
+        @media (max-width: 375px) {
+            .container {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+            
+            .form-section {
+                padding: 0.5rem;
+            }
+            
+            .card-body {
+                padding: 0.75rem !important;
+            }
+            
+            .btn-action {
+                font-size: 0.85rem;
+                padding: 0.6rem 0.8rem;
+            }
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:dashboard' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <i class="fas fa-plus me-1"></i>Adicionar Documento
+                    </li>
+                </ol>
+            </nav>
+            
+                
+                        </div>
+
+                        <!-- Mensagens -->
+                        {% if messages %}
+                        <div class="mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-standard alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message|safe }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-9">
+                        <form action="." method="post" enctype="multipart/form-data" class="form-standard">
+                            {% csrf_token %}
+                    
+                    <!-- Informações do Lojista -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-primary bg-opacity-10 me-3">
+                                <i class="fas fa-store text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Informações do Lojista</h4>
+                                <p class="text-muted mb-0">Dados da loja onde foi feita a compra</p>
+                            </div>
+                        </div>
+                            
+                            <div class="row g-3">
+                            <!-- CNPJ da Loja -->
+                                <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                        <input type="text" 
+                                               name="lojista_cnpj" 
+                                               id="id_lojista_cnpj" 
+                                               class="form-control cnpj-mask" 
+                                               placeholder="00.000.000/0000-00" 
+                                               value="{{ documentoFiscal_form.lojista_cnpj.value|default:'' }}" 
+                                               required>
+                                    <label for="id_lojista_cnpj" class="fw-semibold">
+                                        <i class="fas fa-building me-2"></i>CNPJ da Loja <span class="text-danger">*</span>
+                                        </label>
+                                        {% if documentoFiscal_form.lojista_cnpj.errors %}
+                                            <div class="invalid-feedback d-block">{{ documentoFiscal_form.lojista_cnpj.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                            <!-- Vendedor -->
+                                <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                        <input type="text" 
+                                               name="vendedor" 
+                                               id="id_vendedor" 
+                                               class="form-control" 
+                                               placeholder="Nome do vendedor" 
+                                               value="{{ documentoFiscal_form.vendedor.value|default:'' }}">
+                                    <label for="id_vendedor" class="fw-semibold">
+                                            <i class="fas fa-user me-2"></i>Vendedor
+                                        </label>
+                                        {% if documentoFiscal_form.vendedor.errors %}
+                                            <div class="invalid-feedback d-block">{{ documentoFiscal_form.vendedor.errors }}</div>
+                                        {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações do Documento -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-info bg-opacity-10 me-3">
+                                <i class="fas fa-file-invoice text-info"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Informações do Documento</h4>
+                                <p class="text-muted mb-0">Dados da nota fiscal ou cupom</p>
+                                    </div>
+                                </div>
+
+                        <div class="row g-3">
+                            <!-- Número do Documento -->
+                                <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                        <input type="text" 
+                                               name="numeroDocumento" 
+                                               id="id_numeroDocumento" 
+                                               class="form-control" 
+                                               placeholder="Número da nota fiscal" 
+                                               value="{{ documentoFiscal_form.numeroDocumento.value|default:'' }}" 
+                                               required>
+                                    <label for="id_numeroDocumento" class="fw-semibold">
+                                        <i class="fas fa-hashtag me-2"></i>Número do Documento <span class="text-danger">*</span>
+                                        </label>
+                                        {% if documentoFiscal_form.numeroDocumento.errors %}
+                                            <div class="invalid-feedback d-block">{{ documentoFiscal_form.numeroDocumento.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                            <!-- Data da Compra -->
+                                <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                        <input type="date" 
+                                               name="dataDocumento" 
+                                               id="id_dataDocumento" 
+                                               class="form-control" 
+                                               value="{{ documentoFiscal_form.dataDocumento.value|default:'' }}" 
+                                               required>
+                                    <label for="id_dataDocumento" class="fw-semibold">
+                                        <i class="fas fa-calendar me-2"></i>Data da Compra <span class="text-danger">*</span>
+                                        </label>
+                                        {% if documentoFiscal_form.dataDocumento.errors %}
+                                            <div class="invalid-feedback d-block">{{ documentoFiscal_form.dataDocumento.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                            </div>
+                                        </div>
+
+                    <!-- Valores Separados -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-success bg-opacity-10 me-3">
+                                <i class="fas fa-calculator text-success"></i>
+                                                    </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Valores Separados</h4>
+                                <p class="text-muted mb-0">Detalhamento dos valores da compra</p>
+                                            </div>
+                                        </div>
+
+                        <div class="row g-3">
+                            <!-- Valor Cielo -->
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           name="valorCielo" 
+                                           id="id_valorCielo" 
+                                           class="form-control money-mask" 
+                                           placeholder="0,00" 
+                                           value="{{ documentoFiscal_form.valorCielo.value|default:'' }}">
+                                    <label for="id_valorCielo" class="fw-semibold">
+                                        <i class="fas fa-credit-card me-2"></i>Valor Cielo
+                                    </label>
+                                    {% if documentoFiscal_form.valorCielo.errors %}
+                                        <div class="invalid-feedback d-block">{{ documentoFiscal_form.valorCielo.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Valor Outros -->
+                                <div class="col-12 col-md-6">
+                                    <div class="form-floating">
+                                    <input type="text" 
+                                           name="valorOutros" 
+                                           id="id_valorOutros" 
+                                       class="form-control money-mask" 
+                                           placeholder="0,00" 
+                                           value="{{ documentoFiscal_form.valorOutros.value|default:'' }}">
+                                    <label for="id_valorOutros" class="fw-semibold">
+                                        <i class="fas fa-money-bill-wave me-2"></i>Valor Outros
+                                </label>
+                                    {% if documentoFiscal_form.valorOutros.errors %}
+                                        <div class="invalid-feedback d-block">{{ documentoFiscal_form.valorOutros.errors }}</div>
+                                {% endif %}
+                                </div>
+                                        </div>
+                                        
+                            <!-- Valor Total (calculado automaticamente) -->
+                                <div class="col-md-12">
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           name="valorDocumento" 
+                                           id="id_valorDocumento" 
+                                           class="form-control money-mask" 
+                                           placeholder="0,00" 
+                                           value="{{ documentoFiscal_form.valorDocumento.value|default:'' }}" 
+                                           readonly>
+                                    <label for="id_valorDocumento" class="fw-semibold">
+                                        <i class="fas fa-money-bill me-2"></i>Valor Total <span class="text-muted">(calculado)</span>
+                                        </label>
+                                    {% if documentoFiscal_form.valorDocumento.errors %}
+                                        <div class="invalid-feedback d-block">{{ documentoFiscal_form.valorDocumento.errors }}</div>
+                                        {% endif %}
+                                </div>
+                                <div class="form-text small text-muted mt-1">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>Regra de Cupons:</strong> 1 cupom a cada R$ 50 em outros meios | 3 cupons a cada R$ 50 na Cielo
+                                </div>
+                            </div>
+                                    </div>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-warning bg-opacity-10 me-3">
+                                <i class="fas fa-comment text-warning"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Observações</h4>
+                                <p class="text-muted mb-0">Informações adicionais sobre o documento</p>
+                                </div>
+                            </div>
+
+                        <div class="form-floating">
+                            <textarea name="observacao" 
+                                      id="id_observacao" 
+                                      class="form-control" 
+                                      placeholder="Observações sobre o documento" 
+                                      rows="3"></textarea>
+                            <label for="id_observacao" class="fw-semibold">
+                                <i class="fas fa-sticky-note me-2"></i>Observações
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Upload de Arquivos -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-primary bg-opacity-10 me-3">
+                                <i class="fas fa-upload text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Upload de Arquivos</h4>
+                                <p class="text-muted mb-0">Anexe os documentos fiscais</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Documento Fiscal -->
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                    <input type="file" 
+                                           name="photo" 
+                                           id="id_photo" 
+                                           class="form-control" 
+                                           accept="image/*,.pdf" 
+                                           required>
+                                    <label for="id_photo" class="fw-semibold">
+                                        <i class="fas fa-file-invoice me-2"></i>Documento Fiscal <span class="text-danger">*</span>
+                                    </label>
+                                    {% if documentoFiscal_form.photo.errors %}
+                                        <div class="invalid-feedback d-block">{{ documentoFiscal_form.photo.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Comprovante do Cartão -->
+                            <div class="col-12 col-md-6">
+                                <div class="form-floating">
+                                    <input type="file" 
+                                           name="photo2" 
+                                           id="id_photo2" 
+                                           class="form-control" 
+                                           accept="image/*,.pdf">
+                                    <label for="id_photo2" class="fw-semibold">
+                                        <i class="fas fa-credit-card me-2"></i>Comprovante do Cartão
+                                    </label>
+                                    {% if documentoFiscal_form.photo2.errors %}
+                                        <div class="invalid-feedback d-block">{{ documentoFiscal_form.photo2.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="card card-standard">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between gap-3">
+                                <a href="{% url 'participante:dashboard' %}" class="btn btn-outline-secondary btn-action">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-gradient btn-action">
+                                    <i class="fas fa-save me-2"></i>Adicionar Documento
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize masks
+    $('.cnpj-mask').mask('00.000.000/0000-00');
+    $('.money-mask').mask('#.##0,00', {reverse: true});
+    
+    // Função para converter string de dinheiro para número
+    function parseMoneyValue(value) {
+        if (!value) return 0;
+        return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+    }
+    
+    // Função para formatar número para string de dinheiro
+    function formatMoneyValue(value) {
+        return value.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    // Sistema modular de cálculo de cupons (SEGURO E REUTILIZÁVEL)
+    var CuponsCalculator = {
+        // Cache para evitar requisições desnecessárias
+        cache: {},
+        timeout: null,
+        
+        // Função principal para calcular cupons via servidor
+        calcular: function(valorCielo, valorOutros, callback) {
+            var cacheKey = valorCielo + '_' + valorOutros;
+            
+            // Verificar cache primeiro (performance)
+            if (this.cache[cacheKey]) {
+                callback(this.cache[cacheKey]);
+                return;
+            }
+            
+            // Mostrar loading se callback for fornecido
+            if (callback) {
+                callback({loading: true});
+            }
+            
+            // Fazer requisição AJAX
+            $.ajax({
+                url: "{% url 'participante:calcular_cupons_preview' %}",
+                method: 'POST',
+                data: {
+                    valor_cielo: valorCielo,
+                    valor_outros: valorOutros,
+                    csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Salvar no cache (performance)
+                        CuponsCalculator.cache[cacheKey] = response;
+                        callback(response);
+                    } else {
+                        callback({error: response.error});
+                    }
+                },
+                error: function(xhr, status, error) {
+                    callback({error: 'Erro na conexão. Tente novamente.'});
+                }
+            });
+        },
+        
+        // Função para limpar cache (útil para atualizações)
+        limparCache: function() {
+            this.cache = {};
+        },
+        
+        // Função para debounce (performance)
+        calcularComDebounce: function(valorCielo, valorOutros, callback, delay) {
+            clearTimeout(this.timeout);
+            this.timeout = setTimeout(function() {
+                CuponsCalculator.calcular(valorCielo, valorOutros, callback);
+            }, delay || 500);
+        }
+    };
+    
+    // Função para atualizar preview de cupons (REUTILIZÁVEL)
+    function atualizarPreviewCupons(data) {
+        var valorCielo = data.valor_cielo || 0;
+        var valorOutros = data.valor_outros || 0;
+        var cupons = data.cupons || 0;
+        var valorTotal = data.valor_total || 0;
+        
+        // Atualizar preview se existir
+        if ($('#preview-cupons-container').length) {
+            if (data.loading) {
+                $('#preview-cupons-total').html('<i class="fas fa-spinner fa-spin"></i>');
+                return;
+            }
+            
+            if (data.error) {
+                $('#preview-cupons-container').removeClass('alert-info').addClass('alert-danger');
+                $('#preview-cupons-total').html('<i class="fas fa-exclamation-triangle"></i> Erro');
+                return;
+            }
+            
+            // Restaurar estilo normal
+            $('#preview-cupons-container').removeClass('alert-danger').addClass('alert-info');
+            $('#preview-cupons-total').text(cupons);
+            $('#preview-valor-cielo').text('R$ ' + formatMoneyValue(valorCielo));
+            $('#preview-valor-outros').text('R$ ' + formatMoneyValue(valorOutros));
+            $('#preview-valor-total').text('R$ ' + formatMoneyValue(valorTotal));
+            
+            // Animação sutil
+            $('#preview-cupons-container').addClass('animate__animated animate__pulse');
+            setTimeout(function() {
+                $('#preview-cupons-container').removeClass('animate__animated animate__pulse');
+            }, 300);
+            
+        } else {
+            // Criar preview se não existir (mantém seu layout original)
+            var previewHtml = `
+                <div class="alert alert-info alert-dismissible fade show mt-3" id="preview-cupons-container">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-ticket-alt me-2"></i>
+                                <strong>Preview de Cupons (Tempo Real):</strong>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span><i class="fas fa-credit-card me-1 text-primary"></i>Cielo:</span>
+                                <small class="text-muted" id="preview-valor-cielo">R$ ${formatMoneyValue(valorCielo)}</small>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span><i class="fas fa-money-bill-wave me-1 text-success"></i>Outros:</span>
+                                <small class="text-muted" id="preview-valor-outros">R$ ${formatMoneyValue(valorOutros)}</small>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <hr class="my-2">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <strong>Total de Cupons:</strong>
+                                <span class="badge bg-info fs-6" id="preview-cupons-total">${cupons}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('#id_valorDocumento').closest('.form-section').append(previewHtml);
+        }
+    }
+    
+    // Auto-calculate total value and update cupons preview (PERFORMÁTICO)
+    $('#id_valorCielo, #id_valorOutros').on('input', function() {
+        var valorCielo = parseMoneyValue($('#id_valorCielo').val());
+        var valorOutros = parseMoneyValue($('#id_valorOutros').val());
+        var total = valorCielo + valorOutros;
+        
+        // Atualizar valor total imediatamente
+        $('#id_valorDocumento').val(formatMoneyValue(total));
+        
+        // Calcular cupons via servidor (SEGURO) com debounce
+        if (total >= 50) {
+            CuponsCalculator.calcularComDebounce(valorCielo, valorOutros, atualizarPreviewCupons, 500);
+        } else {
+            // Remover preview se valor < 50
+            $('#preview-cupons-container').fadeOut(300, function() {
+                $(this).remove();
+            });
+        }
+    });
+    
+    // Auto-fill total when document value changes
+    $('#id_valorDocumento').on('input', function() {
+        var total = parseMoneyValue($(this).val());
+        var valorCielo = parseMoneyValue($('#id_valorCielo').val());
+        var valorOutros = total - valorCielo;
+        
+        if (valorOutros < 0) {
+            $('#id_valorOutros').val('0,00');
+            $('#id_valorCielo').val(formatMoneyValue(total));
+            valorCielo = total;
+            valorOutros = 0;
+        } else {
+            $('#id_valorOutros').val(formatMoneyValue(valorOutros));
+        }
+        
+        // Recalcular cupons
+        if (total >= 50) {
+            CuponsCalculator.calcularComDebounce(valorCielo, valorOutros, atualizarPreviewCupons, 500);
+        }
+    });
+    
+    // Melhorar experiência mobile
+    function enhanceMobileExperience() {
+        // Melhorar campos de data em mobile
+        if (window.innerWidth <= 768) {
+            $('input[type="date"]').attr('type', 'text').attr('placeholder', 'DD/MM/AAAA');
+            
+            // Adicionar máscara para data em mobile
+            $('input[type="text"][placeholder="DD/MM/AAAA"]').mask('00/00/0000');
+        }
+        
+        // Melhorar upload de arquivos em mobile
+        $('input[type="file"]').on('change', function() {
+            var fileName = this.files[0] ? this.files[0].name : 'Nenhum arquivo selecionado';
+            var label = $(this).siblings('label');
+            var originalText = label.attr('data-original-text') || label.text();
+            
+            if (!label.attr('data-original-text')) {
+                label.attr('data-original-text', originalText);
+            }
+            
+            if (this.files[0]) {
+                label.html('<i class="fas fa-check text-success me-2"></i>' + fileName);
+            } else {
+                label.text(originalText);
+            }
+        });
+        
+        // Melhorar validação em tempo real
+        $('.form-control').on('blur', function() {
+            if (this.checkValidity()) {
+                $(this).removeClass('is-invalid').addClass('is-valid');
+            } else {
+                $(this).removeClass('is-valid').addClass('is-invalid');
+            }
+        });
+        
+        // Melhorar feedback visual
+        $('.form-control').on('input', function() {
+            $(this).removeClass('is-invalid is-valid');
+        });
+    }
+    
+    // Melhorar acessibilidade
+    function enhanceAccessibility() {
+        // Adicionar labels para leitores de tela
+        $('input[type="file"]').each(function() {
+            var id = $(this).attr('id');
+            var label = $('label[for="' + id + '"]');
+            if (label.length) {
+                $(this).attr('aria-describedby', id + '-help');
+                label.after('<div id="' + id + '-help" class="form-text small text-muted">Clique para selecionar um arquivo</div>');
+            }
+        });
+        
+        // Melhorar navegação por teclado
+        $('.form-control').on('keydown', function(e) {
+            if (e.key === 'Enter' && $(this).hasClass('form-control')) {
+                e.preventDefault();
+                var nextField = $(this).closest('.form-floating').next().find('.form-control');
+                if (nextField.length) {
+                    nextField.focus();
+                }
+            }
+        });
+    }
+    
+    // Melhorar performance
+    function enhancePerformance() {
+        // Debounce para cálculos
+        var timeout;
+        $('#id_valorCielo, #id_valorOutros').on('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(function() {
+                var valorCielo = parseMoneyValue($('#id_valorCielo').val());
+                var valorOutros = parseMoneyValue($('#id_valorOutros').val());
+                var total = valorCielo + valorOutros;
+                $('#id_valorDocumento').val(formatMoneyValue(total));
+                atualizarPreviewCupons();
+            }, 300);
+        });
+        
+        // Lazy loading para preview
+        var previewTimeout;
+        function showPreview() {
+            clearTimeout(previewTimeout);
+            previewTimeout = setTimeout(atualizarPreviewCupons, 500);
+        }
+        
+        $('#id_valorCielo, #id_valorOutros').on('input', showPreview);
+    }
+    
+    // Inicializar melhorias
+    enhanceMobileExperience();
+    enhanceAccessibility();
+    enhancePerformance();
+    
+    // Inicializar preview de cupons se já há valores
+    var valorCieloInicial = parseMoneyValue($('#id_valorCielo').val());
+    var valorOutrosInicial = parseMoneyValue($('#id_valorOutros').val());
+    if (valorCieloInicial + valorOutrosInicial >= 50) {
+        CuponsCalculator.calcular(valorCieloInicial, valorOutrosInicial, atualizarPreviewCupons);
+    }
+    
+    // Melhorar responsividade em mudanças de orientação
+    $(window).on('orientationchange resize', function() {
+        setTimeout(enhanceMobileExperience, 100);
+    });
+});
+</script>
+{% endblock %}

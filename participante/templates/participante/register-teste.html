@@ -1,0 +1,24 @@
+{% extends "mobile.html" %}
+
+{% load static %}
+
+{% block content %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="{% static 'js/polyfiller.js' %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function(){
+        $(".CPF").on("input", function(){
+            var textoDigitado = $(this).val();
+            var inputCusto = $(this).attr("username");
+            $("#"+ inputCusto).val(textoDigitado);
+        });
+    });
+    </script>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% bootstrap_form user_form show_label=False show_help=True layout='horizontal' %}
+    {% bootstrap_form profile_form show_label=False layout='horizontal' show_help=True exclude='enderecoComplemento, whatsapp, facebook, twitter, foneFixo, foneCelular2, foneCelular3, pergunta' %}
+    <button type="submit">Registrar</button>
+</form>
+
+{% endblock %}

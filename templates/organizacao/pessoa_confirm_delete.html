@@ -1,0 +1,18 @@
+{% extends "base-dashboard.html" %}
+{% block title %}Excluir Pessoa{% endblock %}
+{% block content %}
+<main class="pt-5 mt-5">
+  <div class="container py-4">
+    <div class="alert alert-warning">
+      Tem certeza que deseja excluir <strong>{{ pessoa.nome }}</strong> ({{ pessoa.cpf }})?
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Excluir</button>
+      <a href="{% url 'organizacao:pessoas_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+  </div>
+</main>
+{% endblock %}
+
+

@@ -1,0 +1,184 @@
+{% extends "mobile.html" %}
+{% load auth_extras %}
+{% block title %}{{ page_title }} - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-6">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-6">
+            <nav class="flex items-center space-x-2 text-sm text-gray-600 mb-4">
+                <a href="{% url 'lojista:homepage' %}" class="hover:text-purple-600 transition-colors">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <i class="fas fa-chevron-right text-gray-400"></i>
+                <span class="text-purple-600 font-medium">Solicitar Materiais</span>
+            </nav>
+            
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-boxes text-xl text-white"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Solicitar Materiais</h1>
+                        <p class="text-gray-600">Faça solicitações de bobinas e materiais da campanha</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações do Usuário -->
+        {% if profile %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center space-x-2 mb-2">
+                <i class="fas fa-info-circle text-blue-600"></i>
+                <h3 class="font-medium text-blue-900">Informações do Solicitante</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <span class="font-medium text-blue-800">Nome:</span>
+                    <span class="text-blue-700">{{ profile.nome|default:request.user.email }}</span>
+                </div>
+                {% if posto_trabalho %}
+                <div>
+                    <span class="font-medium text-blue-800">Posto de Trabalho:</span>
+                    <span class="text-blue-700">{{ posto_trabalho.nome }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Formulário de Solicitação -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Tipo de Material -->
+                <div>
+                    <label for="tipo_material" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-box text-purple-600 mr-1"></i>
+                        Tipo de Material *
+                    </label>
+                    <select name="tipo_material" id="tipo_material" required 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="">Selecione o tipo de material</option>
+                        {% for value, label in tipos_materiais %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Quantidade -->
+                <div>
+                    <label for="quantidade" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-hashtag text-purple-600 mr-1"></i>
+                        Quantidade *
+                    </label>
+                    <input type="number" name="quantidade" id="quantidade" required min="1"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                           placeholder="Ex: 5">
+                </div>
+
+                <!-- Descrição/Justificativa -->
+                <div>
+                    <label for="descricao" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-comment-alt text-purple-600 mr-1"></i>
+                        Descrição/Justificativa *
+                    </label>
+                    <textarea name="descricao" id="descricao" required rows="4"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                              placeholder="Descreva o motivo da solicitação, uso previsto, etc."></textarea>
+                </div>
+
+                <!-- Urgência -->
+                <div>
+                    <label for="urgencia" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-clock text-purple-600 mr-1"></i>
+                        Nível de Urgência
+                    </label>
+                    <select name="urgencia" id="urgencia"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="baixa">🟢 Baixa - Pode aguardar alguns dias</option>
+                        <option value="normal" selected>🟡 Normal - Necessário em breve</option>
+                        <option value="alta">🟠 Alta - Urgente, necessário hoje</option>
+                        <option value="critica">🔴 Crítica - Parada de trabalho</option>
+                    </select>
+                </div>
+
+                <!-- Botões -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-medium py-3 px-6 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center justify-center space-x-2">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Enviar Solicitação</span>
+                    </button>
+                    
+                    <a href="{% url 'lojista:homepage' %}" 
+                       class="flex-1 bg-gray-100 text-gray-700 font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Voltar ao Dashboard</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Informações Adicionais -->
+        <div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h3 class="font-medium text-gray-900 mb-3 flex items-center">
+                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                Dicas para Solicitação
+            </h3>
+            <div class="text-sm text-gray-700 space-y-2">
+                <p><strong>📦 Bobinas:</strong> Especifique se é para cupons ou comprovantes</p>
+                <p><strong>⏰ Urgência:</strong> Solicitações críticas são priorizadas</p>
+                <p><strong>📝 Justificativa:</strong> Seja específico sobre a necessidade</p>
+                <p><strong>🔄 Acompanhamento:</strong> Você receberá feedback sobre sua solicitação</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript para melhorar a UX -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoMaterial = document.getElementById('tipo_material');
+    const quantidade = document.getElementById('quantidade');
+    
+    // Sugestões automáticas de quantidade baseadas no tipo
+    tipoMaterial.addEventListener('change', function() {
+        const tipo = this.value;
+        let sugestao = '';
+        
+        switch(tipo) {
+            case 'bobinas_cupom':
+            case 'bobinas_comprovante':
+                sugestao = '10';
+                break;
+            case 'papel_a4':
+                sugestao = '500';
+                break;
+            case 'canetas':
+                sugestao = '10';
+                break;
+            case 'grampeador':
+                sugestao = '1';
+                break;
+            case 'grampos':
+                sugestao = '1000';
+                break;
+            default:
+                sugestao = '1';
+        }
+        
+        if (sugestao && !quantidade.value) {
+            quantidade.value = sugestao;
+        }
+    });
+});
+</script>
+{% endblock %}

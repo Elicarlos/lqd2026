@@ -1,0 +1,302 @@
+{% load static %}
+<!-- Header Dashboard - Simplificado para colaboradores -->
+<nav class="navbar navbar-expand-lg fixed-top bg-white bg-opacity-95 border-bottom shadow-sm" style="backdrop-filter: blur(10px);">
+    <div class="container">
+        <!-- Logo -->
+        <a class="navbar-brand d-flex align-items-center" href="{% if request.user.is_authenticated %}{% if request.user.is_superuser %}{% url 'lojista:homepage' %}{% elif request.user.groups.all.0.name in 'Operador,Operadores,Backoffice,Supervisor,Recursos Humanos,Suporte,Gerente Solve' %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}{% else %}{% url 'participante:homepage' %}{% endif %}">
+            {% if campanha.logo_principal %}
+                <img src="{{ campanha.logo_principal.url }}" alt="Logo {{ campanha.nome }}" style="height: 40px; width: auto;">
+            {% else %}
+                <img src="{% static 'img/2023/logo.png' %}" alt="Logo Liquida" style="height: 40px; width: auto;">
+            {% endif %}
+        </a>
+
+        <!-- Mobile Toggle -->
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navigation Items -->
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <!-- Botões e Dropdown - Alinhados à direita -->
+            <div class="d-flex flex-column flex-lg-row gap-2 w-100 w-lg-auto align-items-center ms-auto justify-content-end">
+                {% if request.user.is_authenticated %}
+                    <!-- User Info Mobile -->
+                    <div class="d-lg-none mb-3">
+                        <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                            <div class="flex-shrink-0">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fw-semibold text-dark">{{ request.user.username }}</div>
+                                <small class="text-muted">{{ request.user.email }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Menu Items -->
+                    <div class="d-lg-none mb-3">
+                        <!-- Botão Finalizar/Iniciar Jornada Mobile -->
+                        {% if request.user.is_superuser or request.user.is_staff %}
+                            {% if request.user.profile.tem_jornada_ativa %}
+                            <div class="mb-3">
+                                <button type="button" onclick="finalizarJornada()" 
+                                        class="btn btn-warning w-100" title="Finalizar Jornada">
+                                    <i class="fas fa-stop-circle me-2"></i>Finalizar Jornada
+                                </button>
+                            </div>
+                            {% else %}
+                            <div class="mb-3">
+                                <a href="{% url 'participante:selecionar_posto' %}" 
+                                   class="btn btn-success w-100" title="Iniciar Jornada">
+                                    <i class="fas fa-play-circle me-2"></i>Iniciar Jornada
+                                </a>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                        
+                        <div class="list-group list-group-flush">
+                            <a href="{% if request.user.is_superuser or request.user.groups.all.0.name in 'Operador,Operadores,Backoffice,Supervisor,Recursos Humanos,Suporte,Gerente Solve' %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}" class="list-group-item list-group-item-action border-0 px-0">
+                                <i class="fas fa-home me-3 text-primary"></i>Dashboard
+                            </a>
+                            {% if request.user.is_superuser or request.user.is_staff %}
+                            <a href="https://solve.page.gd/" target="_blank" rel="noopener noreferrer" class="list-group-item list-group-item-action border-0 px-0">
+                                <i class="fas fa-external-link-alt me-3 text-primary"></i>Solicitação de Material
+                            </a>
+                            {% endif %}
+                            {% if request.user.is_superuser %}
+                            <a href="{% url 'participante:funcionalidades_list' %}" class="list-group-item list-group-item-action border-0 px-0">
+                                <i class="fas fa-cogs me-3 text-primary"></i>Gerenciar Funcionalidades
+                            </a>
+                            <a href="{% url 'participante:cards_list' %}" class="list-group-item list-group-item-action border-0 px-0">
+                                <i class="fas fa-th-large me-3 text-primary"></i>Gerenciar Cards
+                            </a>
+                            <a href="{% url 'participante:secoes_list' %}" class="list-group-item list-group-item-action border-0 px-0">
+                                <i class="fas fa-columns me-3 text-primary"></i>Gerenciar Seções
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'participante:password_change' %}" class="list-group-item list-group-item-action border-0 px-0">
+                                <i class="fas fa-key me-3 text-primary"></i>Trocar Senha
+                            </a>
+                            <a href="tel:+5586999285100" class="nav-link px-0">
+                                <i class="fab fa-whatsapp me-2"></i>Suporte
+                            </a>
+                            <form method="post" action="{% url 'participante:logout' %}" style="display: inline; width: 100%;">
+                                {% csrf_token %}
+                                <button type="submit" class="list-group-item list-group-item-action border-0 px-0 text-danger w-100 text-start" style="background: none; border: none; cursor: pointer;">
+                                    <i class="fas fa-sign-out-alt me-3"></i>Sair
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Layout -->
+                    <div class="d-none d-lg-flex align-items-center gap-2 ms-auto">
+                        <!-- Botões para Staff/Superuser -->
+                        {% if request.user.is_superuser or request.user.is_staff %}
+                        <!-- Link Material -->
+                        <a href="https://solve.page.gd/" target="_blank" rel="noopener noreferrer" 
+                           class="btn btn-outline-primary btn-sm px-3" title="Solicitação de Material">
+                            <i class="fas fa-external-link-alt me-1"></i>
+                            <span class="d-none d-xl-inline">Material</span>
+                        </a>
+
+                        <!-- Link Suporte -->
+                        <a href="tel:+5586999285100" class="nav-link px-0">
+                            <i class="fab fa-whatsapp me-2"></i>Suporte
+                        </a>
+                        
+                        <!-- Botão Finalizar Jornada -->
+                        {% if request.user.profile.tem_jornada_ativa %}
+                        <button type="button" onclick="finalizarJornada()" 
+                                class="btn btn-warning btn-sm px-3" title="Finalizar Jornada">
+                            <i class="fas fa-stop-circle me-1"></i>
+                            <span class="d-none d-xl-inline">Finalizar Jornada</span>
+                        </button>
+                        {% else %}
+                        <!-- Botão Iniciar Jornada -->
+                        <a href="{% url 'participante:selecionar_posto' %}" 
+                           class="btn btn-success btn-sm px-3" title="Iniciar Jornada">
+                            <i class="fas fa-play-circle me-1"></i>
+                            <span class="d-none d-xl-inline">Iniciar Jornada</span>
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                        
+                        <!-- Desktop Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-gradient btn-sm dropdown-toggle" 
+                                    type="button" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span class="d-none d-sm-inline">{{ request.user.username|truncatechars:15 }}</span>
+                            </button>
+
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3">
+                                <li>
+                                    <a class="dropdown-item" href="{% if request.user.is_superuser or request.user.groups.all.0.name in 'Operador,Operadores,Backoffice,Supervisor,Recursos Humanos,Suporte,Gerente Solve' %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}">
+                                        <i class="fas fa-home me-2"></i>Dashboard
+                                    </a>
+                                </li>
+                                {% if request.user.is_superuser %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'participante:funcionalidades_list' %}">
+                                        <i class="fas fa-cogs me-2"></i>Gerenciar Funcionalidades
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'participante:cards_list' %}">
+                                        <i class="fas fa-th-large me-2"></i>Gerenciar Cards
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'participante:secoes_list' %}">
+                                        <i class="fas fa-columns me-2"></i>Gerenciar Seções
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'participante:password_change' %}">
+                                        <i class="fas fa-key me-2"></i>Trocar Senha
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'participante:logout' %}" style="display: inline; width: 100%;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger border-0 bg-transparent w-100 text-start" style="cursor: pointer;">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Sair
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Login/Register buttons for non-authenticated users -->
+                    <a href="{% url 'participante:register' %}" class="btn btn-outline-primary d-flex align-items-center justify-content-center">
+                        <i class="fas fa-user-plus me-2"></i>
+                        <span class="d-none d-sm-inline">Cadastre-se</span>
+                        <span class="d-sm-none">Cadastro</span>
+                    </a>
+                    <button type="button" data-bs-toggle="modal" data-bs-target="#loginModal" 
+                            class="btn btn-gradient d-flex align-items-center justify-content-center">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        <span class="d-none d-sm-inline">Entrar</span>
+                        <span class="d-sm-none">Login</span>
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- CSS adicional para melhorar a responsividade -->
+<style>
+    /* Melhorar o header responsivo */
+    .navbar {
+        z-index: 1030;
+        transition: all 0.3s ease;
+    }
+    
+    .navbar-brand img {
+        transition: all 0.3s ease;
+    }
+    
+    .navbar-toggler {
+        border: none;
+        padding: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .navbar-toggler:focus {
+        box-shadow: none;
+        outline: none;
+    }
+    
+    .navbar-toggler:hover {
+        background-color: rgba(0,0,0,0.05);
+        border-radius: 0.375rem;
+    }
+    
+    /* Melhorar o menu mobile */
+    .navbar-collapse {
+        transition: all 0.3s ease;
+    }
+    
+    /* Forçar alinhamento à direita no desktop */
+    @media (min-width: 992px) {
+        .navbar-collapse {
+            justify-content: flex-end !important;
+        }
+        
+        .navbar-nav {
+            margin-left: auto !important;
+        }
+    }
+    
+    @media (max-width: 991.98px) {
+        .navbar-collapse {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+            margin-top: 0.5rem;
+            padding: 1rem;
+        }
+        
+        .navbar-nav .list-group-item {
+            border-radius: 0.375rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .navbar-nav .list-group-item:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+    }
+    
+    /* Melhorar botões responsivos */
+    .btn {
+        transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+    
+    /* Melhorar dropdown */
+    .dropdown-menu {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+        animation: dropdownFadeIn 0.2s ease;
+    }
+    
+    @keyframes dropdownFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Melhorar espaçamento do conteúdo principal */
+    main {
+        padding-top: 80px;
+    }
+    
+    @media (max-width: 768px) {
+        main {
+            padding-top: 70px;
+        }
+        
+        .navbar-brand img {
+            height: 35px !important;
+        }
+    }
+</style>

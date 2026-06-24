@@ -1,0 +1,251 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Buscar Participante por CPF - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for search by CPF - same as other pages */
+    .card {
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+        background: #ffffff;
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #ffffff;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar form controls */
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorar botões */
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+    }
+    
+    /* Melhorar alertas */
+    .alert-standard {
+        border-radius: 0.75rem;
+        border: 1px solid rgba(0,0,0,.08);
+        padding: 1rem 1.5rem;
+    }
+    
+    .alert-success {
+        background: rgba(25, 135, 84, 0.1);
+        border-color: rgba(25, 135, 84, 0.2);
+        color: #198754;
+    }
+    
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.1);
+        border-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    /* Melhorar cards de ação */
+    .action-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(0,0,0,.08);
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .btn-action {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .action-card {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <i class="fas fa-search me-1"></i>Buscar Participante
+                    </li>
+                </ol>
+            </nav>           
+        </div>
+
+        <!-- Mensagens de Erro/Sucesso -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-standard alert-dismissible fade show" role="alert">
+                        <div class="d-flex align-items-center">
+                            {% if message.tags == 'error' %}
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% elif message.tags == 'success' %}
+                                <i class="fas fa-check-circle me-2"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                            {% else %}
+                                <i class="fas fa-info-circle me-2"></i>
+                            {% endif %}
+                            <span>{{ message }}</span>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-6">
+                <!-- Formulário de Busca -->
+                <div class="form-section" >
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="section-icon bg-primary bg-opacity-10 me-3">
+                            <i class="fas fa-search text-primary"></i>
+                        </div>
+                        <div>
+                            <h4 class="h5 fw-bold text-dark mb-1">Busca por CPF</h4>
+                            <p class="text-muted mb-0">Encontre participantes rapidamente</p>
+                        </div>
+                    </div>
+
+                    <form method="get" action="{% url 'participante:search_by_cpf' %}" class="form-standard">
+                        <div class="form-floating mb-4">
+                            <input type="text" 
+                                   class="form-control cpf-mask" 
+                                   id="cpf" 
+                                   name="q" 
+                                   placeholder="000.000.000-00"
+                                   value="{{ request.GET.q|default:'' }}"
+                                   required>
+                            <label for="cpf" class="fw-semibold">
+                                <i class="fas fa-id-card me-2"></i>CPF do Participante <span class="text-danger">*</span>
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'participante:cadastro-participante-operador' %}" class="btn btn-outline-secondary btn-action">
+                                <i class="fas fa-user-plus me-2"></i>Novo Participante
+                            </a>
+                            <button type="submit" class="btn btn-gradient btn-action">
+                                <i class="fas fa-search me-2"></i>Buscar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Card de Informações -->
+                <div class="form-section">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="section-icon bg-info bg-opacity-10 me-3">
+                            <i class="fas fa-info-circle text-info"></i>
+                        </div>
+                        <div>
+                            <h4 class="h5 fw-bold text-dark mb-1">Como funciona?</h4>
+                            <p class="text-muted mb-0">Encontre participantes rapidamente</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success bg-opacity-10 rounded-circle p-1 me-2">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <small class="text-muted">Digite o CPF completo</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success bg-opacity-10 rounded-circle p-1 me-2">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <small class="text-muted">Visualize dados completos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success bg-opacity-10 rounded-circle p-1 me-2">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <small class="text-muted">Gerencie documentos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success bg-opacity-10 rounded-circle p-1 me-2">
+                                    <i class="fas fa-check text-success"></i>
+                                </div>
+                                <small class="text-muted">Acompanhe cupons</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Initialize CPF mask
+    $('.cpf-mask').mask('000.000.000-00');
+    
+    // Auto-submit form when CPF is complete
+    $('.cpf-mask').on('input', function() {
+        var value = $(this).val().replace(/\D/g, '');
+        if (value.length === 11) {
+            // Optional: Auto-submit after a short delay
+            // setTimeout(function() {
+            //     $('form').submit();
+            // }, 500);
+        }
+    });
+});
+</script>
+{% endblock %}

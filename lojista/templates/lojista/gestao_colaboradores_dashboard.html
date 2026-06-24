@@ -1,0 +1,376 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Gestão de Colaboradores - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for gestao colaboradores dashboard - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Animation for stats cards */
+    .card .h2 {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 700;
+    }
+    
+    .card:hover .h2 {
+        transform: scale(1.08);
+        color: #667eea;
+    }
+    
+    /* Melhorar ícones dos cards de estatísticas */
+    .card .bg-primary.bg-opacity-10,
+    .card .bg-success.bg-opacity-10,
+    .card .bg-warning.bg-opacity-10,
+    .card .bg-info.bg-opacity-10 {
+        transition: all 0.3s ease;
+        border-radius: 0.75rem;
+    }
+    
+    .card:hover .bg-primary.bg-opacity-10 {
+        background-color: rgba(102, 126, 234, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-success.bg-opacity-10 {
+        background-color: rgba(25, 135, 84, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-warning.bg-opacity-10 {
+        background-color: rgba(255, 193, 7, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-info.bg-opacity-10 {
+        background-color: rgba(13, 202, 240, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Gestão de Colaboradores</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">
+                                <i class="fas fa-users-cog text-primary me-2"></i>Gestão de Colaboradores
+                            </h1>
+                            <p class="text-muted mb-0">Gerencie colaboradores, configure jornadas e postos de trabalho</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:gestao_colaborador_cadastrar' %}" class="btn btn-gradient">
+                                <i class="fas fa-user-plus me-2"></i>Novo Colaborador
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row g-4 mb-4">
+            <!-- Colaboradores Ativos -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Ativos</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ colaboradores_ativos_count }}</h3>
+                                <p class="small text-success mb-0">
+                                    <i class="fas fa-user-check me-1"></i>Colaboradores
+                                </p>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-user-check text-xl text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pendentes -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Pendentes</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ colaboradores_pendentes_count }}</h3>
+                                <p class="small text-warning mb-0">
+                                    <i class="fas fa-clock me-1"></i>Aguardando
+                                </p>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-clock text-xl text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tipos de Jornada -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Jornadas</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ tipos_jornada.count }}</h3>
+                                <p class="small text-primary mb-0">
+                                    <i class="fas fa-clock me-1"></i>Tipos
+                                </p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-clock text-xl text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Postos de Trabalho -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Postos</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ postos_trabalho.count }}</h3>
+                                <p class="small text-info mb-0">
+                                    <i class="fas fa-building me-1"></i>Locais
+                                </p>
+                            </div>
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-building text-xl text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ações Rápidas -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <h4 class="fw-bold text-dark mb-3">
+                    <i class="fas fa-bolt text-warning me-2"></i>Ações Rápidas
+                </h4>
+            </div>
+            
+            <!-- Cadastro Individual -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-user-plus text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Cadastro Individual</h5>
+                                <p class="text-muted small mb-0">Novo colaborador</p>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Cadastre um novo colaborador com todos os dados necessários.</p>
+                        <a href="{% url 'lojista:gestao_colaborador_cadastrar' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i>Acessar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cadastro em Massa -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-users text-success"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Cadastro em Massa</h5>
+                                <p class="text-muted small mb-0">Múltiplos colaboradores</p>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Cadastre múltiplos colaboradores via CSV/Excel.</p>
+                        <a href="{% url 'lojista:gestao_colaboradores_massa' %}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i>Acessar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Colaboradores Pendentes -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-user-clock text-warning"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Pendentes de Ativação</h5>
+                                <p class="text-muted small mb-0">Aguardando configuração</p>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Configure e ative colaboradores aguardando ativação.</p>
+                        <a href="{% url 'lojista:gestao_colaboradores_pendentes' %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i>Acessar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configuração Unificada -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-cogs text-info"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Configuração Unificada</h5>
+                                <p class="text-muted small mb-0">Jornadas e postos</p>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Configure jornadas, postos e permissões de forma unificada.</p>
+                        <a href="{% url 'lojista:configurar_colaborador_novo' %}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i>Acessar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Funcionalidades Específicas -->
+        <div class="row g-4">
+            <div class="col-12">
+                <h4 class="fw-bold text-dark mb-3">
+                    <i class="fas fa-tools text-secondary me-2"></i>Funcionalidades Específicas
+                </h4>
+            </div>
+            
+            <!-- Gestão de Jornadas -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-clock text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Gestão de Jornadas</h5>
+                                <p class="text-muted small mb-0">Configure tipos de jornada</p>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Crie e gerencie diferentes tipos de jornada de trabalho com horários e dias específicos.</p>
+                        <a href="{% url 'lojista:jornadas_gestao' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i>Acessar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Postos de Trabalho -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-building text-success"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Postos de Trabalho</h5>
+                                <p class="text-muted small mb-0">Gerencie locais de trabalho</p>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Configure e gerencie os diferentes postos de trabalho onde os colaboradores atuam.</p>
+                        <a href="{% url 'lojista:listar_postos' %}" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i>Acessar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Jornadas de Colaboradores -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-user-clock text-warning"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Jornadas Atribuídas</h5>
+                                <p class="text-muted small mb-0">Visualize jornadas ativas</p>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Visualize e gerencie as jornadas de trabalho atribuídas aos colaboradores.</p>
+                        <a href="{% url 'lojista:jornadas_colaboradores_list' %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i>Acessar
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gestão de Registros de Jornada -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-clock text-info"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Registros de Jornada</h5>
+                                <p class="text-muted small mb-0">Colaboradores</p>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-3">Visualize, edite e finalize registros de jornada dos colaboradores (equipe interna).</p>
+                        <a href="{% url 'lojista:gestao_registros_jornada' %}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-arrow-right me-1"></i>Acessar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

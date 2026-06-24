@@ -1,0 +1,158 @@
+{% load static %}
+{% load auth_extras %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Liquida 2025 - A maior campanha de varejo de Teresina">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}Natal de Luz e Prêmios{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'img/2023/favicon.ico' %}">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="{% static 'css/main.css' %}" rel="stylesheet">
+    <link href="{% static 'css/header-responsive.css' %}" rel="stylesheet">
+    
+    <!-- Garantir que $ esteja disponível ANTES de qualquer script -->
+    <script>
+    // Definir $ imediatamente para evitar erros de "Uncaught ReferenceError: $ is not defined"
+    window.$ = window.jQuery || function() {
+        console.warn('jQuery não está disponível ainda, usando fallback para $');
+        return {
+            ready: function(callback) {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', callback);
+                } else {
+                    callback();
+                }
+            },
+            fn: {},
+            mask: function() { return this; },
+            on: function() { return this; },
+            addClass: function() { return this; },
+            removeClass: function() { return this; },
+            text: function() { return this; },
+            val: function() { return ''; }
+        };
+    };
+    </script>
+    
+    {% block extra_css %}{% endblock %}
+
+    {% if campanha %}
+    <style>
+        :root {
+            --brand-primary: {{ campanha.cor_primaria }};
+            --brand-primary-dark: {{ campanha.cor_hover }};
+        }
+    </style>
+    {% endif %}
+</head>
+
+<body class="bg-light" 
+      data-is-staff="{{ request.user.is_staff|yesno:'true,false' }}" 
+      data-has-operational-group="{{ tem_grupo_operacional|yesno:'true,false' }}">
+    <!-- Header -->
+    {% block header %}
+        {% include 'components/header.html' %}
+    {% endblock %}
+
+    <!-- System Messages -->
+    {% if messages %}
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
+        {% for message in messages %}
+        <div class="toast align-items-center text-white bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}times-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2 text-center" style="width: 16px;"></i>
+                    {{ message }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Login Modal -->
+    {% include 'components/login-modal.html' %}
+
+    <!-- Posto de Trabalho Modal -->
+    <!-- DEBUG: {{ request.user.is_authenticated }} | {{ request.user.is_staff }} | {{ tem_grupo_operacional }} | {{ request.user.profile.posto_trabalho }} -->
+    <!-- Modal movido para templates específicos -->
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Footer -->
+    {% block footer %}
+        {% include 'components/footer.html' %}
+    {% endblock %}
+
+    <!-- jQuery e jQuery Mask -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    
+    <!-- Header Responsivo JavaScript -->
+    <script src="{% static 'js/header-responsive.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    
+    <!-- Garantir que jQuery esteja disponível globalmente -->
+    <script>
+    // Definir $ imediatamente para evitar erros
+    window.$ = window.jQuery || function() {
+        console.warn('jQuery não está disponível ainda, usando fallback');
+        return {
+            ready: function(callback) {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', callback);
+                } else {
+                    callback();
+                }
+            }
+        };
+    };
+    
+    if (typeof jQuery === 'undefined') {
+        console.error('jQuery não foi carregado corretamente');
+        // Tentar carregar novamente
+        var script = document.createElement('script');
+        script.src = 'https://code.jquery.com/jquery-3.7.1.min.js';
+        script.onload = function() {
+            console.log('jQuery carregado com sucesso na segunda tentativa:', jQuery.fn.jquery);
+            // Atualizar $ com o jQuery real
+            window.$ = jQuery;
+        };
+        document.head.appendChild(script);
+    } else {
+        console.log('jQuery carregado com sucesso:', jQuery.fn.jquery);
+        // Garantir que $ esteja disponível globalmente
+        window.$ = jQuery;
+    }
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Common Scripts -->
+    <script src="{% static 'js/main.js' %}"></script>
+
+    <!-- Posto Modal Script movido para templates específicos -->
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

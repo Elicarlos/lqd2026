@@ -1,0 +1,202 @@
+{% extends "mobile.html" %}
+{% load auth_extras %}
+{% load dashboard_cards %}
+{% block title %}Dashboard - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header com informações da campanha -->
+        <div class="mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Campanha Ativa -->
+                    <div class="flex items-center space-x-3 p-4 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-calendar-alt text-2xl text-red-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-red-800">Campanha Ativa</p>
+                            <p class="text-lg font-bold text-red-900">{{ campanha.nome|default:"Natal de Luz e Prêmios" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Usuário -->
+                    <div class="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user text-2xl text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-blue-800">Usuário</p>
+                            <p class="text-lg font-bold text-blue-900">{{ request.user.email }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Posto de Trabalho -->
+                    <div class="flex items-center space-x-3 p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-map-marker-alt text-2xl text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-green-800">Posto</p>
+                            <p class="text-lg font-bold text-green-900">{{ request.user.profile.posto_trabalho|default:"Não definido" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Status da Jornada -->
+                    <div class="flex items-center space-x-3 p-4 {% if not jornada_iniciada %}bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200{% else %}bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200{% endif %} rounded-lg border">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-clock text-2xl {% if not jornada_iniciada %}text-yellow-600{% else %}text-emerald-600{% endif %}"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium {% if not jornada_iniciada %}text-yellow-800{% else %}text-emerald-800{% endif %}">Jornada</p>
+                            <p class="text-lg font-bold {% if not jornada_iniciada %}text-yellow-900{% else %}text-emerald-900{% endif %}">
+                                {% if jornada_iniciada %}Ativa{% else %}Inativa{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards de Estatísticas Rápidas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Participantes Cadastrados -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Participantes</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.participantes|default:"0" }}</p>
+                        <p class="text-xs text-green-600 mt-1">
+                            <i class="fas fa-arrow-up mr-1"></i>+12% este mês
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-xl text-red-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lojistas Ativos -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Lojistas</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.lojistas|default:"0" }}</p>
+                        <p class="text-xs text-blue-600 mt-1">
+                            <i class="fas fa-check mr-1"></i>{{ stats.lojistas_ativos|default:"0" }} ativos
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-store text-xl text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos Pendentes -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Pendentes</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.pendentes|default:"0" }}</p>
+                        <p class="text-xs text-yellow-600 mt-1">
+                            <i class="fas fa-clock mr-1"></i>Aguardando validação
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-alt text-xl text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cupons Gerados -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Cupons Hoje</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ stats.cupons|default:"0" }}</p>
+                        <p class="text-xs text-emerald-600 mt-1">
+                            <i class="fas fa-ticket-alt mr-1"></i>Gerados hoje
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-ticket-alt text-xl text-emerald-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seções de Funcionalidades Dinâmicas -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Participantes -->
+            {% if participantes_cards %}
+                {% get_section_config 'participantes' as config %}
+                {% render_card_section participantes_cards config.title config.icon config.color %}
+            {% endif %}
+
+            <!-- Lojistas -->
+            {% if lojistas_cards %}
+                {% get_section_config 'lojistas' as config %}
+                {% render_card_section lojistas_cards config.title config.icon config.color %}
+            {% endif %}
+
+            <!-- Configurações -->
+            {% if configuracoes_cards %}
+                {% get_section_config 'configuracoes' as config %}
+                {% render_card_section configuracoes_cards config.title config.icon config.color %}
+            {% endif %}
+
+            <!-- Backoffice -->
+            {% if backoffice_cards %}
+                {% get_section_config 'backoffice' as config %}
+                {% render_card_section backoffice_cards config.title config.icon config.color %}
+            {% endif %}
+
+            <!-- Relatórios -->
+            {% if relatorios_cards %}
+                {% get_section_config 'relatorios' as config %}
+                {% render_card_section relatorios_cards config.title config.icon config.color %}
+            {% endif %}
+        </div>
+
+        <!-- Aviso sobre Jornada -->
+        {% if jornada_iniciada %}
+        <div class="mt-8 bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-clock text-2xl text-emerald-600"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-semibold text-emerald-800">Jornada Ativa</h3>
+                    <p class="text-emerald-700 mt-1">
+                        Sua jornada foi iniciada automaticamente. Ela será finalizada ao fazer logout ou após 30 minutos de inatividade.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="mt-8 bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-xl p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-2xl text-yellow-600"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-semibold text-yellow-800">Jornada Não Iniciada</h3>
+                    <p class="text-yellow-700 mt-1">
+                        Sua jornada será iniciada automaticamente quando você fizer login no sistema.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

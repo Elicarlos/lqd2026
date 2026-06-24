@@ -1,0 +1,253 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Filtros de Registro de Ponto - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Filtros de Registro de Ponto</li>
+                </ol>
+            </nav>
+            
+            <div class="card bg-white rounded-4 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Filtros de Registro de Ponto</h1>
+                            <p class="text-muted mb-0">Configure filtros para visualização de registros de ponto</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário de Filtros -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-filter me-2"></i>Configurar Filtros
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="GET" class="row g-3">
+                            <!-- Período -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                           value="{{ request.GET.data_inicio|default:'' }}" placeholder="Data Início">
+                                    <label for="data_inicio">Data Início</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                                           value="{{ request.GET.data_fim|default:'' }}" placeholder="Data Fim">
+                                    <label for="data_fim">Data Fim</label>
+                                </div>
+                            </div>
+
+                            <!-- Colaborador -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="colaborador" name="colaborador">
+                                        <option value="">Selecione um colaborador</option>
+                                        {% for colaborador in colaboradores %}
+                                        <option value="{{ colaborador.id }}" 
+                                                {% if request.GET.colaborador == colaborador.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ colaborador.profile.nome }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="colaborador">Colaborador</label>
+                                </div>
+                            </div>
+
+                            <!-- Posto de Trabalho -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="posto" name="posto">
+                                        <option value="">Selecione um posto</option>
+                                        {% for posto in postos %}
+                                        <option value="{{ posto.id }}" 
+                                                {% if request.GET.posto == posto.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ posto.nome }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="posto">Posto de Trabalho</label>
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="">Todos os status</option>
+                                        <option value="completo" {% if request.GET.status == 'completo' %}selected{% endif %}>Completo</option>
+                                        <option value="em_andamento" {% if request.GET.status == 'em_andamento' %}selected{% endif %}>Em andamento</option>
+                                    </select>
+                                    <label for="status">Status</label>
+                                </div>
+                            </div>
+
+                            <!-- Tipo de Jornada -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="jornada" name="jornada">
+                                        <option value="">Todas as jornadas</option>
+                                        {% for jornada in jornadas %}
+                                        <option value="{{ jornada.id }}" 
+                                                {% if request.GET.jornada == jornada.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ jornada.nome }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="jornada">Tipo de Jornada</label>
+                                </div>
+                            </div>
+
+                            <!-- Botões -->
+                            <div class="col-12">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search me-2"></i>Aplicar Filtros
+                                    </button>
+                                    <a href="{% url 'participante:registro_ponto_filtros' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Limpar Filtros
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações -->
+            <div class="col-lg-4">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-info-circle me-2"></i>Informações
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-dark">Como usar os filtros:</h6>
+                            <ul class="list-unstyled text-muted small">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Selecione um período para filtrar por data</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Escolha um colaborador específico</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Filtre por posto de trabalho</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Filtre por status (completo/em andamento)</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Filtre por tipo de jornada</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Dica:</strong> Deixe os campos vazios para ver todos os registros.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        {% if registros %}
+        <div class="row g-4 mt-4">
+            <div class="col-12">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-list me-2"></i>Resultados ({{ registros|length }} registros)
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0">Colaborador</th>
+                                        <th class="border-0">Data</th>
+                                        <th class="border-0">Início</th>
+                                        <th class="border-0">Fim</th>
+                                        <th class="border-0">Posto</th>
+                                        <th class="border-0">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in registros %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0 me-3">
+                                                    <div class="w-8 h-8 bg-light rounded-circle d-flex align-items-center justify-content-center">
+                                                        <i class="fas fa-user text-muted"></i>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">{{ registro.colaborador.profile.nome }}</div>
+                                                    <div class="text-muted small">{{ registro.colaborador.profile.CPF }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-dark">{{ registro.horario_inicio|date:"d/m/Y" }}</div>
+                                            <div class="text-muted small">{{ registro.horario_inicio|date:"l" }}</div>
+                                        </td>
+                                        <td>
+                                            {% if registro.horario_inicio %}
+                                                <span class="fw-semibold text-success">{{ registro.horario_inicio|time:"H:i" }}</span>
+                                            {% else %}
+                                                <span class="text-muted">--:--</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if registro.horario_fim %}
+                                                <span class="fw-semibold text-danger">{{ registro.horario_fim|time:"H:i" }}</span>
+                                            {% else %}
+                                                <span class="text-muted">--:--</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if registro.posto_trabalho %}
+                                                <span class="badge bg-light text-dark">{{ registro.posto_trabalho.nome }}</span>
+                                            {% else %}
+                                                <span class="text-muted">--</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if registro.horario_inicio and registro.horario_fim %}
+                                                <span class="badge bg-success">Completo</span>
+                                            {% elif registro.horario_inicio and not registro.horario_fim %}
+                                                <span class="badge bg-warning">Em andamento</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

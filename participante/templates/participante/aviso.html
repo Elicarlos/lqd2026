@@ -1,0 +1,74 @@
+{% extends "base-bootstrap.html" %}
+
+{% load static %}
+
+{% block title %}{{ titulo|default:"Aviso" }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <div class="text-center">
+                <!-- Ícone dinâmico baseado no tipo de mensagem -->
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4
+                    {% if tipo == 'error' %}bg-red-100{% elif tipo == 'warning' %}bg-yellow-100{% elif tipo == 'info' %}bg-blue-100{% else %}bg-gray-100{% endif %}">
+                    <i class="fas 
+                        {% if tipo == 'error' %}fa-exclamation-triangle text-red-600
+                        {% elif tipo == 'warning' %}fa-exclamation-circle text-yellow-600
+                        {% elif tipo == 'info' %}fa-info-circle text-blue-600
+                        {% else %}fa-info-circle text-gray-600{% endif %} 
+                        text-xl"></i>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">
+                    {{ titulo|default:"Aviso" }}
+                </h2>
+                
+                <div class="text-gray-600 mb-6">
+                    <p class="mb-4">
+                        {{ mensagem|default:"Ocorreu um problema. Por favor, tente novamente." }}
+                    </p>
+                    
+                    {% if detalhes %}
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <p class="text-gray-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            {{ detalhes }}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="space-y-3">
+                    {% if acao_primaria %}
+                    <a href="{{ acao_primaria_url|default:'/' }}" 
+                       class="w-full btn-primary py-3 px-4 flex items-center justify-center">
+                        <i class="fas fa-{{ acao_primaria_icone|default:'home' }} mr-2"></i>
+                        {{ acao_primaria }}
+                    </a>
+                    {% endif %}
+                    
+                    {% if acao_secundaria %}
+                    <a href="{{ acao_secundaria_url|default:'/' }}" 
+                       class="w-full btn-secondary py-3 px-4 flex items-center justify-center">
+                        <i class="fas fa-{{ acao_secundaria_icone|default:'arrow-left' }} mr-2"></i>
+                        {{ acao_secundaria }}
+                    </a>
+                    {% endif %}
+                    
+                    {% if mostrar_voltar %}
+                    <button 
+                        type="button" 
+                        class="w-full btn-secondary py-3 px-4 flex items-center justify-center"
+                        onclick="history.back()"
+                    >
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Voltar
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

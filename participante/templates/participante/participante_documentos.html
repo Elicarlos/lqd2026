@@ -1,0 +1,165 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Documentos do Participante{% endblock %}
+
+{% block extra_css %}
+<style>
+    .photo-thumb {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0,0,0,.08);
+        box-shadow: 0 2px 6px rgba(0,0,0,.05);
+    }
+    .badge-standard {
+        padding: 0.35rem 0.6rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    .bg-success-subtle { background: rgba(25,135,84,.1); color:#198754; }
+    .bg-warning-subtle { background: rgba(255,193,7,.1); color:#ffc107; }
+    .bg-danger-subtle  { background: rgba(220,53,69,.1); color:#dc3545; }
+
+    .photo-chip {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0,0,0,.08);
+        background: #f8f9fa;
+        font-size: 0.75rem;
+        color: #0d6efd;
+        text-decoration: none;
+    }
+    .photo-link .photo-label { display: none; }
+    .photo-link.photo-error .photo-label { display: inline-block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="pt-5 mt-5">
+    <div class="container-fluid py-4">
+        <div class="mb-4 d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="mb-1">Documentos do Participante</h5>
+                <div class="text-muted small">
+                    {{ participant_user.profile.nome }} • CPF: {{ participant_user.profile.CPF }}
+                </div>
+            </div>
+            <div>
+                <a href="{% url 'participante:backoffice' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Backoffice
+                </a>
+            </div>
+        </div>
+
+        {% if docs %}
+        <div class="table-modern">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-file-invoice me-2"></i>Documento</th>
+                            <th><i class="fas fa-store me-2"></i>Lojista</th>
+                            <th><i class="fas fa-image me-2"></i>Fotos</th>
+                            <th><i class="fas fa-credit-card me-2"></i>Valor Cielo</th>
+                            <th><i class="fas fa-money-bill me-2"></i>Valor Outros</th>
+                            <th><i class="fas fa-tag me-2"></i>Status</th>
+                            <th><i class="fas fa-calculator me-2"></i>Total</th>
+                            <th><i class="fas fa-calendar me-2"></i>Data</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in docs %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold doc-number">{{ doc.numeroDocumento }}</div>
+                                <div class="text-muted small">{{ doc.tipoDocumento }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ doc.lojista.fantasiaLojista }}</div>
+                                <div class="text-muted small">{{ doc.lojista.CNPJLojista }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2 align-items-center">
+                                    {% if doc.photo %}
+                                    <a href="{{ doc.photo.url }}" target="_blank" class="photo-link" title="Documento Fiscal">
+                                        <img src="{{ doc.photo.url }}" class="photo-thumb" alt="Documento Fiscal" onerror="this.style.display='none'; this.parentElement.classList.add('photo-error');">
+                                        <span class="photo-label">Documento Fiscal</span>
+                                    </a>
+                                    {% endif %}
+                                    {% if doc.photo2 %}
+                                    <a href="{{ doc.photo2.url }}" target="_blank" class="photo-link" title="Comprovante do Cartão">
+                                        <img src="{{ doc.photo2.url }}" class="photo-thumb" alt="Comprovante do Cartão" onerror="this.style.display='none'; this.parentElement.classList.add('photo-error');">
+                                        <span class="photo-label">Comprovante do Cartão</span>
+                                    </a>
+                                    {% endif %}
+                                    {% if not doc.photo and not doc.photo2 %}
+                                        <span class="text-muted small">Sem fotos</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td><div class="fw-semibold">R$ {{ doc.valorCielo|default:0|floatformat:2 }}</div></td>
+                            <td><div class="fw-semibold">R$ {{ doc.valorOutros|default:0|floatformat:2 }}</div></td>
+                            <td>
+                                {% if doc.status == 'pendente' %}
+                                    <span class="badge-standard bg-warning-subtle"><i class="fas fa-clock me-1"></i>Pendente</span>
+                                {% elif doc.status == 'validado' %}
+                                    <span class="badge-standard bg-success-subtle"><i class="fas fa-check-circle me-1"></i>Validado</span>
+                                {% elif doc.status == 'inconsistente' %}
+                                    <span class="badge-standard bg-danger-subtle"><i class="fas fa-exclamation-triangle me-1"></i>Inconsistente</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-semibold text-primary">R$ {{ doc.valorDocumento|floatformat:2 }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ doc.dataDocumento|date:"d/m/Y" }}</div>
+                                <div class="text-muted small">{{ doc.dataCadastro|date:"H:i" }}</div>
+                            </td>
+                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if docs.has_other_pages %}
+        <nav aria-label="Paginação" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if docs.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ docs.previous_page_number }}"><i class="fas fa-chevron-left"></i></a>
+                </li>
+                {% endif %}
+
+                {% for num in docs.paginator.page_range %}
+                    {% if docs.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > docs.number|add:'-3' and num < docs.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if docs.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ docs.next_page_number }}"><i class="fas fa-chevron-right"></i></a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon"><i class="fas fa-file-invoice"></i></div>
+            <h4 class="text-muted mb-2">Nenhum documento encontrado</h4>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
+
+

@@ -1,0 +1,423 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for configuracoes jornada list */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar tabela */
+    .table-modern {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .table-modern .table {
+        margin-bottom: 0;
+    }
+    
+    .table-modern .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-modern .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .table-modern .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: translateX(4px);
+    }
+    
+    .table-modern .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .table-modern .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    /* Melhorar badges */
+    .badge-modern {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-modern.badge-success {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .badge-modern.badge-danger {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .badge-modern.badge-warning {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+    
+    .badge-modern.badge-info {
+        background: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+    }
+    
+    /* Melhorar botões de ação */
+    .btn-action {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .table-modern .table thead th,
+        .table-modern .table tbody td {
+            padding: 0.75rem 1rem;
+        }
+        
+        .table-modern .table thead th {
+            font-size: 0.75rem;
+        }
+        
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- CSRF Token para AJAX -->
+{% csrf_token %}
+
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:jornadas_gestao' %}" class="text-decoration-none">
+                            Gestão de Jornadas
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-cogs text-xl text-info"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">{{ page_title }}</h1>
+                                <p class="text-muted mb-0">Gerenciar configurações de jornada por grupo</p>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="d-flex flex-column flex-sm-row gap-2">
+                                <a href="{% url 'lojista:jornadas_gestao' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                                </a>
+                                <a href="{% url 'lojista:configuracao_jornada_create' %}" class="btn btn-gradient">
+                                    <i class="fas fa-plus me-2"></i>Nova Configuração
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de configurações -->
+        <div class="card-standard">
+            <div class="card-header bg-white border-bottom p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-list me-2"></i>Configurações de Jornada
+                        <span class="text-muted fw-normal">({{ page_obj.paginator.count }} total)</span>
+                    </h5>
+                </div>
+            </div>
+            
+            {% if page_obj %}
+            <div class="table-modern">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-users me-2"></i>Grupo
+                                </th>
+                                <th>
+                                    <i class="fas fa-clock me-2"></i>Controle de Jornada
+                                </th>
+                                <th>
+                                    <i class="fas fa-flex me-2"></i>Jornada Flexível
+                                </th>
+                                <th>
+                                    <i class="fas fa-sign-in-alt me-2"></i>Tolerância Entrada
+                                </th>
+                                <th>
+                                    <i class="fas fa-sign-out-alt me-2"></i>Tolerância Saída
+                                </th>
+                                <th>
+                                    <i class="fas fa-toggle-on me-2"></i>Status
+                                </th>
+                                <th>
+                                    <i class="fas fa-cogs me-2"></i>Ações
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for config in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-users text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ config.grupo.name }}</div>
+                                            <div class="text-muted small">{{ config.grupo.user_set.count }} usuário{{ config.grupo.user_set.count|pluralize }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if config.requer_jornada %}
+                                    <span class="badge badge-modern badge-success">
+                                        <i class="fas fa-check me-1"></i>Obrigatório
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-modern badge-warning">
+                                        <i class="fas fa-times me-1"></i>Opcional
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if config.jornada_flexivel %}
+                                    <span class="badge badge-modern badge-info">
+                                        <i class="fas fa-check me-1"></i>Sim
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-modern badge-secondary">
+                                        <i class="fas fa-times me-1"></i>Não
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ config.tolerancia_entrada }} min</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ config.tolerancia_saida }} min</div>
+                                </td>
+                                <td>
+                                    {% if config.ativo %}
+                                    <span class="badge badge-modern badge-success">
+                                        <i class="fas fa-check-circle me-1"></i>Ativo
+                                    </span>
+                                    {% else %}
+                                    <span class="badge badge-modern badge-danger">
+                                        <i class="fas fa-times-circle me-1"></i>Inativo
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'lojista:configuracao_jornada_edit' config.pk %}" 
+                                           class="btn btn-outline-primary btn-action" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-action {% if config.ativo %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
+                                                onclick="toggleStatusConfiguracao({{ config.pk }}, {{ config.ativo|lower }})" 
+                                                id="btn-status-{{ config.pk }}"
+                                                title="{% if config.ativo %}Inativar{% else %}Ativar{% endif %}">
+                                            <i class="fas {% if config.ativo %}fa-times{% else %}fa-check{% endif %}"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Paginação -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer bg-white border-top p-4">
+                <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+                    <div class="text-muted small">
+                        Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} resultados
+                    </div>
+                    <nav aria-label="Paginação">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_obj.number }}</span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fas fa-cogs text-muted" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                <h3 class="h5 fw-bold text-dark mb-2">Nenhuma configuração encontrada</h3>
+                <p class="text-muted mb-4">Comece criando uma configuração para um grupo.</p>
+                <a href="{% url 'lojista:configuracao_jornada_create' %}" class="btn btn-gradient">
+                    <i class="fas fa-plus me-2"></i>Criar Primeira Configuração
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+<script>
+function toggleStatusConfiguracao(id, ativo) {
+    const acao = ativo ? 'inativar' : 'ativar';
+    const confirmacao = confirm(`Tem certeza que deseja ${acao} esta configuração de jornada?`);
+    
+    if (!confirmacao) return;
+    
+    // Mostrar loading no botão
+    const btn = document.getElementById(`btn-status-${id}`);
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    // Fazer requisição AJAX
+    fetch(`/lojista/jornadas/configuracoes/${id}/toggle-status/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Atualizar botão
+            const novoStatus = !ativo;
+            btn.className = `btn btn-action ${novoStatus ? 'btn-outline-danger' : 'btn-outline-success'}`;
+            btn.innerHTML = `<i class="fas ${novoStatus ? 'fa-times' : 'fa-check'}"></i>`;
+            btn.onclick = () => toggleStatusConfiguracao(id, novoStatus);
+            
+            // Mostrar mensagem de sucesso
+            showNotification(data.message, 'success');
+            
+            // Recarregar página após 1 segundo para atualizar status
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(data.message, 'error');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showNotification('Erro ao processar a solicitação', 'error');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function showNotification(message, type) {
+    // Criar notificação
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remover após 5 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+<div id="document-analysis-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center p-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800">Análise de Documento Fiscal <span id="modal-doc-id"></span></h2>
+            <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close="document-analysis-modal">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Modal Content: Two Columns Layout -->
+        <div class="flex-grow overflow-hidden flex flex-col lg:flex-row">
+            <!-- Left Column: Image Viewer -->
+            <div class="lg:w-1/2 p-4 flex flex-col items-center justify-center bg-gray-100 relative">
+                <div class="flex-grow flex items-center justify-center w-full h-full overflow-hidden">
+                    <img id="modal-image-fiscal" src="" alt="Documento Fiscal" class="max-w-full max-h-full object-contain transition-transform duration-200 ease-in-out" style="transform: rotate(0deg) scale(1);">
+                    <img id="modal-image-cartao" src="" alt="Comprovante Cartão" class="max-w-full max-h-full object-contain transition-transform duration-200 ease-in-out hidden" style="transform: rotate(0deg) scale(1);">
+                </div>
+                <div class="absolute bottom-4 left-4 right-4 flex justify-center space-x-2 bg-white bg-opacity-80 p-2 rounded-lg shadow-md">
+                    <button type="button" class="btn-secondary py-1.5 px-3 inline-flex items-center" data-image-viewer-toggle="modal-image-fiscal">
+                        <i class="fas fa-receipt mr-2"></i>Fiscal
+                    </button>
+                    <button type="button" class="btn-secondary py-1.5 px-3 inline-flex items-center" data-image-viewer-toggle="modal-image-cartao">
+                        <i class="fas fa-credit-card mr-2"></i>Cartão
+                    </button>
+                    <button type="button" class="btn-secondary py-1.5 px-3 inline-flex items-center" data-image-rotate="modal-image-fiscal">
+                        <i class="fas fa-sync-alt mr-2"></i>Girar
+                    </button>
+                    <button type="button" class="btn-secondary py-1.5 px-3 inline-flex items-center" data-image-zoom="in">
+                        <i class="fas fa-search-plus mr-2"></i>Zoom +
+                    </button>
+                    <button type="button" class="btn-secondary py-1.5 px-3 inline-flex items-center" data-image-zoom="out">
+                        <i class="fas fa-search-minus mr-2"></i>Zoom -
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Details and Actions -->
+            <div class="lg:w-1/2 p-4 flex flex-col">
+                <h3 class="text-lg font-semibold text-gray-700 mb-3">Dados do Participante e Documento</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
+                    <div><strong>Participante:</strong> <span id="modal-participant-name"></span></div>
+                    <div><strong>CPF:</strong> <span id="modal-participant-cpf"></span></div>
+                    <div><strong>Histórico:</strong> <span id="modal-participant-history"></span></div>
+                    <div><strong>Protocolo:</strong> <span id="modal-doc-protocol"></span></div>
+                    <div><strong>Data Envio:</strong> <span id="modal-doc-date"></span></div>
+                    <div><strong>Valor Declarado:</strong> <span id="modal-doc-value"></span></div>
+                    <div><strong>Loja:</strong> <span id="modal-doc-lojista"></span></div>
+                    <div><strong>Número Documento:</strong> <span id="modal-doc-numero"></span></div>
+                    <div><strong>Comprado Cielo:</strong> <span id="modal-doc-cielo"></span></div>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-700 mb-3">Ações de Validação</h3>
+                <div class="flex-grow">
+                    <!-- Rejection Section -->
+                    <div class="mb-4">
+                        <label for="rejection-reason" class="block text-sm font-medium text-gray-700 mb-2">Motivo da Pendência:</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3" id="rejection-reasons-checkboxes">
+                            <!-- Checkboxes will be populated dynamically or hardcoded -->
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="rejection_reason" value="Imagem Ilegível" class="form-checkbox text-red-600">
+                                <span class="ml-2 text-gray-700">Imagem Ilegível</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="rejection_reason" value="Fora da Data" class="form-checkbox text-red-600">
+                                <span class="ml-2 text-gray-700">Fora da Data</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="rejection_reason" value="Loja não participante" class="form-checkbox text-red-600">
+                                <span class="ml-2 text-gray-700">Loja não participante</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="rejection_reason" value="Valor incorreto" class="form-checkbox text-red-600">
+                                <span class="ml-2 text-gray-700">Valor incorreto</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="rejection_reason" value="Documento duplicado" class="form-checkbox text-red-600">
+                                <span class="ml-2 text-gray-700">Documento duplicado</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="rejection_reason" value="Outros" class="form-checkbox text-red-600">
+                                <span class="ml-2 text-gray-700">Outros (especificar)</span>
+                            </label>
+                        </div>
+                        <textarea id="rejection-details" class="form-textarea mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50" rows="3" placeholder="Detalhes adicionais da pendência (opcional)"></textarea>
+                    </div>
+
+                    <button id="reject-button" class="btn-danger w-full py-3 text-lg font-bold">
+                        <i class="fas fa-times-circle mr-2"></i>Reprovar e Notificar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

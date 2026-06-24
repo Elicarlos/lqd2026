@@ -1,0 +1,748 @@
+{% load static %}
+{% load auth_extras %}
+<!DOCTYPE html>
+<html lang="pt-br" class="scroll-smooth">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Natal de Luz e Prêmios - A maior campanha de varejo de Teresina">
+    <title>{% block title %}Natal de Luz e Prêmios{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'img/2023/favicon.ico' %}">
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    
+    <!-- Design System -->
+    <!-- Components included in Tailwind build -->
+    
+    <!-- Tailwind CSS -->
+    <link href="{% static 'css/tailwind/output.css' %}" rel="stylesheet">
+    
+    <style>
+        /* Ensure fonts are applied */
+        :root {
+            --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-display: 'Poppins', var(--font-sans);
+        }
+        
+        body {
+            font-family: var(--font-sans);
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-display);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+
+    {% if campanha %}
+    <style>
+        :root {
+            --brand-500-hex: {{ campanha.cor_primaria }};
+            --brand-600-hex: {{ campanha.cor_hover }};
+        }
+        .bg-primary {
+            background-color: var(--brand-500-hex) !important;
+        }
+        .hover\:bg-primary-dark:hover {
+            background-color: var(--brand-600-hex) !important;
+        }
+        .text-primary {
+            color: var(--brand-500-hex) !important;
+        }
+        .hover\:text-primary-dark:hover {
+            color: var(--brand-600-hex) !important;
+        }
+        .focus\:ring-primary:focus {
+            --tw-ring-color: var(--brand-500-hex) !important;
+        }
+    </style>
+    {% endif %}
+</head>
+
+<body class="font-sans bg-background text-foreground antialiased">
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-lg border-b border-neutral-200 shadow-sm transition-all duration-300">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo -->
+                <a href="{% url 'participante:homepage' %}" class="flex-shrink-0 transition-all duration-300">
+                    {% if campanha.logo_principal %}
+                        <img src="{{ campanha.logo_principal.url }}" alt="Logo {{ campanha.nome }}" class="h-10 w-auto">
+                    {% else %}
+                        <img src="{% static 'img/2023/logo.png' %}" alt="Logo Liquida" class="h-10 w-auto">
+                    {% endif %}
+                </a>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="{% url 'participante:homepage' %}#inicio" 
+                       class="px-4 py-2 rounded-lg font-medium {% if request.path == '/' %}text-brand-primary bg-brand-primary/10{% else %}text-neutral-600 hover:text-brand-primary hover:bg-brand-primary/5{% endif %} transition-all duration-300">
+                        <span class="relative">
+                            <i class="fas fa-home mr-2"></i>
+                            Início
+                            {% if request.path == '/' %}
+                            <span class="absolute -bottom-1 left-0 w-full h-0.5 bg-brand-primary"></span>
+                            {% endif %}
+                        </span>
+                    </a>
+                    <a href="{% url 'participante:homepage' %}#como-participar" 
+                       class="px-4 py-2 rounded-lg font-medium text-neutral-600 hover:text-brand-primary hover:bg-brand-primary/5 transition-all duration-300">
+                        <span class="relative">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Como Participar
+                        </span>
+                    </a>
+                    <a href="{% url 'participante:homepage' %}#premios" 
+                       class="px-4 py-2 rounded-lg font-medium text-neutral-600 hover:text-brand-primary hover:bg-brand-primary/5 transition-all duration-300">
+                        <span class="relative">
+                            <i class="fas fa-gift mr-2"></i>
+                            Prêmios
+                        </span>
+                    </a>
+                </div>
+
+                <!-- Desktop Actions -->
+                <div class="hidden md:flex items-center space-x-4">
+                    {% if request.user.is_authenticated %}
+                        <a href="{% if request.user.is_superuser %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}" 
+                           class="inline-flex items-center px-4 py-2 rounded-lg border-2 border-[#11B3EE] text-[#11B3EE] hover:bg-[#11B3EE] hover:text-white transition-all duration-300">
+                            <i class="fas fa-user-circle text-lg mr-2"></i>
+                            <span class="font-medium">{{ request.user.username|truncatechars:15 }}</span>
+                        </a>
+                    {% else %}
+                        <div class="flex items-center space-x-3">
+                            <a href="{% url 'participante:register' %}" 
+                               class="inline-flex items-center px-4 py-2 rounded-lg border-2 border-[#11B3EE] text-neutral-900 hover:bg-[#11B3EE] hover:text-white transition-all duration-300">
+                                <i class="fas fa-user-plus text-lg mr-2"></i>
+                                <span class="font-medium">Cadastre-se</span>
+                            </a>
+                            <button type="button" 
+                                    data-open-modal="login" 
+                                    class="inline-flex items-center px-6 py-2 rounded-lg bg-[#8e005c] text-white font-medium shadow-md hover:shadow-lg hover:bg-[#7a004f] transform hover:-translate-y-0.5 transition-all duration-300">
+                                <i class="fas fa-arrow-right-to-bracket text-lg mr-2"></i>
+                                <span>Entrar</span>
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile Menu Button and Login -->
+                <div class="md:hidden flex items-center space-x-3">
+                    {% if not request.user.is_authenticated %}
+                        <button type="button" 
+                                data-open-modal="login" 
+                                class="inline-flex items-center px-4 py-2 rounded-lg bg-[#8e005c] text-white font-medium shadow-md hover:shadow-lg hover:bg-[#7a004f] transition-colors">
+                            <i class="fas fa-arrow-right-to-bracket text-lg"></i>
+                        </button>
+                    {% endif %}
+                    <button id="mobileMenuBtn" 
+                            class="btn p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+                            aria-label="Menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path id="menuIconOpen" 
+                                  stroke-linecap="round" 
+                                  stroke-linejoin="round" 
+                                  stroke-width="2" 
+                                  d="M4 6h16M4 12h16M4 18h16" />
+                            <path id="menuIconClose" 
+                                  class="hidden" 
+                                  stroke-linecap="round" 
+                                  stroke-linejoin="round" 
+                                  stroke-width="2" 
+                                  d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="hidden md:hidden border-t border-neutral-200 bg-white/95 backdrop-blur-sm">
+            <div class="container mx-auto px-4 py-6 space-y-6">
+                <a href="{% url 'participante:homepage' %}#inicio" 
+                   class="nav-link block py-2 px-4 rounded-lg hover:bg-neutral-50 transition-colors">
+                    <i class="fas fa-home mr-3 text-brand-primary"></i>
+                    <span>Início</span>
+                </a>
+                <a href="{% url 'participante:homepage' %}#como-participar" 
+                   class="nav-link block py-2 px-4 rounded-lg hover:bg-neutral-50 transition-colors">
+                    <i class="fas fa-info-circle mr-3 text-brand-primary"></i>
+                    <span>Como Participar</span>
+                </a>
+                <a href="{% url 'participante:homepage' %}#premios" 
+                   class="nav-link block py-2 px-4 rounded-lg hover:bg-neutral-50 transition-colors">
+                    <i class="fas fa-gift mr-3 text-brand-primary"></i>
+                    <span>Prêmios</span>
+                </a>
+                                    {% if not user.is_authenticated %}
+                        <div class="space-y-3 pt-4">
+                            <a href="{% url 'participante:register' %}" 
+                               class="block w-full py-2 px-4 rounded-lg border-2 border-[#11B3EE] text-neutral-900 hover:bg-[#11B3EE] hover:text-white text-center font-medium transition-all duration-300">
+                                <i class="fas fa-user-plus mr-2"></i>
+                                <span>Cadastre-se</span>
+                            </a>
+                            <button type="button" 
+                                    data-open-modal="login" 
+                                    class="block w-full py-2 px-4 rounded-lg bg-[#8e005c] text-white font-medium shadow-md hover:shadow-lg hover:bg-[#7a004f] transition-all duration-300">
+                                <i class="fas fa-arrow-right-to-bracket mr-2"></i>
+                                <span>Entrar</span>
+                            </button>
+                        </div>
+                    {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- System Messages -->
+    {% if messages %}
+    <div id="messages-container" class="fixed top-24 right-4 z-50 w-full max-w-sm space-y-4">
+        <div class="bg-white rounded-lg shadow-lg p-4 border border-neutral-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-medium text-neutral-700">
+                    <i class="fas fa-bell mr-2 text-brand-primary"></i>
+                    Notificações
+                </h3>
+                <button type="button" 
+                        onclick="clearAllMessages()" 
+                        class="text-xs text-neutral-500 hover:text-neutral-700 hover:underline transition-colors">
+                    Limpar todas
+                </button>
+            </div>
+            {% for message in messages %}
+            <div class="transform transition-all duration-300 animate-fade-in animate-delay-{{ forloop.counter }}00"
+                 role="alert">
+                <div class="relative p-4 rounded-lg shadow-sm border-l-4 mb-3 last:mb-0
+                    {% if message.tags == 'success' %} bg-status-success/10 border-status-success text-status-success
+                    {% elif message.tags == 'error' %} bg-status-error/10 border-status-error text-status-error
+                    {% elif message.tags == 'warning' %} bg-status-warning/10 border-status-warning text-status-warning
+                    {% else %} bg-status-info/10 border-status-info text-status-info
+                    {% endif %}">
+                    <div class="flex items-start">
+                        <span class="flex-shrink-0 mr-3 mt-0.5">
+                            {% if message.tags == 'success' %}<i class="fas fa-check-circle"></i>
+                            {% elif message.tags == 'error' %}<i class="fas fa-times-circle"></i>
+                            {% elif message.tags == 'warning' %}<i class="fas fa-exclamation-triangle"></i>
+                            {% else %}<i class="fas fa-info-circle"></i>
+                            {% endif %}
+                        </span>
+                        <p class="text-sm">{{ message }}</p>
+                        <button type="button" 
+                                class="absolute top-2 right-2 p-1 hover:bg-black/5 rounded-full transition-colors" 
+                                onclick="this.parentElement.remove();">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script>
+        // Auto-hide messages after 3 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, setting up message auto-hide...');
+            
+            setTimeout(function() {
+                const messagesContainer = document.getElementById('messages-container');
+                console.log('Messages container:', messagesContainer);
+                
+                if (messagesContainer) {
+                    const allMessages = messagesContainer.querySelectorAll('[role="alert"]');
+                    console.log('Found messages:', allMessages.length);
+                    
+                    allMessages.forEach(function(msg, index) {
+                        console.log(`Hiding message ${index + 1}:`, msg.textContent);
+                        msg.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                        msg.style.opacity = '0';
+                        msg.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            msg.style.display = 'none';
+                            msg.remove();
+                            console.log(`Message ${index + 1} removed`);
+                        }, 500);
+                    });
+                } else {
+                    console.log('No messages container found');
+                }
+            }, 2000);
+        });
+        
+        // Also hide messages when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('[role="alert"]')) {
+                const messagesContainer = document.getElementById('messages-container');
+                if (messagesContainer) {
+                    const allMessages = messagesContainer.querySelectorAll('[role="alert"]');
+                    allMessages.forEach(function(msg) {
+                        msg.style.transition = 'opacity 0.3s ease';
+                        msg.style.opacity = '0';
+                        setTimeout(() => msg.remove(), 300);
+                    });
+                }
+            }
+        });
+        
+        // Force hide all messages after 5 seconds (fallback)
+        setTimeout(function() {
+            const messagesContainer = document.getElementById('messages-container');
+            if (messagesContainer) {
+                console.log('Force hiding all messages...');
+                messagesContainer.style.display = 'none';
+                messagesContainer.remove();
+            }
+        }, 5000);
+        
+        // Function to clear all messages
+        function clearAllMessages() {
+            const messagesContainer = document.getElementById('messages-container');
+            if (messagesContainer) {
+                const allMessages = messagesContainer.querySelectorAll('[role="alert"]');
+                allMessages.forEach(function(msg) {
+                    msg.style.transition = 'opacity 0.3s ease';
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 300);
+                });
+                
+                // Hide the container after all messages are removed
+                setTimeout(() => {
+                    messagesContainer.style.display = 'none';
+                }, 500);
+            }
+        }
+        
+        // Expose function globally
+        window.clearAllMessages = clearAllMessages;
+    </script>
+    {% endif %}
+
+    <!-- Modal de Login -->
+    <div id="loginModal" class="fixed inset-0 z-50 hidden bg-black/50">
+        <!-- Container do Modal -->
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="relative bg-white w-full max-w-md rounded-lg shadow-2xl mx-auto">
+                <!-- Botão Fechar -->
+                <button data-close-modal="login" 
+                        class="absolute right-2 top-2 p-2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                    <span class="sr-only">Fechar</span>
+                </button>
+
+                <!-- Formulário -->
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-neutral-900 mb-6 text-center">
+                        Bem-vindo de volta!
+                    </h2>
+                    
+                    <form id="loginForm" method="post" class="flex flex-col gap-4">
+                        {% csrf_token %}
+                        
+                        <!-- Campo CPF -->
+                        <div>
+                            <label for="id_username_login" class="block text-sm font-medium text-neutral-700 mb-1">
+                                CPF
+                            </label>
+                            <input type="text" 
+                                   name="username" 
+                                   id="id_username_login" 
+                                   class="cpf-mask w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-[#11B3EE] focus:border-[#11B3EE] transition-colors" 
+                                   placeholder="000.000.000-00" 
+                                   required>
+                            <div id="username-login-error" class="hidden mt-1 text-xs text-red-600"></div>
+                        </div>
+
+                        <!-- Campo Senha -->
+                        <div>
+                            <label for="id_password_login" class="block text-sm font-medium text-neutral-700 mb-1">
+                                Senha
+                            </label>
+                            <input type="password" 
+                                   name="password" 
+                                   id="id_password_login" 
+                                   class="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-[#11B3EE] focus:border-[#11B3EE] transition-colors" 
+                                   placeholder="Digite sua senha" 
+                                   required>
+                            <div id="password-login-error" class="hidden mt-1 text-xs text-red-600"></div>
+                        </div>
+
+                        <!-- Link Esqueceu a senha -->
+                        <div class="text-right">
+                            <a href="{% url 'participante:password_reset' %}" 
+                               class="text-xs text-[#11B3EE] hover:text-[#0e9bd2] transition-colors">
+                                Esqueceu a senha?
+                            </a>
+                        </div>
+
+                        <!-- Botão de Login -->
+                        <button type="submit" 
+                                class="w-full bg-[#8e005c] text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-[#7a004f] transition-colors mt-2 flex items-center justify-center">
+                            <i class="fas fa-arrow-right-to-bracket mr-2"></i>
+                            Entrar
+                        </button>
+
+                        <!-- Link para Cadastro -->
+                        <div class="text-center mt-4">
+                            <p class="text-xs text-neutral-500">
+                                Ainda não tem conta? 
+                                <a href="{% url 'participante:register' %}" 
+                                   class="text-[#11B3EE] hover:text-[#0e9bd2] transition-colors">
+                                    Cadastre-se aqui
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="relative bg-neutral-50 border-t border-neutral-200">
+        <!-- Main Footer Content -->
+        <div class="py-16">
+            <div class="container mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+                    <!-- Brand Section -->
+                    <div class="lg:col-span-1">
+                        <div class="mb-6">
+                            <img src="{% static 'img/2023/logo-cdl.png' %}" 
+                                 alt="CDL Teresina" 
+                                 class="h-12">
+                        </div>
+                        <p class="text-neutral-700 leading-relaxed mb-6">
+                            A maior campanha de varejo de Teresina, promovendo o comércio local e premiando os consumidores.
+                        </p>
+                        <div class="flex space-x-4">
+                            <a href="https://www.instagram.com/cdlteresina/" 
+                               target="_blank"
+                               class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-neutral-600 hover:bg-[#8e005c] hover:text-white transition-all shadow-sm">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="https://www.facebook.com/cdlteresina/" 
+                               target="_blank"
+                               class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-neutral-600 hover:bg-[#8e005c] hover:text-white transition-all shadow-sm">
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                            <a href="http://www.cdlteresina.com.br/" 
+                               target="_blank"
+                               class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-neutral-600 hover:bg-[#8e005c] hover:text-white transition-all shadow-sm">
+                                <i class="fas fa-globe"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div>
+                        <h4 class="font-bold text-neutral-900 mb-6">Links Rápidos</h4>
+                        <ul class="space-y-3">
+                            <li>
+                                <a href="{% url 'participante:homepage' %}#como-participar" 
+                                   class="text-neutral-700 hover:text-[#8e005c] transition-colors">
+                                    Como Participar
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'participante:homepage' %}#premios" 
+                                   class="text-neutral-700 hover:text-[#8e005c] transition-colors">
+                                    Prêmios
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'participante:register' %}" 
+                                   class="text-neutral-700 hover:text-[#8e005c] transition-colors">
+                                    Cadastre-se
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% static 'docs/regulamento.pdf' %}" 
+                                   target="_blank" 
+                                   class="text-neutral-700 hover:text-[#8e005c] transition-colors">
+                                    Regulamento
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Support -->
+                    <div>
+                        <h4 class="font-bold text-neutral-900 mb-6">Suporte</h4>
+                        <ul class="space-y-3">
+                            <li>
+                                <a href="tel:+558632219800" 
+                                   class="text-neutral-700 hover:text-[#8e005c] transition-colors">
+                                    (86) 3221-9800
+                                </a>
+                            </li>
+                            <li>
+                                <a href="mailto:contato@cdlteresina.com.br" 
+                                   class="text-neutral-700 hover:text-[#8e005c] transition-colors">
+                                    contato@cdlteresina.com.br
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/ajuda" 
+                                   class="text-neutral-700 hover:text-[#8e005c] transition-colors">
+                                    Central de Ajuda
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/faq" 
+                                   class="text-neutral-700 hover:text-[#8e005c] transition-colors">
+                                    Perguntas Frequentes
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- CTA Section -->
+                    <div>
+                        <h4 class="font-bold text-neutral-900 mb-6">Participe Agora</h4>
+                        <p class="text-neutral-700 mb-6">
+                            Junte-se à maior campanha de varejo de Teresina e concorra a prêmios incríveis!
+                        </p>
+                        <a href="{% url 'participante:register' %}" 
+                           class="inline-flex items-center px-6 py-3 bg-[#8e005c] text-white rounded-lg hover:bg-[#7a004f] transition-colors group shadow-md">
+                            <span class="font-medium">Cadastre-se</span>
+                            <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="border-t border-neutral-200 py-8 bg-white">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                    <div class="flex items-center space-x-6">
+                        <p class="text-neutral-600 text-sm">
+                            &copy; {% now "Y" %} Liquida Teresina. Todos os direitos reservados.
+                        </p>
+                        <div class="flex items-center space-x-4">
+                            <a href="{% url 'participante:politica-privacidade' %}" class="text-neutral-600 hover:text-neutral-800 text-sm transition-colors">
+                                Política de Privacidade
+                            </a>
+                            <span class="text-neutral-400">•</span>
+                            <a href="{% url 'participante:termos-uso' %}" class="text-neutral-600 hover:text-neutral-800 text-sm transition-colors">
+                                Termos de Uso
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-neutral-600 text-sm">Desenvolvido com</span>
+                        <i class="fas fa-heart text-[#8e005c] mx-2"></i>
+                        <a href="https://markosolution.com.br" 
+                           target="_blank" 
+                           class="text-neutral-700 hover:text-[#8e005c] transition-colors text-sm font-medium">
+                            Marko Solution
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery e jQuery Mask -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+    <!-- Common Scripts -->
+    <script>
+        $(document).ready(function() {
+            // Inicializa a máscara de CPF
+            $('.cpf-mask').mask('000.000.000-00', {
+                reverse: false,
+                clearIfNotMatch: true
+            });
+
+            // Modal elements
+            const modal = document.getElementById('loginModal');
+            if (!modal) return;
+
+            const modalOverlay = modal.querySelector('.bg-neutral-900\\/70, [class*="bg-neutral-900/70"]');
+            const openButtons = document.querySelectorAll('[data-open-modal="login"]');
+            const closeButtons = document.querySelectorAll('[data-close-modal="login"]');
+            
+            // Open modal
+            function showModal() {
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                
+                if (modalOverlay) {
+                    modalOverlay.dataset.state = 'open';
+                }
+            }
+            
+            // Close modal
+            function hideModal() {
+                if (modalOverlay) {
+                    modalOverlay.dataset.state = 'closed';
+                }
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
+                }, 200);
+            }
+            
+            // Add click handlers
+            openButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showModal();
+                });
+            });
+            
+            closeButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    hideModal();
+                });
+            });
+            
+            // Close on backdrop click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal || e.target === modalOverlay) {
+                    hideModal();
+                }
+            });
+            
+            // Close on Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    hideModal();
+                }
+            });
+
+            // Handle form submission
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Pega o CPF com a formatação
+                var cpf = $('#id_username_login').val();
+                
+                // Remove qualquer mensagem de erro anterior
+                $('#username-login-error').addClass('hidden').text('');
+                $('#password-login-error').addClass('hidden').text('');
+                
+                $.ajax({
+                    url: "{% url 'participante:login' %}",
+                    type: "POST",
+                    data: {
+                        username: cpf,
+                        password: $('#id_password_login').val(),
+                        csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            hideModal();
+                            setTimeout(() => {
+                                window.location.href = response.redirect_url;
+                            }, 200);
+                        } else {
+                            if (response.message) {
+                                $('#username-login-error').text(response.message).removeClass('hidden');
+                            }
+                            if (response.errors) {
+                                Object.keys(response.errors).forEach(function(key) {
+                                    $('#' + key + '-login-error').text(response.errors[key]).removeClass('hidden');
+                                });
+                            }
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('DEBUG AJAX ERROR:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText,
+                            statusCode: xhr.status
+                        });
+                        
+                        if (xhr.status === 403) {
+                            $('#username-login-error').text('Erro de segurança. Por favor, recarregue a página e tente novamente.').removeClass('hidden');
+                        } else if (xhr.status === 500) {
+                            $('#username-login-error').text('Erro interno do servidor. Por favor, tente novamente.').removeClass('hidden');
+                        } else {
+                            $('#username-login-error').text('Erro ao tentar fazer login. Por favor, tente novamente.').removeClass('hidden');
+                        }
+                    }
+                });
+            });
+        });
+
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuIconOpen = document.getElementById('menuIconOpen');
+            const menuIconClose = document.getElementById('menuIconClose');
+
+            if (mobileMenuBtn && mobileMenu && menuIconOpen && menuIconClose) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    const isHidden = mobileMenu.classList.contains('hidden');
+                    mobileMenu.classList.toggle('hidden');
+                    menuIconOpen.classList.toggle('hidden', !isHidden);
+                    menuIconClose.classList.toggle('hidden', isHidden);
+                });
+            }
+        });
+        
+        // Sistema de notificações toast moderno
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border-l-4 transform transition-all duration-300 translate-x-full ${
+                type === 'success' ? 'bg-green-50 border-green-500 text-green-800' :
+                type === 'error' ? 'bg-red-50 border-red-500 text-red-800' :
+                type === 'warning' ? 'bg-yellow-50 border-yellow-500 text-yellow-800' :
+                'bg-blue-50 border-blue-500 text-blue-800'
+            }`;
+            
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <span class="mr-3">
+                        ${type === 'success' ? '<i class="fas fa-check-circle"></i>' :
+                          type === 'error' ? '<i class="fas fa-times-circle"></i>' :
+                          type === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' :
+                          '<i class="fas fa-info-circle"></i>'}
+                    </span>
+                    <span>${message}</span>
+                    <button type="button" class="ml-4 text-lg hover:bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center transition-colors" onclick="this.parentElement.parentElement.remove();">&times;</button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Anima entrada
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Auto-remove
+            setTimeout(() => {
+                toast.style.transform = 'translateX(full)';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+        
+        // Expor função globalmente
+        window.showToast = showToast;
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

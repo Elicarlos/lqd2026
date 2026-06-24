@@ -1,0 +1,389 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Dados da Campanha - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for dados campanha - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Animation for stats cards */
+    .card .h2 {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 700;
+    }
+    
+    .card:hover .h2 {
+        transform: scale(1.08);
+        color: #667eea;
+    }
+    
+    /* Melhorar ícones dos cards de estatísticas */
+    .card .bg-primary.bg-opacity-10,
+    .card .bg-success.bg-opacity-10,
+    .card .bg-warning.bg-opacity-10,
+    .card .bg-info.bg-opacity-10,
+    .card .bg-danger.bg-opacity-10,
+    .card .bg-secondary.bg-opacity-10 {
+        transition: all 0.3s ease;
+        border-radius: 0.75rem;
+    }
+    
+    .card:hover .bg-primary.bg-opacity-10 {
+        background-color: rgba(102, 126, 234, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-success.bg-opacity-10 {
+        background-color: rgba(25, 135, 84, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-warning.bg-opacity-10 {
+        background-color: rgba(255, 193, 7, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-info.bg-opacity-10 {
+        background-color: rgba(13, 202, 240, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-danger.bg-opacity-10 {
+        background-color: rgba(220, 53, 69, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-secondary.bg-opacity-10 {
+        background-color: rgba(108, 117, 125, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Dados da Campanha</li>
+                </ol>
+            </nav>
+            
+            <div class="card bg-white rounded-4 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Dados da Campanha</h1>
+                            <p class="text-muted mb-0">Estatísticas e métricas da campanha Natal de Luz e Prêmios</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'participante:graficos_campanha' %}" class="btn btn-primary">
+                                <i class="fas fa-chart-line me-2"></i>Ver Gráficos
+        </a>
+    </div>
+                    </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas Principais -->
+        <div class="row g-4 mb-4">
+            <!-- Total de Cupons -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Total de Cupons</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ quant_cupons|default:0 }}</h3>
+                                <p class="small text-success mb-0">
+                                    <i class="fas fa-ticket-alt me-1"></i>Gerados
+                                </p>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-ticket-alt text-xl text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total de Participantes -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Total Participantes</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ quant_usuario|default:0 }}</h3>
+                                <p class="small text-primary mb-0">
+                                    <i class="fas fa-users me-1"></i>Cadastrados
+                                </p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-users text-xl text-primary"></i>
+                            </div>
+                        </div>
+            </div>
+        </div>
+            </div>
+            
+            <!-- Total de Lojistas Ativos -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Lojistas Ativos</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ quant_lojistas|default:0 }}</h3>
+                                <p class="small text-info mb-0">
+                                    <i class="fas fa-store me-1"></i>Participando
+                                </p>
+                            </div>
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-store text-xl text-info"></i>
+                            </div>
+                        </div>
+            </div>
+        </div>
+            </div>
+            
+            <!-- Total de Documentos Válidos -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Documentos Válidos</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ quant_documentos|default:0 }}</h3>
+                                <p class="small text-warning mb-0">
+                                    <i class="fas fa-file-alt me-1"></i>Aprovados
+                                </p>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-file-alt text-xl text-warning"></i>
+                            </div>
+            </div>
+        </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas Financeiras -->
+        <div class="row g-4 mb-4">
+            <!-- Faturamento Total -->
+            <div class="col-md-4">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Faturamento Total</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">R$ {{ faturamento_total|default:0|floatformat:2 }}</h3>
+                                <p class="small text-success mb-0">
+                                    <i class="fas fa-dollar-sign me-1"></i>Movimentado
+                                </p>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-dollar-sign text-xl text-success"></i>
+                            </div>
+            </div>
+            </div>
+        </div>
+            </div>
+            
+            <!-- Ticket Médio -->
+            <div class="col-md-4">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Ticket Médio</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">R$ {{ ticket_medio|default:0|floatformat:2 }}</h3>
+                                <p class="small text-danger mb-0">
+                                    <i class="fas fa-receipt me-1"></i>Por Documento
+                                </p>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-receipt text-xl text-danger"></i>
+                            </div>
+                        </div>
+            </div>
+        </div>
+            </div>
+            
+            <!-- Média Docs por Participante -->
+            <div class="col-md-4">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Média Docs/Participante</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ media_docs_por_participante|default:0|floatformat:1 }}</h3>
+                                <p class="small text-info mb-0">
+                                    <i class="fas fa-chart-bar me-1"></i>Por Usuário
+                                </p>
+                            </div>
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-chart-bar text-xl text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas de Pagamento -->
+        <div class="row g-4 mb-4">
+            <!-- % REDE -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">% REDE</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ perc_rede|default:0|floatformat:1 }}%</h3>
+                                <p class="small text-warning mb-0">
+                                    <i class="fas fa-credit-card me-1"></i>Transações
+                                </p>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-credit-card text-xl text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- % Mastercard -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">% Mastercard</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ perc_mastercard|default:0|floatformat:1 }}%</h3>
+                                <p class="small text-danger mb-0">
+                                    <i class="fab fa-cc-mastercard me-1"></i>Transações
+                                </p>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 rounded-3 p-3">
+                                <i class="fab fa-cc-mastercard text-xl text-danger"></i>
+                            </div>
+                        </div>
+            </div>
+        </div>
+            </div>
+            
+            <!-- % Cielo -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">% Cielo</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ perc_cielo|default:0|floatformat:1 }}%</h3>
+                                <p class="small text-primary mb-0">
+                                    <i class="fas fa-credit-card me-1"></i>Transações
+                                </p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-credit-card text-xl text-primary"></i>
+                            </div>
+                        </div>
+            </div>
+        </div>
+            </div>
+            
+            <!-- Taxa de Conversão -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Taxa de Conversão</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ taxa_conversao|default:0|floatformat:1 }}%</h3>
+                                <p class="small text-secondary mb-0">
+                                    <i class="fas fa-percent me-1"></i>Eficiência
+                                </p>
+                            </div>
+                            <div class="bg-secondary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-percent text-xl text-secondary"></i>
+                            </div>
+            </div>
+        </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas de Produtividade -->
+        <div class="row g-4">
+            <!-- Horas Trabalhadas Hoje -->
+            <div class="col-md-6">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Horas Trabalhadas Hoje</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ horas_hoje|default:0|floatformat:1 }}h</h3>
+                                <p class="small text-info mb-0">
+                                    <i class="fas fa-clock me-1"></i>Tempo Ativo
+                                </p>
+                            </div>
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-clock text-xl text-info"></i>
+                            </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+            <!-- Cupons por Hora -->
+            <div class="col-md-6">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Cupons por Hora</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ cupons_por_hora|default:0|floatformat:1 }}</h3>
+                                <p class="small text-success mb-0">
+                                    <i class="fas fa-hourglass-half me-1"></i>Produtividade
+                                </p>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-hourglass-half text-xl text-success"></i>
+                            </div>
+                        </div>
+            </div>
+            </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

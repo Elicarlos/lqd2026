@@ -1,0 +1,549 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for jornada colaborador form - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar collapse animations */
+    .collapse {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    
+    .collapse.show {
+        max-height: 500px;
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    /* Melhorar preview cards */
+    .preview-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .preview-card .card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+    }
+    
+    .preview-card .card-body {
+        color: white;
+    }
+    
+    /* Melhorar form controls */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label,
+    .form-floating > .form-select:focus ~ label,
+    .form-floating > .form-select:not([value=""]):valid ~ label {
+        color: #667eea;
+    }
+    
+    /* Melhorar switch */
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .form-check-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .preview-card {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:gestao_colaboradores_dashboard' %}" class="text-decoration-none">
+                            Gestão de Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:jornadas_gestao' %}" class="text-decoration-none">
+                            Gestão de Jornadas
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:jornadas_colaboradores_list' %}" class="text-decoration-none">
+                            Jornadas dos Colaboradores
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">{{ page_title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-edit text-xl text-warning"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">{{ page_title }}</h1>
+                                <p class="text-muted mb-0">Editar horário de trabalho do colaborador</p>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:jornadas_colaboradores_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <form method="post" id="jornadaColaboradorForm" class="form-standard">
+                    {% csrf_token %}
+                    
+                    <!-- Seção: Informações do Colaborador -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-primary bg-opacity-10 me-3">
+                                <i class="fas fa-user text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Colaborador</h4>
+                                <p class="text-muted mb-0">Informações do colaborador selecionado</p>
+                            </div>
+                        </div>
+                        
+                        <div class="card border-0 bg-primary bg-opacity-10">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-20 rounded-circle p-2 me-3">
+                                        <i class="fas fa-user text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <p class="fw-semibold text-dark mb-0">
+                                            {% if jornada.colaborador.profile.CPF %}
+                                                {{ jornada.colaborador.profile.CPF }} - {{ jornada.colaborador.profile.nome|default:jornada.colaborador.first_name|default:jornada.colaborador.username }}
+                                            {% else %}
+                                                {{ jornada.colaborador.username }}
+                                                {% if jornada.colaborador.first_name or jornada.colaborador.last_name %}
+                                                - {{ jornada.colaborador.first_name }} {{ jornada.colaborador.last_name }}
+                                                {% endif %}
+                                            {% endif %}
+                                        </p>
+                                        <p class="small text-muted mb-0">{{ jornada.colaborador.email }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Tipo de Jornada -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-success bg-opacity-10 me-3">
+                                <i class="fas fa-clock text-success"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Tipo de Jornada</h4>
+                                <p class="text-muted mb-0">Defina o horário de trabalho</p>
+                            </div>
+                        </div>
+                        
+                        <div class="form-floating">
+                            <select class="form-select" 
+                                    id="tipo_jornada" 
+                                    name="tipo_jornada" 
+                                    required
+                                    onchange="updateJornadaInfo()">
+                                <option value="">Selecione um tipo de jornada</option>
+                                {% for tipo in tipos_jornada %}
+                                <option value="{{ tipo.id }}"
+                                        data-nome="{{ tipo.nome }}"
+                                        data-inicio="{{ tipo.hora_inicio|time:'H:i' }}"
+                                        data-fim="{{ tipo.hora_fim|time:'H:i' }}"
+                                        data-dias="{{ tipo.get_dias_semana_display }}"
+                                        data-tol-entrada="{{ tipo.tolerancia_entrada }}"
+                                        data-tol-saida="{{ tipo.tolerancia_saida }}"
+                                        {% if tipo.id == jornada.tipo_jornada.id %}selected{% endif %}>
+                                    {{ tipo.nome }} ({{ tipo.hora_inicio|time:"H:i" }} - {{ tipo.hora_fim|time:"H:i" }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <label for="tipo_jornada">
+                                <i class="fas fa-calendar-alt me-2"></i>Tipo de Jornada <span class="text-danger">*</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Info da jornada selecionada -->
+                        <div id="jornadaInfo" class="collapse mt-3">
+                            <div class="card border-0 bg-success bg-opacity-10">
+                                <div class="card-body p-4">
+                                    <h6 class="fw-semibold text-success mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>Detalhes da Jornada
+                                    </h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-clock text-success me-2"></i>
+                                                <div>
+                                                    <p class="small text-success fw-semibold mb-0">Horário</p>
+                                                    <p class="small text-dark mb-0" id="jornadaHorario">-</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-calendar-week text-success me-2 mt-1"></i>
+                                                <div>
+                                                    <p class="small text-success fw-semibold mb-0">Dias da Semana</p>
+                                                    <p class="small text-dark mb-0" id="jornadaDias">-</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-sign-in-alt text-warning me-2"></i>
+                                                <div>
+                                                    <p class="small text-warning fw-semibold mb-0">Tolerância Entrada</p>
+                                                    <p class="small text-dark mb-0" id="jornadaTolEntrada">-</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-sign-out-alt text-info me-2"></i>
+                                                <div>
+                                                    <p class="small text-info fw-semibold mb-0">Tolerância Saída</p>
+                                                    <p class="small text-dark mb-0" id="jornadaTolSaida">-</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Período de Validade -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-warning bg-opacity-10 me-3">
+                                <i class="fas fa-calendar text-warning"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Período de Validade</h4>
+                                <p class="text-muted mb-0">Defina quando a jornada será válida</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="data_inicio" 
+                                           name="data_inicio" 
+                                           value="{{ jornada.data_inicio|date:'Y-m-d' }}"
+                                           required>
+                                    <label for="data_inicio">
+                                        <i class="fas fa-calendar-plus me-2"></i>Data de Início <span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb me-1"></i>A partir de quando esta jornada será válida
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" 
+                                           class="form-control" 
+                                           id="data_fim" 
+                                           name="data_fim"
+                                           value="{{ jornada.data_fim|date:'Y-m-d'|default:'' }}">
+                                    <label for="data_fim">
+                                        <i class="fas fa-calendar-minus me-2"></i>Data de Fim (Opcional)
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Deixe vazio para jornada sem prazo definido
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Configurações Adicionais -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-info bg-opacity-10 me-3">
+                                <i class="fas fa-cogs text-info"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Configurações Adicionais</h4>
+                                <p class="text-muted mb-0">Informações extras e status da atribuição</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-floating">
+                                    <textarea class="form-control" 
+                                              id="observacoes" 
+                                              name="observacoes" 
+                                              placeholder="Observações"
+                                              style="height: 100px">{{ jornada.observacoes }}</textarea>
+                                    <label for="observacoes">
+                                        <i class="fas fa-sticky-note me-2"></i>Observações
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Informações extras sobre esta atribuição de jornada
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="ativo" 
+                                           name="ativo" 
+                                           {% if jornada.ativo %}checked{% endif %}>
+                                    <label class="form-check-label" for="ativo">
+                                        <i class="fas fa-toggle-on me-2"></i>Atribuição Ativa
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Atribuições inativas não restringem o acesso ao sistema
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview da Atribuição -->
+                    <div class="preview-card">
+                        <h5 class="fw-semibold mb-3 text-white">
+                            <i class="fas fa-eye me-2"></i>Preview da Atribuição
+                        </h5>
+                        <div id="preview" class="text-white">
+                            <p class="mb-0">Selecione uma jornada para ver o preview</p>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="card card-standard">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'lojista:jornadas_colaboradores_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                                </a>
+                                <div class="d-flex gap-2">
+                                    <button type="reset" class="btn btn-outline-warning">
+                                        <i class="fas fa-undo me-2"></i>Restaurar
+                                    </button>
+                                    <button type="submit" class="btn btn-gradient">
+                                        <i class="fas fa-save me-2"></i>Salvar Alterações
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Atualizar preview quando qualquer campo mudar
+    const form = document.getElementById('jornadaColaboradorForm');
+    form.addEventListener('input', updatePreview);
+    form.addEventListener('change', updatePreview);
+    
+    updatePreview();
+    updateJornadaInfo();
+});
+
+function updateJornadaInfo() {
+    const select = document.getElementById('tipo_jornada');
+    const info = document.getElementById('jornadaInfo');
+    const horario = document.getElementById('jornadaHorario');
+    const dias = document.getElementById('jornadaDias');
+    const tolEntrada = document.getElementById('jornadaTolEntrada');
+    const tolSaida = document.getElementById('jornadaTolSaida');
+    
+    if (select.value) {
+        const option = select.options[select.selectedIndex];
+        const nome = option.dataset.nome;
+        const inicio = option.dataset.inicio;
+        const fim = option.dataset.fim;
+        const diasSemana = option.dataset.dias;
+        const toleranciaEntrada = option.dataset.tolEntrada;
+        const toleranciaSaida = option.dataset.tolSaida;
+        
+        horario.textContent = `${inicio} - ${fim}`;
+        dias.textContent = diasSemana;
+        tolEntrada.textContent = `${toleranciaEntrada} minutos`;
+        tolSaida.textContent = `${toleranciaSaida} minutos`;
+        
+        // Mostrar info
+        info.classList.add('show');
+    } else {
+        // Esconder info
+        info.classList.remove('show');
+    }
+    
+    updatePreview();
+}
+
+function updatePreview() {
+    const jornadaSelect = document.getElementById('tipo_jornada');
+    const dataInicio = document.getElementById('data_inicio').value;
+    const dataFim = document.getElementById('data_fim').value;
+    const observacoes = document.getElementById('observacoes').value;
+    const ativo = document.getElementById('ativo').checked;
+    const preview = document.getElementById('preview');
+    
+    if (!jornadaSelect.value) {
+        preview.innerHTML = '<p class="mb-0">Selecione uma jornada para ver o preview</p>';
+        return;
+    }
+    
+    const jornadaOption = jornadaSelect.options[jornadaSelect.selectedIndex];
+    const colaboradorNome = "{{ jornada.colaborador.profile.CPF|default:'' }} - {{ jornada.colaborador.profile.nome|default:jornada.colaborador.first_name|default:jornada.colaborador.username }}";
+    const jornadaNome = jornadaOption.dataset.nome;
+    const jornadaHorario = `${jornadaOption.dataset.inicio} - ${jornadaOption.dataset.fim}`;
+    const jornadaDias = jornadaOption.dataset.dias;
+    
+    const dataInicioFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Indefinida';
+    
+    preview.innerHTML = `
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="fas fa-user me-2"></i>Colaborador
+                        </h6>
+                        <p class="fw-semibold mb-1">${colaboradorNome}</p>
+                        <small>{{ jornada.colaborador.username }}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="fas fa-clock me-2"></i>Jornada
+                        </h6>
+                        <p class="fw-semibold mb-1">${jornadaNome}</p>
+                        <small>${jornadaHorario}</small>
+                        <br><small>${jornadaDias}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="fas fa-calendar me-2"></i>Período
+                        </h6>
+                        <p class="mb-1"><strong>De:</strong> ${dataInicioFormatada}</p>
+                        <p class="mb-0"><strong>Até:</strong> ${dataFimFormatada}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Status
+                        </h6>
+                        <p class="mb-1">
+                            <i class="fas fa-${ativo ? 'check' : 'times'}-circle me-2"></i>
+                            <strong>${ativo ? 'Ativo' : 'Inativo'}</strong>
+                        </p>
+                        ${observacoes ? `<small>📝 ${observacoes}</small>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

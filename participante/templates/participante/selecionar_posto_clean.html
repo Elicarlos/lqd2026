@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Selecionar Posto de Trabalho{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Esconder header e footer */
+    header, footer, .navbar, .header-dashboard {
+        display: none !important;
+    }
+    
+    .posto-selection-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+    
+    .posto-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        padding: 3rem;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .user-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+    }
+    
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+    }
+    
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+    
+    .status-nova {
+        background: rgba(34, 197, 94, 0.1);
+        color: #16a34a;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    
+    .status-atualizar {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+        text-align: left;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+    }
+    
+    .form-select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.2s;
+        background: white;
+    }
+    
+    .form-select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1rem;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .current-time {
+        background: rgba(0, 0, 0, 0.05);
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+    
+    .jornada-info {
+        background: rgba(59, 130, 246, 0.05);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+        color: #2563eb;
+    }
+    
+    .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .success-message {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        color: #16a34a;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .footer-note {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+        font-size: 0.75rem;
+        color: #9ca3af;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="posto-selection-container">
+    <div class="posto-card">
+        <!-- Informações do Usuário -->
+        <div class="user-info">
+            <div class="user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <h3 class="mb-1">{{ request.user.get_full_name|default:request.user.username }}</h3>
+            <p class="mb-2 opacity-75">{{ request.user.username }}</p>
+            
+            <!-- Status Indicator -->
+            <div class="status-indicator {% if request.user.profile.posto_trabalho %}status-atualizar{% else %}status-nova{% endif %}">
+                {% if request.user.profile.posto_trabalho %}
+                    <i class="fas fa-sync-alt me-2"></i>Atualizar Posto
+                {% else %}
+                    <i class="fas fa-plus me-2"></i>Nova Seleção
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Horário Atual -->
+        <div class="current-time">
+            <i class="fas fa-clock me-2"></i>
+            <span id="currentTime">{{ current_time|date:"d/m/Y H:i:s" }}</span>
+        </div>
+
+        <!-- Informações da Jornada -->
+        <div class="jornada-info" id="jornadaInfo">
+            <i class="fas fa-info-circle me-2"></i>
+            <span id="jornadaStatus">Verificando status da jornada...</span>
+        </div>
+
+        <!-- Mensagens de Erro/Sucesso -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
+                    <i class="fas fa-{% if message.tags == 'error' %}exclamation-triangle{% else %}check-circle{% endif %} me-2"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Formulário de Seleção -->
+        <form id="postoForm" method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="posto_trabalho" class="form-label">
+                    <i class="fas fa-desktop me-2"></i>Posto de Trabalho
+                </label>
+                <select name="posto_trabalho" id="posto_trabalho" class="form-select" required>
+                    <option value="">Selecione um posto de trabalho</option>
+                    {% for posto in postos %}
+                        <option value="{{ posto.id }}" {% if request.user.profile.posto_trabalho == posto %}selected{% endif %}>
+                            {{ posto.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-primary">
+                <span id="btnText">
+                    {% if request.user.profile.posto_trabalho %}
+                        <i class="fas fa-sync-alt me-2"></i>Atualizar e Continuar
+                    {% else %}
+                        <i class="fas fa-play me-2"></i>Iniciar Trabalho
+                    {% endif %}
+                </span>
+                <span id="btnSpinner" class="spinner" style="display: none;"></span>
+            </button>
+        </form>
+
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('postoForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const currentTimeEl = document.getElementById('currentTime');
+    const jornadaInfoEl = document.getElementById('jornadaInfo');
+    const jornadaStatusEl = document.getElementById('jornadaStatus');
+
+    // Atualizar horário a cada segundo
+    function updateTime() {
+        const now = new Date();
+        const options = {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+        currentTimeEl.textContent = now.toLocaleDateString('pt-BR', options);
+    }
+    
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // Verificar status da jornada
+    async function checkJornadaStatus() {
+        try {
+            const response = await fetch('/api/jornada-status/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.jornada_ativa) {
+                    // Formatar a data de forma mais amigável
+                    const dataInicio = new Date(data.horario_inicio);
+                    const dataFormatada = dataInicio.toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    jornadaStatusEl.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        Jornada ativa iniciada em ${dataFormatada}
+                    `;
+                    jornadaInfoEl.className = 'jornada-info';
+                } else {
+                    jornadaStatusEl.innerHTML = `
+                        <i class="fas fa-clock me-2"></i>
+                        Nenhuma jornada ativa - será criada uma nova
+                    `;
+                    jornadaInfoEl.className = 'jornada-info';
+                }
+            } else {
+                jornadaStatusEl.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Erro ao verificar status da jornada
+                `;
+                jornadaInfoEl.className = 'error-message';
+            }
+        } catch (error) {
+            console.error('Erro ao verificar jornada:', error);
+            jornadaStatusEl.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Erro de conexão
+            `;
+            jornadaInfoEl.className = 'error-message';
+        }
+    }
+
+    // Verificar status inicial
+    checkJornadaStatus();
+
+    // Manipular envio do formulário
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const postoSelect = document.getElementById('posto_trabalho');
+        if (!postoSelect.value) {
+            alert('Por favor, selecione um posto de trabalho.');
+            return;
+        }
+
+        // Mostrar loading
+        submitBtn.classList.add('loading');
+        btnText.style.display = 'none';
+        btnSpinner.style.display = 'inline-block';
+
+        // Garantir que o token CSRF seja incluído
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        if (!csrfToken) {
+            alert('Erro: Token de segurança não encontrado. Recarregue a página.');
+            return;
+        }
+
+        // Usar submit tradicional do formulário (que inclui o CSRF token)
+        console.log('Enviando formulário com CSRF token...');
+        form.submit();
+    });
+
+    // Focar no select automaticamente
+    document.getElementById('posto_trabalho').focus();
+});
+
+// Impede botão voltar
+history.pushState(null, null, location.href);
+  window.onpopstate = function () {
+      history.go(-1);
+  };
+
+  // Impede F5 / reload
+window.addEventListener('beforeunload', function (e) {
+      e.preventDefault();
+      e.returnValue = '';
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base-bootstrap.html" %}
+{% load static %}
+
+{% block title %}Cadastro Realizado com Sucesso{% endblock %}
+
+{% block content %}
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="row w-100 justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+            <!-- Card de Sucesso -->
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center p-5">
+                    <!-- Ícone de Sucesso -->
+                    <div class="mb-4">
+                        <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px;">
+                            <i class="fas fa-check fa-3x"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Título -->
+                    <h3 class="text-success mb-3">Cadastro Realizado com Sucesso!</h3>
+                    
+                    <!-- Mensagem -->
+                    <p class="text-muted mb-4">
+                        Seu cadastro foi realizado com sucesso e está sendo processado pela nossa equipe.
+                    </p>
+                    
+                    <!-- Informações do Treinamento -->
+                    {% if url_treinamento %}
+                    <div class="alert alert-info mb-4">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle"></i>
+                            {{ url_treinamento.titulo }}
+                        </h6>
+                        <p class="mb-0">{{ url_treinamento.descricao }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Próximos Passos -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-list-check text-primary"></i>
+                                Próximos Passos
+                            </h6>
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="fas fa-clock text-warning"></i>
+                                    Aguarde a ativação do seu perfil (24-48h)
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-envelope text-info"></i>
+                                    Você receberá um e-mail de confirmação
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-user-check text-success"></i>
+                                    Após ativação, você poderá fazer login no sistema
+                                </li>
+                                <li>
+                                    <i class="fas fa-phone text-primary"></i>
+                                    Em caso de dúvidas, entre em contato conosco
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-grid gap-2">
+                        {% if url_treinamento %}
+                        <a href="{% url 'participante:cadastro_publico' hash_url %}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus"></i> Cadastrar Outro Colaborador
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'participante:login' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Ir para o Login
+                        </a>
+                    </div>
+                    
+                    <!-- Informações Adicionais -->
+                    <div class="mt-4">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt"></i>
+                            Seus dados estão seguros e serão usados apenas para o treinamento.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-copyright"></i>
+                    2025 Liquida Teresina - Sistema de Cadastro
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "mobile.html" %}
+
+{% block title %}Entrar{% endblock %}
+
+{% block content %}
+    <h1 style="margin-top: 70px;">Entrar</h1>
+    {% if form.errors %}
+        <p>Seu nome de usuario e senha podem estar errados. Por favor tente novamente.</p>
+    {% else %}
+        <p>Por favor, use os seguintes campos para entrar. Se você ainda não é cadastrado você pode <a href="{% url 'participante:register' %}">registrar aqui</a></p>
+    {% endif %}
+    {% bootstrap_form_errors form %}
+    <div class="login-form">
+        <form action="{% url 'participante:login' %}" method="post">
+          <!--{{ form.as_p }}-->
+          <div class="fieldWrapper">
+              {{ form.username.errors }}
+              <input type="text" name="username" autofocus="" maxlength="254" class="form-control cpf cpf-mask" placeholder="Digite seu CPF" title="" required="" id="id_username">
+          </div>
+          <div class="fieldWrapper">
+              {{ form.password.errors }}
+              {%  bootstrap_field form.password %}
+          </div>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}" />
+            <p><input type="submit" class="btn btn-primary btn-lg" value="Entrar"></p>
+        </form>
+        <p><a href="{% url 'participante:password_reset' %}">Esqueceu a sua senha?</a></p>
+    </div>
+
+    {% comment %} <div class="social">
+        <ul>
+            <li class="facebook"><a href="{% url "social:begin" "facebook" %}">Entrar com o facebook</a></li>
+            <li class="twitter"><a href="{% url "social:begin" "twitter" %}">Entrar com o Twitter</a></li>
+            <li class="google"><a href="{% url "social:begin" "google-oauth2" %}">Entrar com a conta Google</a></li>
+        </ul>
+    </div> {% endcomment %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize CPF mask
+    $('.cpf, .cpf-mask').mask('000.000.000-00', {
+        reverse: true,
+        placeholder: "___.___.___-__"
+    });
+});
+</script>
+{% endblock %}

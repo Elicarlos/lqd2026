@@ -1,0 +1,97 @@
+{% extends "base-dashboard.html" %}
+{% block title %}Resultados do Sorteio{% endblock %}
+{% block content %}
+<main class="pt-5 mt-5">
+  <div class="container py-4">
+    <nav class="mb-3">
+      <ol class="breadcrumb breadcrumb-standard">
+        <li class="breadcrumb-item"><a href="{% url 'sorteio:home' %}" class="text-decoration-none"><i class="fas fa-random me-1"></i>Sorteio</a></li>
+        <li class="breadcrumb-item active">Resultados</li>
+      </ol>
+    </nav>
+
+    <form method="get" class="row g-2 mb-3">
+      <div class="col-md-3">
+        <div class="form-floating">
+          <input type="text" class="form-control" name="cpf" value="{{ cpf|default:'' }}" placeholder="CPF">
+          <label>CPF</label>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="form-floating">
+          <input type="text" class="form-control" name="cupom" value="{{ cupom|default:'' }}" placeholder="Cupom">
+          <label>Cupom</label>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="form-floating">
+          <input type="date" class="form-control" name="data_inicio" value="{{ data_inicio|default:'' }}">
+          <label>Data Início</label>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="form-floating">
+          <input type="date" class="form-control" name="data_fim" value="{{ data_fim|default:'' }}">
+          <label>Data Fim</label>
+        </div>
+      </div>
+      <div class="col-md-5 col-lg-3 d-flex gap-2 align-items-stretch">
+        <button class="btn btn-gradient flex-fill" type="submit"><i class="fas fa-search me-1"></i>Filtrar</button>
+        <a class="btn btn-outline-secondary" href="{% url 'sorteio:resultados' %}"><i class="fas fa-times"></i></a>
+        <a class="btn btn-outline-primary" href="?export=csv&cpf={{ cpf }}&cupom={{ cupom }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">
+          <i class="fas fa-file-download me-1"></i>CSV
+        </a>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Ordem</th>
+            <th>Cupom</th>
+            <th>CPF</th>
+            <th>Participante</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in page_obj %}
+          <tr>
+            <td>{{ page_obj.start_index|add:forloop.counter0 }}°</td>
+            <td>{{ r.cupom_id }}</td>
+            <td>{{ r.cpf }}</td>
+            <td>{{ r.participante.profile.nome|default:r.participante.username }}</td>
+            <td>{{ r.criado_em|date:'d/m/Y H:i' }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center text-muted">Nenhum resultado encontrado</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-3">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&cpf={{ cpf }}&cupom={{ cupom }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}"><i class="fas fa-chevron-left"></i></a></li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}&cpf={{ cpf }}&cupom={{ cupom }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&cpf={{ cpf }}&cupom={{ cupom }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}"><i class="fas fa-chevron-right"></i></a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
+
+

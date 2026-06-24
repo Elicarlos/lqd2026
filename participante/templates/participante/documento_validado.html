@@ -1,0 +1,590 @@
+{% extends "base-dashboard.html" %}
+{% load thumbnail %}
+
+{% block title %}Documento Validado - {{ user.nome }} - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for participant detail - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar tabela */
+    .table-modern {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .table-modern .table {
+        margin-bottom: 0;
+    }
+    
+    .table-modern .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-modern .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .table-modern .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: translateX(4px);
+    }
+    
+    .table-modern .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .table-modern .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    /* Melhorar badges */
+    .badge-standard {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-standard.bg-success-subtle {
+        background-color: rgba(25, 135, 84, 0.1) !important;
+        color: #198754 !important;
+    }
+    
+    .badge-standard.bg-warning-subtle {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+        color: #ffc107 !important;
+    }
+    
+    .badge-standard.bg-danger-subtle {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+        color: #dc3545 !important;
+    }
+    
+    .badge-standard.bg-info-subtle {
+        background-color: rgba(13, 202, 240, 0.1) !important;
+        color: #0dcaf0 !important;
+    }
+    
+    /* Botão de impressão destacado */
+    .btn-print-highlight {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    }
+    
+    .btn-print-highlight:hover {
+        background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+    }
+    
+    /* Card de sucesso */
+    .success-card {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border: 2px solid #28a745;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .success-card .success-icon {
+        width: 64px;
+        height: 64px;
+        background: #28a745;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        margin: 0 auto 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="container-fluid px-4 py-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'participante:dashboard' %}" class="text-decoration-none">
+                        <i class="fas fa-home me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'participante:search_by_cpf' %}" class="text-decoration-none">
+                        <i class="fas fa-search me-1"></i>Buscar Participante
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">
+                    <i class="fas fa-check-circle me-1"></i>Documento Validado
+                </li>
+            </ol>
+        </nav>
+        
+        <!-- Card de Sucesso -->
+        <div class="success-card">
+            <div class="text-center">
+                <div class="success-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h2 class="h4 fw-bold text-success mb-2">✅ Documento Validado com Sucesso!</h2>
+                <p class="text-success mb-0">
+                    O documento foi processado e os cupons foram gerados automaticamente.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Header com informações do participante -->
+        <div class="card-standard">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-user text-xl text-primary"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">{{ user.nome }}</h1>
+                                <p class="text-muted mb-1">CPF: {{ user.CPF }}</p>
+                                <p class="small text-muted mb-0">Documento recém-validado</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 text-lg-end">
+                        <div class="d-flex flex-column gap-2">
+                            <a href="{% url 'participante:search_by_cpf' %}?q={{ user.CPF }}" class="btn btn-outline-secondary btn-action">
+                                <i class="fas fa-list me-1"></i>Ver Todos os Documentos
+                            </a>
+                            <!-- <a href="{% url 'participante:adddocfiscalbyop' user.user.id %}" class="btn btn-gradient btn-action">
+                                <i class="fas fa-plus me-1"></i>Novo Documento
+                            </a> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas Rápidas -->
+        <div class="row g-4 mb-4">
+            <!-- Total de Documentos -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Documento</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ total_docs }}</h3>
+                                <p class="small text-primary mb-0">
+                                    <i class="fas fa-file-invoice me-1"></i>Validado
+                                </p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-file-invoice text-xl text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Documentos Validados -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Status</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ validated_docs }}</h3>
+                                <p class="small text-success mb-0">
+                                    <i class="fas fa-check me-1"></i>Validado
+                                </p>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-check text-xl text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total de Cupons -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Cupons</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ total_cupons }}</h3>
+                                <p class="small text-info mb-0">
+                                    <i class="fas fa-ticket-alt me-1"></i>Gerados
+                                </p>
+                            </div>
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-ticket-alt text-xl text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ação Principal -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-standard h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Próximo Passo</p>
+                                <h3 class="h5 fw-bold text-danger mb-0">Imprimir</h3>
+                                <p class="small text-danger mb-0">
+                                    <i class="fas fa-print me-1"></i>Cupons
+                                </p>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-print text-xl text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Documentos -->
+        {% if docs %}
+            <div class="table-modern">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-file-invoice me-2"></i>Documento
+                                </th>
+                                <th>
+                                    <i class="fas fa-store me-2"></i>Lojista
+                                </th>
+                                <th>
+                                    <i class="fas fa-calendar me-2"></i>Data
+                                </th>
+                                <th>
+                                    <i class="fas fa-money-bill me-2"></i>Valor
+                                </th>
+                                <th>
+                                    <i class="fas fa-tag me-2"></i>Status
+                                </th>
+                                <th>
+                                    <i class="fas fa-ticket-alt me-2"></i>Cupons
+                                </th>
+                                <th class="text-end">
+                                    <i class="fas fa-cog me-2"></i>Ações
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in docs %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3">
+                                            <i class="fas fa-file-invoice text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ doc.numeroDocumento }}</div>
+                                            <div class="text-muted small">{{ doc.tipoDocumento }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ doc.lojista.fantasiaLojista }}</div>
+                                    <div class="text-muted small">{{ doc.lojista.CNPJLojista }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ doc.dataDocumento|date:"d/m/Y" }}</div>
+                                    <div class="text-muted small">{{ doc.dataCadastro|date:"H:i" }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-primary">R$ {{ doc.valorDocumento|floatformat:2 }}</div>
+                                </td>
+                                <td>
+                                    {% if doc.status == 'pendente' %}
+                                    <span class="badge-standard bg-warning-subtle">
+                                        <i class="fas fa-clock me-1"></i>Pendente
+                                    </span>
+                                    {% elif doc.status == 'validado' %}
+                                    <span class="badge-standard bg-success-subtle">
+                                        <i class="fas fa-check-circle me-1"></i>Validado
+                                    </span>
+                                    {% elif doc.status == 'inconsistente' %}
+                                    <span class="badge-standard bg-danger-subtle">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Inconsistente
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if doc.status == 'validado' %}
+                                        <span class="badge-standard bg-info-subtle">
+                                            <i class="fas fa-ticket-alt me-1"></i>{{ doc.get_cupons }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-action" data-bs-toggle="modal" data-bs-target="#detailModal{{ doc.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if doc.status == 'validado' %}
+                                        <a href="{% url 'bcp:print_get' id_=doc.id %}" class="btn btn-print-highlight btn-action" target="_blank" onclick="this.style.pointerEvents='none'; this.innerHTML='<i class=\'fas fa-spinner fa-spin\'></i>'; setTimeout(() => {window.location.reload();}, 3000);">
+                                            <i class="fas fa-print me-1"></i>Imprimir
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <!-- Estado vazio -->
+            <div class="text-center py-5">
+                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center p-4 mb-3">
+                    <i class="fas fa-file-invoice text-muted fa-2x"></i>
+                </div>
+                <h4 class="text-muted mb-2">Nenhum documento encontrado</h4>
+                <p class="text-muted mb-4">Este participante ainda não possui documentos cadastrados</p>
+                <a href="{% url 'participante:adddocfiscalbyop' user.user.id %}" class="btn btn-gradient">
+                    <i class="fas fa-plus me-2"></i>Adicionar Primeiro Documento
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</main>
+
+<!-- Modais para Visualizar Detalhes -->
+{% for doc in docs %}
+    <!-- Modal de Detalhes -->
+    <div class="modal fade" id="detailModal{{ doc.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ doc.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalLabel{{ doc.id }}">
+                        <i class="fas fa-file-invoice me-2"></i>Detalhes do Documento
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Informações do Documento -->
+                    <div class="bg-light p-4 border-bottom">
+                        <div class="row g-4">
+                            <!-- Documento -->
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-file-invoice text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Número do Documento</div>
+                                        <div class="fw-semibold">{{ doc.numeroDocumento }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Data -->
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-calendar text-info"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Data do Documento</div>
+                                        <div class="fw-semibold">{{ doc.dataDocumento|date:"d/m/Y" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lojista -->
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-store text-success"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Lojista</div>
+                                        <div class="fw-semibold">{{ doc.lojista.fantasiaLojista }}</div>
+                                        <div class="text-muted small">{{ doc.lojista.CNPJLojista }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning bg-opacity-10 rounded-3 p-2 me-3">
+                                        <i class="fas fa-tag text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Status</div>
+                                        <div>
+                                            {% if doc.status == 'pendente' %}
+                                                <span class="badge-standard bg-warning-subtle">
+                                                    <i class="fas fa-clock me-1"></i>Pendente
+                                                </span>
+                                            {% elif doc.status == 'validado' %}
+                                                <span class="badge-standard bg-success-subtle">
+                                                    <i class="fas fa-check-circle me-1"></i>Validado
+                                                </span>
+                                            {% elif doc.status == 'inconsistente' %}
+                                                <span class="badge-standard bg-danger-subtle">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Inconsistente
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Valores -->
+                            <div class="col-12">
+                                <div class="card card-standard mb-0">
+                                    <div class="card-body p-3">
+                                        <div class="row g-3">
+                                            <!-- Valor Cielo -->
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-2">
+                                                        <i class="fas fa-credit-card text-primary"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-muted small">Valor Cielo</div>
+                                                        <div class="fw-semibold">R$ {{ doc.valorCielo|default:0|floatformat:2 }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Valor Outros -->
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-success bg-opacity-10 rounded-3 p-2 me-2">
+                                                        <i class="fas fa-money-bill text-success"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-muted small">Valor Outros</div>
+                                                        <div class="fw-semibold">R$ {{ doc.valorOutro|default:0|floatformat:2 }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Valor Total -->
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-info bg-opacity-10 rounded-3 p-2 me-2">
+                                                        <i class="fas fa-calculator text-info"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-muted small">Valor Total</div>
+                                                        <div class="fw-semibold">R$ {{ doc.valorDocumento|floatformat:2 }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Observação -->
+                            {% if doc.observacao %}
+                            <div class="col-12">
+                                <div class="alert alert-standard {% if doc.status == 'inconsistente' %}alert-danger{% else %}alert-info{% endif %} mb-0">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas {% if doc.status == 'inconsistente' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold mb-1">Observação</div>
+                                            <div>{{ doc.observacao }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Fechar
+                    </button>
+                    {% if doc.status == 'validado' %}
+                    <a href="{% url 'bcp:print_get' id_=doc.id %}" class="btn btn-print-highlight" target="_blank" onclick="this.style.pointerEvents='none'; this.innerHTML='<i class=\'fas fa-spinner fa-spin\'></i>'; setTimeout(() => {window.location.reload();}, 3000);">
+                        <i class="fas fa-print me-2"></i>Imprimir Cupons
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+{% endblock %}

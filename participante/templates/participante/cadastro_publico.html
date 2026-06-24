@@ -1,0 +1,197 @@
+{% extends "base-bootstrap.html" %}
+{% load static %}
+
+{% block title %}Cadastro de Colaborador - {{ url_treinamento.titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="row w-100 justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+            <!-- Card Principal -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus"></i>
+                        Cadastro de Colaborador
+                    </h4>
+                    <p class="mb-0 mt-2">{{ url_treinamento.titulo }}</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Informações do Treinamento -->
+                    <div class="alert alert-info mb-4">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle"></i>
+                            Informações do Treinamento
+                        </h6>
+                        <p class="mb-0">{{ url_treinamento.descricao }}</p>
+                    </div>
+                    
+                    <!-- Formulário -->
+                    <form method="post" id="cadastroForm">
+                        {% csrf_token %}
+                        
+                        <!-- Dados Pessoais -->
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">
+                                <i class="fas fa-user"></i> Nome Completo *
+                            </label>
+                            <input type="text" class="form-control" id="nome" name="nome" required
+                                   placeholder="Digite seu nome completo">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-id-card"></i> CPF *
+                            </label>
+                            <input type="text" class="form-control cpf-mask" id="username" name="username" required
+                                   placeholder="000.000.000-00" maxlength="14">
+                            <div class="form-text">Este será seu login no sistema</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope"></i> E-mail *
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" required
+                                   placeholder="seu@email.com">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="whatsapp" class="form-label">
+                                <i class="fas fa-phone"></i> Telefone *
+                            </label>
+                            <input type="text" class="form-control phone-mask" id="whatsapp" name="whatsapp" required
+                                   placeholder="(00) 00000-0000">
+                        </div>
+                        
+                        <!-- Dados de Acesso -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock"></i> Senha *
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" required
+                                   placeholder="Mínimo 8 caracteres">
+                            <div class="form-text">Use uma senha segura</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password2" class="form-label">
+                                <i class="fas fa-lock"></i> Confirmar Senha *
+                            </label>
+                            <input type="password" class="form-control" id="password2" name="password2" required
+                                   placeholder="Digite a senha novamente">
+                        </div>
+                        
+                        <!-- Termos -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="aceitarTermos" required>
+                                <label class="form-check-label" for="aceitarTermos">
+                                    Li e aceito os <a href="#" data-bs-toggle="modal" data-bs-target="#termosModal">termos de uso</a> *
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check"></i> Finalizar Cadastro
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Informações Adicionais -->
+                    <div class="mt-4 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt"></i>
+                            Seus dados estão seguros e serão usados apenas para o treinamento.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-copyright"></i>
+                    2025 Liquida Teresina - Sistema de Cadastro
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Termos -->
+<div class="modal fade" id="termosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Termos de Uso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Uso dos Dados</h6>
+                <p>Seus dados pessoais serão utilizados exclusivamente para fins do treinamento e gestão de colaboradores da Natal de Luz e Prêmios.</p>
+                
+                <h6>2. Segurança</h6>
+                <p>Implementamos medidas de segurança para proteger suas informações pessoais contra acesso não autorizado.</p>
+                
+                <h6>3. Responsabilidades</h6>
+                <p>Ao se cadastrar, você se compromete a fornecer informações verdadeiras e atualizadas.</p>
+                
+                <h6>4. Ativação</h6>
+                <p>Após o cadastro, seu perfil será revisado e ativado pela equipe responsável.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script>
+// Máscaras de input
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara CPF
+    const cpfInput = document.querySelector('.cpf-mask');
+    cpfInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = value;
+    });
+    
+    // Máscara Telefone
+    const phoneInput = document.querySelector('.phone-mask');
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 10) {
+            value = value.replace(/(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        } else {
+            value = value.replace(/(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{5})(\d)/, '$1-$2');
+        }
+        e.target.value = value;
+    });
+    
+    // Validação de senha
+    const password = document.getElementById('password');
+    const password2 = document.getElementById('password2');
+    
+    function validatePassword() {
+        if (password.value !== password2.value) {
+            password2.setCustomValidity('As senhas não coincidem');
+        } else {
+            password2.setCustomValidity('');
+        }
+    }
+    
+    password.addEventListener('change', validatePassword);
+    password2.addEventListener('keyup', validatePassword);
+});
+</script>
+{% endblock %}

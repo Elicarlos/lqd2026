@@ -1,0 +1,362 @@
+{% extends "base-dashboard.html" %}
+{% block title %}Editar perfil{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header com breadcrumb -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:list' %}" class="text-decoration-none">Participantes</a>
+                    </li>
+                    <li class="breadcrumb-item active">Editar Participante</li>
+                </ol>
+            </nav>
+            
+            <div class="card bg-white rounded-4 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-user-edit text-xl text-primary"></i>
+                            </div>
+                        </div>
+                <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Editar Perfil do Participante</h1>
+                            <p class="text-muted mb-0">Atualize as informações do participante</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário de Edição -->
+        <div class="card bg-white rounded-4 shadow-sm border-0">
+            <div class="card-body p-4">
+                <form action="." method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Dados Pessoais -->
+                    <div class="mb-4">
+                        <h5 class="fw-semibold text-dark mb-3">
+                            <i class="fas fa-user me-2 text-primary"></i>Dados Pessoais
+                        </h5>
+                        <div class="row g-3">
+                            <!-- Nome -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" name="nome" id="id_nome" class="form-control" placeholder="Nome Completo" value="{{ profile_form.nome.value|default:'' }}" required>
+                                    <label for="id_nome">
+                                        <i class="fas fa-user text-muted me-1"></i>Nome Completo <span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                                {% if profile_form.nome.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.nome.errors }}</div>
+                                {% endif %}
+                </div>
+
+                <!-- CPF -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" name="CPF" id="id_CPF" class="form-control cpf-mask" placeholder="000.000.000-00" value="{{ profile_form.CPF.value|default:'' }}" required>
+                                    <label for="id_CPF">
+                                        <i class="fas fa-id-card text-muted me-1"></i>CPF <span class="text-danger">*</span>
+                                    </label>
+                    </div>
+                    {% if profile_form.CPF.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.CPF.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Sexo -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select name="sexo" id="id_sexo" class="form-select">
+                            {% for value, label in profile_form.sexo.field.choices %}
+                                <option value="{{ value }}" {% if profile_form.sexo.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                                    <label for="id_sexo">
+                                        <i class="fas fa-venus-mars text-muted me-1"></i>Sexo
+                                    </label>
+                    </div>
+                    {% if profile_form.sexo.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.sexo.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Fone Celular 1 -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" name="foneCelular1" id="id_foneCelular1" class="form-control phone-mask" placeholder="(99) 99999-9999" value="{{ profile_form.foneCelular1.value|default:'' }}" required>
+                                    <label for="id_foneCelular1">
+                                        <i class="fas fa-mobile-alt text-muted me-1"></i>Celular <span class="text-danger">*</span>
+                                    </label>
+                    </div>
+                    {% if profile_form.foneCelular1.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.foneCelular1.errors }}</div>
+                    {% endif %}
+                </div>
+                        </div>
+                    </div>
+
+                    <!-- Redes Sociais -->
+                    <div class="mb-4">
+                        <h5 class="fw-semibold text-dark mb-3">
+                            <i class="fas fa-share-alt me-2 text-primary"></i>Redes Sociais
+                        </h5>
+                        <div class="row g-3">
+                            <!-- WhatsApp -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" name="whatsapp" id="id_whatsapp" class="form-control phone-mask" placeholder="(99) 99999-9999" value="{{ profile_form.whatsapp.value|default:'' }}">
+                                    <label for="id_whatsapp">
+                                        <i class="fab fa-whatsapp text-muted me-1"></i>WhatsApp
+                                    </label>
+                    </div>
+                    {% if profile_form.whatsapp.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.whatsapp.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Facebook -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" name="facebook" id="id_facebook" class="form-control" placeholder="Link do perfil no Facebook" value="{{ profile_form.facebook.value|default:'' }}">
+                                    <label for="id_facebook">
+                                        <i class="fab fa-facebook text-muted me-1"></i>Facebook
+                                    </label>
+                    </div>
+                    {% if profile_form.facebook.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.facebook.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Twitter -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" name="twitter" id="id_twitter" class="form-control" placeholder="Link do perfil no Twitter" value="{{ profile_form.twitter.value|default:'' }}">
+                                    <label for="id_twitter">
+                                        <i class="fab fa-twitter text-muted me-1"></i>Twitter
+                                    </label>
+                                </div>
+                                {% if profile_form.twitter.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.twitter.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Endereço -->
+                    <div class="mb-4">
+                        <h5 class="fw-semibold text-dark mb-3">
+                            <i class="fas fa-map-marker-alt me-2 text-primary"></i>Endereço
+                        </h5>
+                        <div class="row g-3">
+                            <!-- CEP -->
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="CEP" id="id_CEP" class="form-control cep-mask" placeholder="00000-000" value="{{ profile_form.CEP.value|default:'' }}" required>
+                                    <label for="id_CEP">
+                                        <i class="fas fa-map-pin text-muted me-1"></i>CEP <span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                                {% if profile_form.CEP.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.CEP.errors }}</div>
+                    {% endif %}
+                                <div class="mt-2">
+                                    <button type="button" id="btn_buscar_cep" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-search me-1"></i>Buscar CEP
+                                    </button>
+                                </div>
+                </div>
+
+                <!-- Endereço -->
+                            <div class="col-md-8">
+                                <div class="form-floating">
+                                    <input type="text" name="endereco" id="id_endereco" class="form-control" placeholder="Endereço" value="{{ profile_form.endereco.value|default:'' }}" required>
+                                    <label for="id_endereco">
+                                        <i class="fas fa-map-marker-alt text-muted me-1"></i>Endereço <span class="text-danger">*</span>
+                                    </label>
+                    </div>
+                    {% if profile_form.endereco.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.endereco.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Número -->
+                            <div class="col-md-3">
+                                <div class="form-floating">
+                                    <input type="text" name="enderecoNumero" id="id_enderecoNumero" class="form-control" placeholder="Nº da casa" value="{{ profile_form.enderecoNumero.value|default:'' }}">
+                                    <label for="id_enderecoNumero">
+                                        <i class="fas fa-hashtag text-muted me-1"></i>Número
+                                    </label>
+                    </div>
+                    {% if profile_form.enderecoNumero.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.enderecoNumero.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Complemento -->
+                            <div class="col-md-9">
+                                <div class="form-floating">
+                                    <input type="text" name="enderecoComplemento" id="id_enderecoComplemento" class="form-control" placeholder="Complemento" value="{{ profile_form.enderecoComplemento.value|default:'' }}">
+                                    <label for="id_enderecoComplemento">
+                                        <i class="fas fa-info-circle text-muted me-1"></i>Complemento
+                                    </label>
+                    </div>
+                    {% if profile_form.enderecoComplemento.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.enderecoComplemento.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Bairro -->
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="bairro" id="id_bairro" class="form-control" placeholder="Bairro" value="{{ profile_form.bairro.value|default:'' }}" required>
+                                    <label for="id_bairro">
+                                        <i class="fas fa-map-signs text-muted me-1"></i>Bairro <span class="text-danger">*</span>
+                                    </label>
+                    </div>
+                    {% if profile_form.bairro.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.bairro.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Cidade -->
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="cidade" id="id_cidade" class="form-control" placeholder="Cidade" value="{{ profile_form.cidade.value|default:'' }}" required>
+                                    <label for="id_cidade">
+                                        <i class="fas fa-city text-muted me-1"></i>Cidade <span class="text-danger">*</span>
+                                    </label>
+                    </div>
+                    {% if profile_form.cidade.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.cidade.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Estado -->
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <select name="estado" id="id_estado" class="form-select" required>
+                            {% for value, label in profile_form.estado.field.choices %}
+                                <option value="{{ value }}" {% if profile_form.estado.value == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                                    <label for="id_estado">
+                                        <i class="fas fa-map text-muted me-1"></i>Estado <span class="text-danger">*</span>
+                                    </label>
+                    </div>
+                    {% if profile_form.estado.errors %}
+                                    <div class="invalid-feedback d-block">{{ profile_form.estado.errors }}</div>
+                    {% endif %}
+                    <!-- Debug: Valor atual do estado: {{ profile_form.estado.value|default:"Sem valor" }} -->
+                </div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="d-flex justify-content-end gap-3 mt-4">
+                        <a href="{% url 'participante:user_detail' profile_form.instance.user.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times-circle me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+            </div>
+    </div>
+</main>
+
+<script>
+// Wait for jQuery to be available
+function waitForJQuery(callback) {
+    if (typeof jQuery !== 'undefined') {
+        callback();
+    } else {
+        setTimeout(function() {
+            waitForJQuery(callback);
+        }, 100);
+    }
+}
+
+waitForJQuery(function() {
+    $(document).ready(function() {
+        // Initialize masks
+        $('.cpf-mask').mask('000.000.000-00');
+        
+        // Phone mask
+        var SPMaskBehavior = function (val) {
+            return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+        },
+        spOptions = {
+            onKeyPress: function(val, e, field, options) {
+                field.mask(SPMaskBehavior.apply({}, arguments), options);
+            }
+        };
+        $('.phone-mask').mask(SPMaskBehavior, spOptions);
+        
+        // CEP mask
+        $('.cep-mask').mask('00000-000');
+
+        // Função para buscar CEP
+        function buscarCep() {
+            const cep = $('#id_CEP').val().replace(/\D/g, '');
+
+            if (cep.length === 8) {
+                // Limpa os campos de endereço enquanto busca
+                $('#id_endereco').val('');
+                $('#id_bairro').val('');
+                $('#id_cidade').val('');
+                $('#id_estado').val('');
+
+                // Busca via backend Django (usa brazilcep com múltiplos provedores)
+                $.ajax({
+                    url: '{% url "participante:consulta_cep" %}',
+                    method: 'POST',
+                    data: {
+                        cep: cep,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function(result) {
+                        if (result.success && result.data) {
+                            // Atualiza os campos com os dados do CEP
+                            $('#id_endereco').val(result.data.logradouro);
+                            $('#id_bairro').val(result.data.bairro);
+                            $('#id_cidade').val(result.data.localidade);
+                            $('#id_estado').val(result.data.uf);
+                            
+                            showToast('Endereço encontrado!', 'success');
+                        } else {
+                            showToast(result.message || 'CEP não encontrado', 'error');
+                        }
+                    },
+                    error: function() {
+                        showToast('Erro ao consultar CEP', 'error');
+                    }
+                });
+            } else if (cep.length > 0) {
+                showToast('Formato de CEP inválido', 'warning');
+            }
+        }
+
+        // Event listener para o botão de buscar CEP
+        $('#btn_buscar_cep').on('click', buscarCep);
+
+        // Event listener para o campo CEP (ao perder o foco)
+        $('#id_CEP').on('blur', buscarCep);
+    });
+    });
+</script>
+{% endblock %}

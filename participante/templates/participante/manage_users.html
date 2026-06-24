@@ -1,0 +1,513 @@
+{% extends "base-dashboard.html" %}
+{% load auth_extras %}
+
+{% block title %}Gestão de Colaboradores - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for manage users - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar tabela */
+    .table-modern {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .table-modern .table {
+        margin-bottom: 0;
+    }
+    
+    .table-modern .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-modern .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .table-modern .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: translateX(4px);
+    }
+    
+    .table-modern .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .table-modern .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    /* Melhorar badges */
+    .badge-modern {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-modern.badge-success {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .badge-modern.badge-danger {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .badge-modern.badge-primary {
+        background: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+    
+    .badge-modern.badge-secondary {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+    
+    /* Melhorar botões de ação */
+    .btn-action {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Melhorar ícones dos usuários */
+    .user-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+    }
+    
+    /* Estado vazio melhorado */
+    .empty-state {
+        padding: 3rem 2rem;
+        text-align: center;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 1rem;
+    }
+    
+    .empty-state .icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(102, 126, 234, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2rem;
+        color: #667eea;
+    }
+    
+    /* Melhorar form controls */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .table-modern .table thead th,
+        .table-modern .table tbody td {
+            padding: 0.75rem 1rem;
+        }
+        
+        .table-modern .table thead th {
+            font-size: 0.75rem;
+        }
+        
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:dashboard' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Gestão de Colaboradores</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-users-cog text-xl text-primary"></i>
+                                </div>
+                            </div>
+                    <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">Gestão de Colaboradores</h1>
+                            <p class="text-muted mb-0">Alterar grupos, status e permissões dos usuários</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="form-section">
+            <div class="d-flex align-items-center mb-4">
+                <div class="section-icon bg-primary bg-opacity-10 me-3">
+                    <i class="fas fa-filter text-primary"></i>
+                </div>
+                            <div>
+                    <h4 class="h5 fw-bold text-dark mb-1">Filtros de Busca</h4>
+                    <p class="text-muted mb-0">Encontre colaboradores específicos</p>
+                </div>
+            </div>
+            
+                                 <form method="GET" class="row g-3">
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                         <div class="form-floating">
+                    <input type="text" name="search" value="{{ search_query }}" 
+                           placeholder="Nome, CPF ou email..." 
+                                    class="form-control" id="searchInput">
+                             <label for="searchInput" class="fw-semibold">
+                            <i class="fas fa-search me-2"></i>Buscar
+                             </label>
+                         </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                         <div class="form-floating">
+                             <select name="group" class="form-select" id="groupSelect">
+                                 <option value="">Selecione um grupo</option>
+                        {% for group in groups %}
+                            <option value="{{ group.name }}" {% if group.name == group_filter %}selected{% endif %}>
+                                {{ group.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                             <label for="groupSelect" class="fw-semibold">
+                            <i class="fas fa-users me-2"></i>Grupo
+                             </label>
+                         </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 col-sm-12">
+                         <div class="form-floating">
+                             <select name="status" class="form-select" id="statusSelect">
+                                 <option value="">Selecione o status</option>
+                        <option value="ativo" {% if status_filter == 'ativo' %}selected{% endif %}>Ativos</option>
+                        <option value="inativo" {% if status_filter == 'inativo' %}selected{% endif %}>Inativos</option>
+                    </select>
+                             <label for="statusSelect" class="fw-semibold">
+                            <i class="fas fa-toggle-on me-2"></i>Status
+                             </label>
+                         </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 col-sm-12 d-flex align-items-end">
+                    <button type="submit" class="btn btn-gradient w-100">
+                             <i class="fas fa-filter me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Mensagens -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Lista de Usuários -->
+        {% if users %}
+            <div class="table-modern">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-user me-2"></i>Usuário
+                                </th>
+                                <th>
+                                    <i class="fas fa-id-card me-2"></i>Nome
+                                </th>
+                                <th>
+                                    <i class="fas fa-toggle-on me-2"></i>Status
+                                </th>
+                                <th>
+                                    <i class="fas fa-users me-2"></i>Grupo Atual
+                                </th>
+                                <th>
+                                    <i class="fas fa-cogs me-2"></i>Ações
+                                </th>
+                        </tr>
+                    </thead>
+                        <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                            <div class="user-icon me-3">
+                                                <i class="fas fa-user"></i>
+                                        </div>
+                                            <div class="flex-grow-1">
+                                            <div class="fw-semibold text-dark">{{ user.username }}</div>
+                                            <div class="text-muted small">{{ user.email }}</div>
+                                            <div class="text-muted small">
+                                            Cadastrado: {{ user.profile.dataCadastro|date:"d/m/Y" }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                                <td>
+                                        <div class="text-dark">
+                                    {% if user.profile %}
+                                        {{ user.profile.nome|default:"Não informado" }}
+                                    {% else %}
+                                        Não informado
+                                    {% endif %}
+                                </div>
+                            </td>
+                                <td>
+                                {% if user.profile.ativo %}
+                                            <span class="badge badge-modern badge-success">
+                                            <i class="fas fa-check-circle me-1"></i>Ativo
+                                    </span>
+                                {% else %}
+                                            <span class="badge badge-modern badge-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Inativo
+                                    </span>
+                                {% endif %}
+                            </td>
+                                                                 <td>
+                                     <div class="d-flex flex-wrap gap-1">
+                                    {% for group in user.groups.all %}
+                                                <span class="badge badge-modern badge-primary d-flex align-items-center">
+                                            {{ group.name }}
+                                                 <button type="button" 
+                                                            class="btn btn-link btn-sm text-primary p-0 ms-1" 
+                                                         style="text-decoration: none; font-size: 0.75rem;"
+                                                         onclick="confirmRemoveGroup('{{ user.id }}', '{{ group.id }}', '{{ group.name }}', '{{ user.username }}')"
+                                                         title="Remover grupo {{ group.name }}">
+                                                     <i class="fas fa-times"></i>
+                                                 </button>
+                                        </span>
+                                    {% empty %}
+                                                <span class="badge badge-modern badge-secondary">
+                                            Sem grupo
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                                <td>
+                                    <div class="d-flex flex-column gap-2">
+                                    <!-- Alterar Grupo -->
+                                         <form method="POST" class="d-flex align-items-center gap-2">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="change_group">
+                                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                                             <select name="new_group" class="form-select form-select-sm">
+                                            <option value="">Selecione um grupo</option>
+                                            {% for group in groups %}
+                                                <option value="{{ group.id }}" {% if group in user.groups.all %}selected{% endif %}>
+                                                    {{ group.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                                <button type="submit" class="btn btn-outline-primary btn-action">
+                                                 <i class="fas fa-save me-1"></i>
+                                            Salvar
+                                        </button>
+                                    </form>
+                                    
+                                    <!-- Ações Rápidas -->
+                                            <div class="d-flex gap-2 flex-wrap">
+                                        <!-- Toggle Status -->
+                                            <form method="POST" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="toggle_status">
+                                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                                                    <button type="submit" class="btn btn-action {% if user.profile.ativo %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                                                    <i class="fas {% if user.profile.ativo %}fa-user-times{% else %}fa-user-check{% endif %} me-1"></i>
+                                                {% if user.profile.ativo %}Desativar{% else %}Ativar{% endif %}
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Reset Password -->
+                                            <form method="POST" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="reset_password">
+                                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                                                    <button type="submit" class="btn btn-outline-warning btn-action">
+                                                    <i class="fas fa-key me-1"></i>
+                                                Nova Senha
+                                            </button>
+                                        </form>
+                                    </div>
+                                    </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        {% else %}
+            <!-- Estado vazio -->
+            <div class="empty-state">
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h4 class="text-muted mb-2">Nenhum usuário encontrado</h4>
+                <p class="text-muted mb-4">Ajuste seus filtros para encontrar usuários.</p>
+                <button type="button" class="btn btn-outline-primary" onclick="clearFilters()">
+                    <i class="fas fa-undo me-2"></i>Limpar Filtros
+                </button>
+            </div>
+        {% endif %}
+</div>
+</main>
+
+<!-- Modal de Confirmação para Remover Grupo -->
+<div class="modal fade" id="removeGroupModal" tabindex="-1" aria-labelledby="removeGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeGroupModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Confirmar Remoção
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja remover o grupo <strong id="groupName"></strong> do usuário <strong id="userName"></strong>?</p>
+                <p class="text-muted small">Esta ação pode afetar as permissões do usuário no sistema.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <form method="POST" id="removeGroupForm" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove_group">
+                    <input type="hidden" name="user_id" id="removeUserId">
+                    <input type="hidden" name="group_id" id="removeGroupId">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Remover Grupo
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmRemoveGroup(userId, groupId, groupName, userName) {
+    // Preencher os dados no modal
+    document.getElementById('groupName').textContent = groupName;
+    document.getElementById('userName').textContent = userName;
+    document.getElementById('removeUserId').value = userId;
+    document.getElementById('removeGroupId').value = groupId;
+    
+    // Mostrar o modal
+    var modal = new bootstrap.Modal(document.getElementById('removeGroupModal'));
+    modal.show();
+}
+
+function clearFilters() {
+    // Limpar todos os campos de filtro
+    document.getElementById('searchInput').value = '';
+    document.getElementById('groupSelect').value = '';
+    document.getElementById('statusSelect').value = '';
+    
+    // Submeter o formulário
+    document.querySelector('form[method="GET"]').submit();
+}
+</script>
+{% endblock %}

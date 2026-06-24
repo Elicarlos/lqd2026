@@ -1,0 +1,47 @@
+{% extends "mobile.html" %}
+
+{% load static %}
+
+{% block title %}Erro na Impressão{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">
+                    Erro na Impressão
+                </h2>
+                
+                <div class="text-gray-600 mb-6">
+                    <p class="mb-4">
+                        Ocorreu um erro ao tentar gerar os cupons para impressão.
+                    </p>
+                    
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p class="text-red-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            {{ error|default:"Erro desconhecido" }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <button 
+                        type="button" 
+                        class="w-full btn-secondary py-3 px-4 flex items-center justify-center"
+                        onclick="window.close()"
+                    >
+                        <i class="fas fa-times mr-2"></i>
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,1168 @@
+{% extends "base-dashboard.html" %}
+{% block title %}Adicionar documento fiscal{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for document fiscal form */
+    .section-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 1rem;
+    }
+    
+    .preview-card {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border: 1px solid #bbdefb;
+    }
+    
+    .cupons-highlight {
+        color: #198754;
+        font-weight: bold;
+    }
+    
+    .money-input {
+        font-family: 'Courier New', monospace;
+        font-weight: 500;
+    }
+    
+    /* Animações para o preview */
+    .animate__pulse {
+        animation: pulse 1s infinite;
+    }
+    
+    .animate__fadeIn {
+        animation: fadeIn 0.5s ease-in;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Estilos para o botão de busca */
+    .btn-buscar-lojista {
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+    
+    .btn-buscar-lojista:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Garantir alinhamento correto do campo CNPJ com botões */
+    .cnpj-search-container {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .cnpj-search-container .form-floating {
+        flex: 1;
+    }
+    
+    .cnpj-search-container .btn {
+        flex-shrink: 0;
+        margin-top: 0;
+        height: 58px;
+    }
+    
+    /* Estilo para o botão de copiar */
+    .btn-copiar {
+        transition: all 0.2s ease;
+    }
+    
+    .btn-copiar:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn-copiar.copied {
+        background-color: #198754;
+        border-color: #198754;
+        color: white;
+    }
+    
+    /* Estilo para aviso de valor alto */
+    .bg-warning-subtle {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+    
+    .border-warning {
+        border-color: #ffc107 !important;
+    }
+    
+    /* Melhorar visualização das tabs */
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: #6c757d;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-tabs .nav-link.active {
+        border-bottom-color: #0d6efd;
+        color: #0d6efd;
+        background: none;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-bottom-color: #0d6efd;
+        color: #0d6efd;
+    }
+    
+    /* Transições suaves para as seções */
+    #documento-section,
+    #valores-section,
+    #preview-cupons-container {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    /* Animação de fade para as seções */
+    .section-fade-out {
+        opacity: 0;
+        transform: translateY(-10px);
+        pointer-events: none;
+    }
+    
+    .section-fade-in {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header com breadcrumb -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:user_detail' participante.id %}" class="text-decoration-none">{{ participante.username }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Adicionar Documento</li>
+                </ol>
+            </nav>
+            <div>
+                <h1 class="h3 fw-bold text-dark mb-1">Adicionar Documento Fiscal</h1>
+                <p class="text-muted mb-0">Para participante: <strong class="text-primary">{{ participante.username }}</strong></p>
+            </div>
+            
+            
+        </div>
+
+        <!-- Mensagens -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message|safe }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+                <!-- Formulário de Documento Fiscal -->
+        <div class="card-standard">
+            <div class="card-body p-4">
+                <form action="." method="post" enctype="multipart/form-data" class="form-standard">
+            {% csrf_token %}
+
+                    <!-- Informações do Lojista -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-2 me-3">
+                                <i class="fas fa-building text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Informações do Lojista</h4>
+                                <p class="text-muted small mb-0">Dados do estabelecimento</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabs para Lojista -->
+                        <ul class="nav nav-tabs" id="lojistaTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="buscar-tab" data-bs-toggle="tab" data-bs-target="#buscar" type="button" role="tab">
+                                    <i class="fas fa-search me-2"></i>Buscar Lojista
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="cadastrar-tab" data-bs-toggle="tab" data-bs-target="#cadastrar" type="button" role="tab">
+                                    <i class="fas fa-plus me-2"></i>Novo Lojista
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="lojistaTabsContent">
+                            <!-- Tab 1: Buscar Lojista -->
+                            <div class="tab-pane fade show active" id="buscar" role="tabpanel">
+                                <div class="row g-3 mt-3 align-items-start">
+                                    <!-- CNPJ da Loja -->
+                                    <div class="col-md-6">
+                                        <div class="cnpj-search-container">
+                                            <div class="form-floating flex-grow-1">
+                                                <input type="text" name="lojista_cnpj" id="id_lojista_cnpj" class="form-control cnpj-mask" placeholder="00.000.000/0000-00" value="{{ documentoFiscal_form.lojista_cnpj.value|default:'' }}" required>
+                                                <label for="id_lojista_cnpj">
+                                                    <i class="fas fa-building text-muted me-1"></i>CNPJ da Loja <span class="text-danger">*</span>
+                                                </label>
+                                            </div>
+                                            <!-- Botão de busca manual -->
+                                            <button type="button" id="btn-buscar-lojista" class="btn btn-outline-primary" style="white-space: nowrap; min-width: 80px;">
+                                                <i class="fas fa-search me-1"></i>Buscar
+                                            </button>
+                                            <!-- Botão de copiar CNPJ -->
+                                            <button type="button" id="btn-copiar-cnpj" class="btn btn-outline-secondary btn-copiar" style="white-space: nowrap; min-width: 60px;" title="Copiar CNPJ">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                        {% if documentoFiscal_form.lojista_cnpj.errors %}
+                                            <div class="invalid-feedback d-block">{{ documentoFiscal_form.lojista_cnpj.errors }}</div>
+                                        {% endif %}
+                                        <div id="lojista-info" class="mt-2" style="display: none;">
+                                            <div class="alert alert-success py-2">
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong id="lojista-nome"></strong> - <span id="lojista-status"></span>
+                                            </div>
+                                        </div>
+                                        <div id="lojista-nao-encontrado" class="mt-2" style="display: none;">
+                                            <div class="alert alert-warning py-2">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                Lojista não encontrado. Use a aba "Cadastrar Novo" para adicionar.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Vendedor -->
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" name="vendedor" id="id_vendedor" class="form-control" placeholder="Nome do vendedor (opcional)" value="{{ documentoFiscal_form.vendedor.value|default:'' }}">
+                                            <label for="id_vendedor">
+                                                <i class="fas fa-user text-muted me-1"></i>Vendedor
+                                            </label>
+                                        </div>
+                                        {% if documentoFiscal_form.vendedor.errors %}
+                                            <div class="invalid-feedback d-block">{{ documentoFiscal_form.vendedor.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tab 2: Cadastrar Novo Lojista -->
+                            <div class="tab-pane fade" id="cadastrar" role="tabpanel">
+                                <div class="row g-3 mt-3">
+                                    <!-- CNPJ do Novo Lojista -->
+                                    <div class="col-md-6">
+                                        <div class="cnpj-search-container">
+                                            <div class="form-floating flex-grow-1">
+                                                <input type="text" id="novo_lojista_cnpj" class="form-control cnpj-mask" placeholder="00.000.000/0000-00">
+                                                <label for="novo_lojista_cnpj">
+                                                    <i class="fas fa-building text-muted me-1"></i>CNPJ <span class="text-danger">*</span>
+                                                </label>
+                                            </div>
+                                            <!-- Botão de copiar CNPJ do novo lojista -->
+                                            <button type="button" id="btn-copiar-novo-cnpj" class="btn btn-outline-secondary btn-copiar" style="white-space: nowrap; min-width: 60px;" title="Copiar CNPJ">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Razão Social -->
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" id="novo_lojista_razao" class="form-control" placeholder="Razão Social">
+                                            <label for="novo_lojista_razao">
+                                                <i class="fas fa-building text-muted me-1"></i>Razão Social <span class="text-danger">*</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Nome Fantasia -->
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" id="novo_lojista_fantasia" class="form-control" placeholder="Nome Fantasia">
+                                            <label for="novo_lojista_fantasia">
+                                                <i class="fas fa-store text-muted me-1"></i>Nome Fantasia <span class="text-danger">*</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Telefone -->
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" id="novo_lojista_telefone" class="form-control phone-mask" placeholder="(00) 00000-0000">
+                                            <label for="novo_lojista_telefone">
+                                                <i class="fas fa-phone text-muted me-1"></i>Telefone
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Endereço -->
+                                    <div class="col-12">
+                                        <div class="form-floating">
+                                            <input type="text" id="novo_lojista_endereco" class="form-control" placeholder="Endereço completo">
+                                            <label for="novo_lojista_endereco">
+                                                <i class="fas fa-map-marker-alt text-muted me-1"></i>Endereço
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Ramo de Atividade -->
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select id="novo_lojista_ramo_atividade" class="form-select">
+                                                <option value="">Selecione um ramo...</option>
+                                            </select>
+                                            <label for="novo_lojista_ramo_atividade">
+                                                <i class="fas fa-briefcase text-muted me-1"></i>Ramo de Atividade
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Localização -->
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select id="novo_lojista_localizacao" class="form-select">
+                                                <option value="">Selecione uma localização...</option>
+                                            </select>
+                                            <label for="novo_lojista_localizacao">
+                                                <i class="fas fa-map-marker-alt text-muted me-1"></i>Localização
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Botão para cadastrar -->
+                                    <div class="col-12">
+                                        <button type="button" id="btn-cadastrar-lojista" class="btn btn-success">
+                                            <i class="fas fa-save me-2"></i>Cadastrar Lojista
+                                        </button>
+                                        <div id="cadastro-lojista-result" class="mt-2"></div>
+                                        
+                                        <!-- Mensagem informativa -->
+                                        <div class="alert alert-info mt-3" id="info-novo-lojista" style="display: none;">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <strong>Próximo passo:</strong> Após cadastrar o lojista, você será direcionado para preencher as informações do documento fiscal.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações do Documento -->
+                    <div class="mb-4" id="documento-section">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-info bg-opacity-10 rounded-3 p-2 me-3">
+                                <i class="fas fa-file-invoice text-info"></i>
+                </div>
+                <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Informações do Documento</h4>
+                                <p class="text-muted small mb-0">Dados da nota fiscal</p>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <!-- Número do Documento -->
+                            <div class="col-md-6">
+                                <div class="cnpj-search-container">
+                                    <div class="form-floating flex-grow-1">
+                                        <input type="text" name="numeroDocumento" id="id_numeroDocumento" class="form-control" placeholder="Número da nota fiscal" value="{{ documentoFiscal_form.numeroDocumento.value|default:'' }}" required>
+                                        <label for="id_numeroDocumento">
+                                            <i class="fas fa-file-invoice text-muted me-1"></i>Número do Documento <span class="text-danger">*</span>
+                                        </label>
+                                    </div>
+                                    <!-- Botão de copiar número do documento -->
+                                    <button type="button" id="btn-copiar-documento" class="btn btn-outline-secondary btn-copiar" style="white-space: nowrap; min-width: 60px;" title="Copiar número do documento">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                {% if documentoFiscal_form.numeroDocumento.errors %}
+                                    <div class="invalid-feedback d-block">{{ documentoFiscal_form.numeroDocumento.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                <!-- Data da Compra -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" name="dataDocumento" id="id_dataDocumento" class="form-control" value="{{ documentoFiscal_form.dataDocumento.value|default:'' }}" required>
+                                    <label for="id_dataDocumento">
+                                        <i class="fas fa-calendar-alt text-muted me-1"></i>Data da Compra <span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                                {% if documentoFiscal_form.dataDocumento.errors %}
+                                    <div class="invalid-feedback d-block">{{ documentoFiscal_form.dataDocumento.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Valores -->
+                    <div class="mb-4" id="valores-section">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success bg-opacity-10 rounded-3 p-2 me-3">
+                                <i class="fas fa-money-bill-wave text-success"></i>
+                </div>
+                <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Valores</h4>
+                                <p class="text-muted small mb-0">Valores pagos na compra</p>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <!-- Valor pago na Cielo -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" id="id_valorCielo" class="form-control money-mask" placeholder="R$ 0,00" value="{{ documentoFiscal_form.valorCielo.value|default:'' }}" style="min-width: 200px; width: 100%;">
+                                    <label for="id_valorCielo">
+                                        <i class="fas fa-credit-card text-muted me-1"></i>Valor pago na Cielo
+                                    </label>
+                    </div>
+                    {% if documentoFiscal_form.valorCielo.errors %}
+                                    <div class="invalid-feedback d-block">{{ documentoFiscal_form.valorCielo.errors }}</div>
+                    {% endif %}
+                                <small class="text-info">
+                                    <i class="fas fa-lightbulb me-1"></i>A cada R$ 50,00 pagos na Cielo = 3 cupons
+                                </small>
+                </div>
+
+                <!-- Valor pago em outros métodos -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" id="id_valorOutros" class="form-control money-mask" placeholder="R$ 0,00" value="{{ documentoFiscal_form.valorOutros.value|default:'' }}" style="min-width: 200px; width: 100%;">
+                                    <label for="id_valorOutros">
+                                        <i class="fas fa-money-bill text-muted me-1"></i>Valor pago em outros métodos
+                                    </label>
+                    </div>
+                    {% if documentoFiscal_form.valorOutros.errors %}
+                                    <div class="invalid-feedback d-block">{{ documentoFiscal_form.valorOutros.errors }}</div>
+                    {% endif %}
+                                <small class="text-info">
+                                    <i class="fas fa-lightbulb me-1"></i>A cada R$ 50,00 pagos em outros métodos = 1 cupom
+                                </small>
+                </div>
+
+                                <!-- Valor Total do Documento (calculado) -->
+                             <div class="col-12">
+                                <div class="form-floating">
+                                    <input type="text" id="valor_total_formatado" class="form-control bg-light" placeholder="R$ 0,00" readonly style="min-width: 200px; width: 100%;">
+                                    <label for="valor_total_formatado">
+                                        <i class="fas fa-calculator text-muted me-1"></i>Valor Total do Documento <span class="text-danger">*</span>
+                                    </label>
+                        </div>
+                        <!-- Campo oculto para o valor real -->
+                        <input type="hidden" name="valorDocumento" id="id_valorDocumento" value="{{ documentoFiscal_form.valorDocumento.value|default:'0.00' }}">
+                                {% if documentoFiscal_form.valorDocumento.errors %}
+                                    <div class="invalid-feedback d-block">{{ documentoFiscal_form.valorDocumento.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                </div>
+
+                <!-- Preview dos Cupons -->
+                    <div class="card-dashboard mb-4" id="preview-cupons-container">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                    <i class="fas fa-ticket-alt text-info"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-0">Preview dos Cupons</h6>
+                            </div>
+                            
+                            <div class="row g-3">
+                                <!-- Card Cupons da Cielo -->
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="h-100 d-flex align-items-center justify-content-between p-3 bg-primary rounded-3 border border-primary border-opacity-25" style="min-height: 70px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-20 rounded-circle p-2 me-2">
+                                                <i class="fas fa-credit-card text-white"></i>
+                                            </div>
+                                            <div class="fw-semibold text-white">Cupons Cielo</div>
+                                        </div>
+                                        <div class="fw-bold text-white fs-4" id="cuponsCielo">0</div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Cupons de outros métodos -->
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="h-100 d-flex align-items-center justify-content-between p-3 bg-success bg-opacity-10 rounded-3 border border-success border-opacity-25" style="min-height: 70px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-success bg-opacity-20 rounded-circle p-2 me-2">
+                                                <i class="fas fa-money-bill text-success"></i>
+                                            </div>
+                                            <div class="fw-semibold text-dark">Outros Métodos</div>
+                                        </div>
+                                        <div class="fw-bold text-success fs-4" id="cuponsOutros">0</div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Total de Cupons -->
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="h-100 d-flex align-items-center justify-content-between p-3 bg-info bg-opacity-10 rounded-3 border border-info border-opacity-25" style="min-height: 70px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-info bg-opacity-20 rounded-circle p-2 me-2">
+                                                <i class="fas fa-trophy text-info"></i>
+                                            </div>
+                                            <div class="fw-semibold text-dark">Total de Cupons</div>
+                            </div>
+                                        <div class="fw-bold text-info fs-4" id="totalCupons">0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+             
+
+                <!-- Campos hidden para valores limpos (enviados ao backend) -->
+                <input type="hidden" name="valorCielo" id="valorCielo_hidden" value="{{ documentoFiscal_form.valorCielo.value|default:'' }}">
+                <input type="hidden" name="valorOutros" id="valorOutros_hidden" value="{{ documentoFiscal_form.valorOutros.value|default:'' }}">
+                <!-- Campo hidden para compradoCielo -->
+                <input type="hidden" name="compradoCielo" id="id_compradoCielo" value="false">
+
+                    <!-- Botões de Ação -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'participante:user_detail' participante.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-gradient">
+                            <i class="fas fa-save me-2"></i>Salvar Documento
+                </button>                
+            </div>
+        </form>
+    </div>
+</div>
+    </div>
+</main>
+
+    <!-- Decimal.js para cálculos monetários precisos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.4.3/decimal.min.js"></script>
+    
+    <script>
+// Wait for jQuery to be available
+function waitForJQuery(callback) {
+    if (typeof jQuery !== 'undefined') {
+        callback();
+    } else {
+        setTimeout(function() {
+            waitForJQuery(callback);
+        }, 100);
+    }
+}
+
+waitForJQuery(function() {
+    $(document).ready(function() {
+        // Configuração do Decimal.js
+        Decimal.set({ precision: 10, rounding: Decimal.ROUND_DOWN });
+        
+        // Máscaras
+        $('.cnpj-mask').mask('00.000.000/0000-00');
+        $('.phone-mask').mask('(00) 00000-0000');
+        $('.date-mask').mask('00/00/0000');
+        
+        // Máscara monetária
+        $('.money-mask').mask('#.##0.##0,00', {
+                reverse: true,
+            placeholder: "0,00"
+            });
+
+        // Elementos do formulário
+        const valorCieloInput = document.getElementById('id_valorCielo');
+        const valorOutrosInput = document.getElementById('id_valorOutros');
+        const valorTotalInput = document.getElementById('id_valorDocumento');
+        const compradoCieloHidden = document.getElementById('id_compradoCielo');
+        
+        // Elementos do preview
+        const cuponsCieloSpan = document.getElementById('cuponsCielo');
+        const cuponsOutrosSpan = document.getElementById('cuponsOutros');
+        const totalCuponsSpan = document.getElementById('totalCupons');
+
+        // Função para converter valor da máscara para número
+        function parseMoneyValue(value) {
+            // Se o valor for nulo, vazio ou apenas R$ com zeros, retorna 0
+            if (!value || value === '' || value === 'R$ ' || value === 'R$ 0,00') {
+                return 0;
+            }
+            
+            try {
+                // Remove R$, pontos e substitui vírgula por ponto
+                const numStr = value.replace(/[R$\s.]/g, '').replace(',', '.');
+                // Garante que é um número válido com 2 casas decimais
+                const num = parseFloat(numStr);
+                if (isNaN(num)) {
+                    console.warn('Valor inválido convertido para 0:', value);
+                    return 0;
+                }
+                // Retorna o número com exatamente 2 casas decimais
+                const result = parseFloat(num.toFixed(2));
+                console.log('Valor convertido:', value, '->', result);
+                return result;
+            } catch (e) {
+                console.error('Erro ao converter valor:', e, 'Valor original:', value);
+                return 0;
+            }
+        }
+
+        // Função para formatar número para string monetária
+        function formatMoneyValue(value) {
+            // Garante que é um número e tem 2 casas decimais
+            const numero = parseFloat(value || 0).toFixed(2);
+            // Separa parte inteira e decimal
+            const [inteiro, decimal] = numero.split('.');
+            // Adiciona pontos de milhar
+            const inteiroFormatado = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            return `${inteiroFormatado},${decimal}`;
+        }
+
+        // Módulo para cálculo de cupons via AJAX (seguro e reutilizável)
+        const CuponsCalculator = {
+            cache: new Map(),
+            debounceTimer: null,
+            
+            // Calcular cupons via AJAX
+            async calcularCupons(valorCielo, valorOutros) {
+                // Validação dos valores antes de enviar
+                if (typeof valorCielo !== 'number' || isNaN(valorCielo)) {
+                    console.warn('Valor Cielo inválido:', valorCielo);
+                    valorCielo = 0;
+                }
+                if (typeof valorOutros !== 'number' || isNaN(valorOutros)) {
+                    console.warn('Valor Outros inválido:', valorOutros);
+                    valorOutros = 0;
+                }
+                
+                // Garantir que os valores são números válidos
+                valorCielo = Math.max(0, parseFloat(valorCielo) || 0);
+                valorOutros = Math.max(0, parseFloat(valorOutros) || 0);
+                
+                const cacheKey = `${valorCielo}_${valorOutros}`;
+                
+                // Verificar cache
+                if (this.cache.has(cacheKey)) {
+                    console.log('Usando cache para:', cacheKey);
+                    return this.cache.get(cacheKey);
+                }
+                
+                // Evitar requisições para valores zero
+                if (valorCielo === 0 && valorOutros === 0) {
+                    const zeroResult = {
+                        success: true,
+                        cupons: 0,
+                        cupons_cielo: 0,
+                        cupons_outros: 0,
+                        valor_total: 0,
+                        valor_cielo: 0,
+                        valor_outros: 0
+                    };
+                    this.cache.set(cacheKey, zeroResult);
+                    return zeroResult;
+                }
+                
+                console.log('Enviando valores para cálculo:', { valorCielo, valorOutros });
+                
+                try {
+                    const response = await fetch('/calcular-cupons-preview/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: new URLSearchParams({
+                            valor_cielo: valorCielo.toString(),
+                            valor_outros: valorOutros.toString()
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Erro HTTP:', response.status, errorText);
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Cache do resultado
+                        this.cache.set(cacheKey, data);
+                        return data;
+                    } else {
+                        throw new Error(data.error || 'Erro no cálculo');
+                    }
+                } catch (error) {
+                    console.error('Erro ao calcular cupons:', error);
+                    return {
+                        success: false,
+                        error: error.message,
+                        cupons: 0,
+                        valor_total: 0,
+                        valor_cielo: valorCielo,
+                        valor_outros: valorOutros
+                    };
+                }
+            },
+            
+            // Debounce para evitar muitas requisições
+            debounce(func, delay = 300) {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(func, delay);
+            }
+        };
+
+        // Função para atualizar valores e preview (usando AJAX seguro)
+        async function atualizarValores() {
+            const valorCielo = parseMoneyValue(valorCieloInput.value);
+            const valorOutros = parseMoneyValue(valorOutrosInput.value);
+            const valorTotal = valorCielo + valorOutros;
+
+            console.log('Valores processados:', { valorCielo, valorOutros, valorTotal });
+
+            // Atualizar campos hidden com valores limpos (enviados ao backend)
+            const valorCieloHidden = document.getElementById('valorCielo_hidden');
+            const valorOutrosHidden = document.getElementById('valorOutros_hidden');
+            
+            if (valorCieloHidden) {
+                valorCieloHidden.value = valorCielo > 0 ? valorCielo.toFixed(2) : '';
+            }
+            if (valorOutrosHidden) {
+                valorOutrosHidden.value = valorOutros > 0 ? valorOutros.toFixed(2) : '';
+            }
+
+            // Atualizar valor total (campo hidden com valor puro)
+            valorTotalInput.value = valorTotal.toFixed(2);
+
+            // Atualizar campo de exibição formatado
+            const valorFormatadoInput = document.getElementById('valor_total_formatado');
+            valorFormatadoInput.value = 'R$ ' + formatMoneyValue(valorTotal);
+            
+            // Adicionar classe de aviso se o valor total for alto
+            if (valorTotal > 40000) {
+                valorFormatadoInput.classList.add('border-warning');
+                valorFormatadoInput.classList.add('bg-warning-subtle');
+            } else {
+                valorFormatadoInput.classList.remove('border-warning');
+                valorFormatadoInput.classList.remove('bg-warning-subtle');
+            }
+
+            // Atualizar campo hidden do compradoCielo
+            compradoCieloHidden.value = valorCielo > 0 ? 'true' : 'false';
+
+            // Só calcular cupons se pelo menos um valor for maior que zero
+            // Evita requisições desnecessárias quando ambos os valores são zero
+            if (valorCielo > 0 || valorOutros > 0) {
+                // Verificar se o valor total não excede o limite
+                const valorTotal = valorCielo + valorOutros;
+                if (valorTotal > 50000) {
+                    console.warn('Valor total excede o limite de R$ 50.000,00:', valorTotal);
+                    showToast('Valor total muito alto (máximo R$ 50.000,00)', 'warning');
+                    return;
+                }
+                // Calcular cupons via AJAX
+                try {
+                    // Mostrar loading
+                    const previewContainer = document.getElementById('preview-cupons-container');
+                    if (previewContainer) {
+                        previewContainer.classList.add('animate__pulse');
+                    }
+                    
+                    const resultado = await CuponsCalculator.calcularCupons(valorCielo, valorOutros);
+                    
+                    if (resultado.success) {
+                        // Atualizar preview com dados corretos do servidor
+                        cuponsCieloSpan.textContent = resultado.cupons_cielo;
+                        cuponsOutrosSpan.textContent = resultado.cupons_outros;
+                        totalCuponsSpan.textContent = resultado.cupons;
+
+                        // Destacar se há cupons
+                        if (resultado.cupons > 0) {
+                            totalCuponsSpan.style.color = '#0d6efd'; // Azul Bootstrap (primary)
+                            totalCuponsSpan.style.fontWeight = 'bold';
+                        } else {
+                            totalCuponsSpan.style.color = '#6c757d'; // Cinza Bootstrap
+                            totalCuponsSpan.style.fontWeight = 'normal';
+                        }
+                        
+                        // Remover loading e adicionar animação de entrada
+                        if (previewContainer) {
+                            previewContainer.classList.remove('animate__pulse');
+                            previewContainer.classList.add('animate__fadeIn');
+                        }
+                    } else {
+                        console.error('Erro no cálculo:', resultado.error);
+                        // Manter valores anteriores em caso de erro
+                        if (previewContainer) {
+                            previewContainer.classList.remove('animate__pulse');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar preview:', error);
+                    // Manter valores anteriores em caso de erro
+                    const previewContainer = document.getElementById('preview-cupons-container');
+                    if (previewContainer) {
+                        previewContainer.classList.remove('animate__pulse');
+                    }
+                }
+            } else {
+                // Se ambos os valores são zero, resetar o preview
+                cuponsCieloSpan.textContent = '0';
+                cuponsOutrosSpan.textContent = '0';
+                totalCuponsSpan.textContent = '0';
+                totalCuponsSpan.style.color = '#6c757d';
+                totalCuponsSpan.style.fontWeight = 'normal';
+            }
+        }
+
+        // Event listeners para atualização em tempo real (com debounce)
+        valorCieloInput.addEventListener('input', () => {
+            CuponsCalculator.debounce(() => {
+                atualizarValores();
+            }, 500); // Aumentado para 500ms para reduzir requisições
+        });
+        valorOutrosInput.addEventListener('input', () => {
+            CuponsCalculator.debounce(() => {
+                atualizarValores();
+            }, 500); // Aumentado para 500ms para reduzir requisições
+        });
+
+        // Inicializar (usando AJAX seguro)
+        $(document).ready(function() {
+        atualizarValores();
+        });
+        
+        // ===== FUNCIONALIDADE DE LOJISTAS =====
+        
+        // Busca manual apenas quando clicar no botão
+        $('#btn-buscar-lojista').on('click', function() {
+            const cnpj = $('#id_lojista_cnpj').val();
+            const cnpj_limpo = cnpj.replace(/\D/g, '');
+            if (cnpj_limpo.length === 14) {
+                buscarLojista(cnpj); // Enviar o CNPJ original com máscara
+            } else {
+                alert('Por favor, digite um CNPJ válido com 14 dígitos.');
+            }
+        });
+
+        // Também permitir busca com Enter no campo CNPJ
+        $('#id_lojista_cnpj').on('keypress', function(e) {
+            if (e.which === 13) { // Enter key
+                e.preventDefault();
+                $('#btn-buscar-lojista').click();
+            }
+        });
+        
+        // Função para buscar lojista
+        function buscarLojista(cnpj) {
+            $.ajax({
+                url: '{% url "lojista:buscar_lojista_ajax" %}',
+                method: 'GET',
+                data: { cnpj: cnpj },
+                success: function(response) {
+                    if (response.success) {
+                        let statusText = 'Status: ' + response.lojista.status;
+                        
+                        // Se encontrou por busca similar, mostrar aviso
+                        if (!response.encontrado_exato) {
+                            statusText += ' (CNPJ similar encontrado: ' + response.cnpj_encontrado + ')';
+                        }
+                        
+                        $('#lojista-nome').text(response.lojista.fantasiaLojista);
+                        $('#lojista-status').html(statusText);
+                        
+                        // Mudar cor do alerta se foi encontrado por busca similar
+                        if (!response.encontrado_exato) {
+                            $('#lojista-info .alert').removeClass('alert-success').addClass('alert-warning');
+                        } else {
+                            $('#lojista-info .alert').removeClass('alert-warning').addClass('alert-success');
+                        }
+                        
+                        $('#lojista-info').show();
+                        $('#lojista-nao-encontrado').hide();
+                    } else {
+                        $('#lojista-info').hide();
+                        $('#lojista-nao-encontrado').show();
+                    }
+                },
+                error: function() {
+                    $('#lojista-info').hide();
+                    $('#lojista-nao-encontrado').show();
+                }
+            });
+        }
+        
+        // Carregar ramos de atividade e localizações ao carregar a página
+        function carregarRamosELocalizacoes() {
+            // Carregar ramos de atividade
+            $.ajax({
+                url: '{% url "lojista:buscar_ramos_atividade_ajax" %}',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const selectRamo = $('#novo_lojista_ramo_atividade');
+                        selectRamo.empty().append('<option value="">Selecione um ramo...</option>');
+                        response.ramos.forEach(function(ramo) {
+                            selectRamo.append(`<option value="${ramo.id}">${ramo.nome}</option>`);
+                        });
+                    }
+                }
+            });
+            
+            // Carregar localizações
+            $.ajax({
+                url: '{% url "lojista:buscar_localizacoes_ajax" %}',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const selectLocalizacao = $('#novo_lojista_localizacao');
+                        selectLocalizacao.empty().append('<option value="">Selecione uma localização...</option>');
+                        response.localizacoes.forEach(function(localizacao) {
+                            selectLocalizacao.append(`<option value="${localizacao.id}">${localizacao.nome}</option>`);
+                        });
+                    }
+                }
+            });
+        }
+        
+        // Carregar dados ao carregar a página
+        carregarRamosELocalizacoes();
+        
+        // Cadastrar novo lojista
+        $('#btn-cadastrar-lojista').click(function() {
+            const cnpj = $('#novo_lojista_cnpj').val();
+            const razao = $('#novo_lojista_razao').val();
+            const fantasia = $('#novo_lojista_fantasia').val();
+            const telefone = $('#novo_lojista_telefone').val();
+            const endereco = $('#novo_lojista_endereco').val();
+            const ramoAtividadeId = $('#novo_lojista_ramo_atividade').val();
+            const localizacaoId = $('#novo_lojista_localizacao').val();
+            
+            if (!cnpj || !razao || !fantasia) {
+                $('#cadastro-lojista-result').html(
+                    '<div class="alert alert-danger">Preencha CNPJ, Razão Social e Nome Fantasia</div>'
+                );
+                return;
+            }
+            
+            $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Cadastrando...');
+            
+            $.ajax({
+                url: '{% url "lojista:cadastrar_lojista_ajax" %}',
+                method: 'POST',
+                data: {
+                    cnpj: cnpj,
+                    razao_social: razao,
+                    nome_fantasia: fantasia,
+                    telefone: telefone,
+                    endereco: endereco,
+                    ramo_atividade_id: ramoAtividadeId,
+                    localizacao_id: localizacaoId,
+                    csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#cadastro-lojista-result').html(
+                            '<div class="alert alert-success">Lojista cadastrado com sucesso!</div>'
+                        );
+                        
+                        // Preencher o campo CNPJ da aba buscar
+                        $('#id_lojista_cnpj').val($('#novo_lojista_cnpj').val());
+                        
+                        // Mostrar informações do lojista
+                        $('#lojista-nome').text(response.lojista.fantasiaLojista);
+                        $('#lojista-status').text('Status: ' + response.lojista.status);
+                        $('#lojista-info').show();
+                        $('#lojista-nao-encontrado').hide();
+                        
+                        // Voltar para a aba buscar
+                        $('#buscar-tab').tab('show');
+                        
+                        // Garantir que as seções sejam mostradas
+                        setTimeout(() => {
+                            toggleSectionsVisibility('buscar');
+                        }, 100);
+                        
+                        // Limpar campos da aba cadastrar
+                        $('#novo_lojista_cnpj').val('');
+                        $('#novo_lojista_razao').val('');
+                        $('#novo_lojista_fantasia').val('');
+                        $('#novo_lojista_telefone').val('');
+                        $('#novo_lojista_endereco').val('');
+                        $('#novo_lojista_ramo_atividade').val('');
+                        $('#novo_lojista_localizacao').val('');
+                        
+                    } else {
+                        $('#cadastro-lojista-result').html(
+                            '<div class="alert alert-danger">' + response.message + '</div>'
+                        );
+                    }
+                },
+                error: function() {
+                    $('#cadastro-lojista-result').html(
+                        '<div class="alert alert-danger">Erro ao cadastrar lojista. Tente novamente.</div>'
+                    );
+                },
+                complete: function() {
+                    $('#btn-cadastrar-lojista').prop('disabled', false).html('<i class="fas fa-save me-2"></i>Cadastrar Lojista');
+                }
+            });
+        });
+        
+        // Máscaras para os novos campos
+        $('#novo_lojista_cnpj').mask('00.000.000/0000-00');
+        $('#novo_lojista_telefone').mask('(00) 00000-0000');
+        
+        // Função genérica para copiar texto
+        function setupCopyButton(buttonId, inputId, successMessage, originalTitle) {
+            $(buttonId).on('click', function() {
+                const input = document.getElementById(inputId);
+                const value = input.value;
+                
+                if (value && value.trim() !== '') {
+                    // Copiar para a área de transferência
+                    navigator.clipboard.writeText(value).then(function() {
+                        // Feedback visual
+                        const btn = $(this);
+                        
+                        // Mudar ícone e cor
+                        btn.addClass('copied');
+                        btn.find('i').removeClass('fa-copy').addClass('fa-check');
+                        btn.attr('title', 'Copiado!');
+                        
+                        // Restaurar após 2 segundos
+                        setTimeout(function() {
+                            btn.removeClass('copied');
+                            btn.find('i').removeClass('fa-check').addClass('fa-copy');
+                            btn.attr('title', originalTitle);
+                        }, 2000);
+                        
+                        // Mostrar toast ou notificação
+                        showToast(successMessage, 'success');
+                    }.bind(this)).catch(function(err) {
+                        console.error('Erro ao copiar: ', err);
+                        showToast('Erro ao copiar texto', 'error');
+                    });
+                } else {
+                    showToast('Nenhum texto para copiar', 'warning');
+                }
+            });
+        }
+        
+        // Configurar botões de copiar
+        setupCopyButton('#btn-copiar-cnpj', 'id_lojista_cnpj', 'CNPJ copiado para a área de transferência!', 'Copiar CNPJ');
+        setupCopyButton('#btn-copiar-novo-cnpj', 'novo_lojista_cnpj', 'CNPJ copiado para a área de transferência!', 'Copiar CNPJ');
+        setupCopyButton('#btn-copiar-documento', 'id_numeroDocumento', 'Número do documento copiado para a área de transferência!', 'Copiar número do documento');
+        
+        // Função para mostrar toast/notificação
+        function showToast(message, type = 'info') {
+            // Criar elemento toast
+            const toast = $(`
+                <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} border-0 position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999;" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `);
+            
+            // Adicionar ao body
+            $('body').append(toast);
+            
+            // Mostrar toast
+            const bsToast = new bootstrap.Toast(toast[0]);
+            bsToast.show();
+            
+            // Remover após ser fechado
+            toast.on('hidden.bs.toast', function() {
+                toast.remove();
+            });
+        }
+        
+        // Controle de visibilidade das seções baseado na aba ativa
+        function toggleSectionsVisibility(activeTab) {
+            const documentoSection = document.getElementById('documento-section');
+            const valoresSection = document.getElementById('valores-section');
+            const previewSection = document.getElementById('preview-cupons-container');
+            const infoNovoLojista = document.getElementById('info-novo-lojista');
+            
+            if (activeTab === 'cadastrar') {
+                // Ocultar seções com animação quando estiver na aba "Novo Lojista"
+                [documentoSection, valoresSection, previewSection].forEach(section => {
+                    if (section) {
+                        section.classList.add('section-fade-out');
+                        setTimeout(() => {
+                            section.style.display = 'none';
+                        }, 300);
+                    }
+                });
+                
+                // Mostrar mensagem informativa
+                if (infoNovoLojista) {
+                    infoNovoLojista.style.display = 'block';
+                    infoNovoLojista.classList.add('section-fade-in');
+                }
+            } else {
+                // Mostrar seções com animação quando estiver na aba "Buscar Lojista"
+                [documentoSection, valoresSection, previewSection].forEach(section => {
+                    if (section) {
+                        section.style.display = 'block';
+                        // Pequeno delay para garantir que o display: block foi aplicado
+                        setTimeout(() => {
+                            section.classList.remove('section-fade-out');
+                            section.classList.add('section-fade-in');
+                        }, 10);
+                    }
+                });
+                
+                // Ocultar mensagem informativa
+                if (infoNovoLojista) {
+                    infoNovoLojista.style.display = 'none';
+                }
+            }
+        }
+        
+        // Event listener para mudança de aba
+        $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            const targetId = $(e.target).attr('data-bs-target');
+            if (targetId === '#buscar') {
+                toggleSectionsVisibility('buscar');
+            } else if (targetId === '#cadastrar') {
+                toggleSectionsVisibility('cadastrar');
+            }
+        });
+        
+        // Inicializar visibilidade baseado na aba ativa
+        $(document).ready(function() {
+            // Pequeno delay para garantir que o DOM está completamente carregado
+            setTimeout(() => {
+                const activeTab = $('.nav-tabs .nav-link.active').attr('data-bs-target');
+                if (activeTab === '#buscar') {
+                    toggleSectionsVisibility('buscar');
+                } else if (activeTab === '#cadastrar') {
+                    toggleSectionsVisibility('cadastrar');
+                }
+            }, 100);
+        });
+    });
+});
+</script>
+{% endblock %}

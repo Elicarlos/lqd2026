@@ -1,0 +1,12 @@
+{% extends "mobile.html" %}
+
+{% block title %}Documento fiscal lançado com sucesso!{% endblock %}
+
+{% block content %}
+    <h1 style="margin-top: 100px;">O documento numero {{ new_documentoFiscal.numeroDocumento }} foi lançado!</h1>
+    <p><a type="button" id="mymodal" class="btn btn-primary btn-lg" data-toggle="modal" href="{% url "participante:adddocfiscal" %}">
+  Adicionar outro documento fiscal
+</a><a type="button" class="btn" href="{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}">Voltar para minha conta</button></p>
+  
+
+{% endblock %}

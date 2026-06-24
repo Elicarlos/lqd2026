@@ -1,0 +1,91 @@
+{% load static %}
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top bg-white bg-opacity-90 border-bottom shadow-sm">
+    <div class="container">
+        <!-- Logo -->
+        <a class="navbar-brand" href="{% if request.user.is_authenticated %}{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}{% else %}{% url 'participante:homepage' %}{% endif %}">
+            {% if campanha.logo_principal %}
+                <img src="{{ campanha.logo_principal.url }}" alt="Logo {{ campanha.nome }}">
+            {% else %}
+                <img src="{% static 'img/2023/logo.png' %}" alt="Logo Liquida">
+            {% endif %}
+        </a>
+
+        <!-- Mobile Toggle -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navigation Items -->
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0 justify-content-center">                  
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center justify-content-center {% if request.path == '/' %}active{% endif %}" href="{% url 'participante:homepage' %}#inicio">
+                        Início
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center justify-content-center" href="{% url 'participante:homepage' %}#como-participar">
+                        Como Participar
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center justify-content-center" href="{% url 'participante:homepage' %}#premios">
+                        Prêmios
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center justify-content-center" href="{% static 'docs/regulamento.pdf' %}" target="_blank">
+                        Regulamento
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center justify-content-center" href="tel:+5586999285100">
+                        <i class="fab fa-whatsapp me-2"></i>Suporte
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Auth Buttons -->
+            <div class="d-flex gap-2">
+                {% if request.user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle d-flex align-items-center" 
+                                type="button" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false">
+                            <i class="fas fa-user-circle me-2 text-center" style="width: 16px;"></i>
+                            {{ request.user.username|truncatechars:15 }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" 
+                                   href="{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}">
+                                    <i class="fas fa-tachometer-alt me-2 text-center" style="width: 16px;"></i>Dashboard
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'participante:logout' %}" style="display: inline; width: 100%;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item d-flex align-items-center text-danger border-0 bg-transparent w-100 text-start" style="cursor: pointer;">
+                                        <i class="fas fa-sign-out-alt me-2 text-center" style="width: 16px;"></i>Sair
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <a href="{% url 'participante:register' %}" class="btn btn-outline-primary d-flex align-items-center">
+                        <i class="fas fa-user-plus me-2 text-center" style="width: 16px;"></i>Cadastre-se
+                    </a> 
+                    <button type="button" data-bs-toggle="modal" data-bs-target="#loginModal" 
+                            class="btn btn-gradient d-flex align-items-center">
+                        <i class="fas fa-sign-in-alt me-2 text-center" style="width: 16px;"></i>Entrar
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>

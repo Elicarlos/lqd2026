@@ -1,0 +1,45 @@
+{% extends "new_base.html" %}
+{% load auth_extras %}
+{% block title %}Natal de Luz e Prêmios 2024{% endblock %}
+
+{% block content %}
+<h1></h1>
+<h1 style="margin-top: 70px;">Natal de Luz e Prêmios 2024</h1>
+
+ <p>Bem vindo a sua conta do Natal de Luz e Prêmios 2024 Colaborador. Agora você pode <a href="{% url 'participante:password_change' %}">mudar a sua senha</a>.</p>
+    <h1>Participantes</h1>
+    <p>
+      <a type="button" id="mymodal" class="btn btn-primary btn-lg" data-toggle="modal" href="{% url "participante:cadastro-participante-operador" %}">
+        Adicionar Participante <span class="glyphicon glyphicon-plus"></span>
+      </a>
+      <!-- <a type="button" id="mymodal" class="btn btn-secondary btn-lg" data-toggle="modal" href="{% url "participante:search" %}">
+        Ver Participantes <span class="glyphicon glyphicon-user"></span>
+      </a> -->
+      <a type="button" id="mymodal" class="btn btn-info btn-lg" data-toggle="modal" href="{% url "participante:search_by_cpf" %}">
+        Buscar participante <span class="glyphicon glyphicon-search"></span>
+      </a>
+      {% if request.user.is_staff %}
+      <a type="button" id="mymodal" class="btn btn-warning btn-lg" data-toggle="modal" href="{% url "lojista:search_by_doc" %}">
+        Reimprimir <span class="glyphicon glyphicon-print"></span>
+      </a>
+      {% endif %}
+    </p>
+
+    <h1>Lojistas</h1>
+    <p>
+      <a type="button" id="mymodal" class="btn btn-primary btn-lg" data-toggle="modal" href="{% url "lojista:cadastro_lojista" %}">
+        Adicionar Lojistas <span class="glyphicon glyphicon-plus"></span>
+      </a>
+      <a type="button" id="mymodal" class="btn btn-secondary btn-lg" data-toggle="modal" href="{% url "lojista:search" %}">
+        Ver lojistas <span class="glyphicon glyphicon-home">
+      </a>
+      <a type="button" id="mymodal" class="btn btn-primary btn-lg" data-toggle="modal" href="{% url "lojista:registeratividade" %}">
+      Adicionar Ramo de atividade <span class="glyphicon glyphicon-plus"></span>
+      </a>
+      <a type="button" id="mymodal" class="btn btn-secondary btn-lg" data-toggle="modal" href="{% url "lojista:listatividade" %}">
+        Ver Ramos de atividade <span class="glyphicon glyphicon-tag">
+      </a>
+    </p>
+    
+
+{% endblock %}

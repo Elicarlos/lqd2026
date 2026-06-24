@@ -1,0 +1,88 @@
+{% extends "base-bootstrap.html" %}
+{% load static %}
+
+{% block title %}URL Inválida{% endblock %}
+
+{% block content %}
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="row w-100 justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+            <!-- Card de Erro -->
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center p-5">
+                    <!-- Ícone de Erro -->
+                    <div class="mb-4">
+                        <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px;">
+                            <i class="fas fa-exclamation-triangle fa-3x"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Título -->
+                    <h3 class="text-danger mb-3">URL Inválida ou Inativa</h3>
+                    
+                    <!-- Mensagem -->
+                    <p class="text-muted mb-4">
+                        {{ mensagem|default:"A URL de treinamento que você está tentando acessar não existe ou não está mais ativa." }}
+                    </p>
+                    
+                    <!-- Possíveis Motivos -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-question-circle text-warning"></i>
+                                Possíveis Motivos
+                            </h6>
+                            <ul class="list-unstyled mb-0 text-start">
+                                <li class="mb-2">
+                                    <i class="fas fa-times text-danger"></i>
+                                    A URL foi digitada incorretamente
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-pause text-warning"></i>
+                                    O treinamento foi finalizado e a URL foi desativada
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-calendar-times text-info"></i>
+                                    O período de cadastro expirou
+                                </li>
+                                <li>
+                                    <i class="fas fa-link text-secondary"></i>
+                                    A URL foi removida pelo administrador
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'participante:login' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Ir para o Login
+                        </a>
+                        
+                        <a href="{% url 'participante:homepage' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-home"></i> Voltar ao Início
+                        </a>
+                    </div>
+                    
+                    <!-- Informações Adicionais -->
+                    <div class="mt-4">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Se você acredita que isso é um erro, entre em contato com a equipe responsável.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <i class="fas fa-copyright"></i>
+                    2025 Natal de Luz e Prêmios - Sistema de Cadastro
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

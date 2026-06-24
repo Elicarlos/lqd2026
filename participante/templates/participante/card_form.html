@@ -1,0 +1,708 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+{% load permission_tags %}
+
+{% block title %}
+{% if card %}Editar Card{% else %}Novo Card{% endif %} - Natal de Luz e Prêmios
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for card form - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar badges de sugestão */
+    .suggestion-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        margin: 0.125rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(0,0,0,.1);
+        background: white;
+    }
+    
+    .suggestion-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        background: #f8f9fa;
+    }
+    
+    .color-suggestion {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+        border: 2px solid white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    
+    /* Melhorar form controls */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorar checkboxes */
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .form-check-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Melhorar switch */
+    .form-switch .form-check-input {
+        width: 3rem;
+        height: 1.5rem;
+        margin-top: 0.125rem;
+    }
+    
+    .form-switch .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    /* Melhorar alertas */
+    .alert-info {
+        background: rgba(13, 202, 240, 0.1);
+        border: 1px solid rgba(13, 202, 240, 0.2);
+        color: #0dcaf0;
+    }
+    
+    /* Melhorar cards de informação */
+    .info-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid rgba(0,0,0,.08);
+        transition: all 0.3s ease;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .suggestion-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:dashboard' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:cards_list' %}" class="text-decoration-none">
+                            <i class="fas fa-th-large me-1"></i>Cards
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        {% if card %}Editar Card{% else %}Novo Card{% endif %}
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                    <i class="fas fa-th-large text-xl text-primary"></i>
+                                </div>
+                            </div>
+            <div>
+                                <h1 class="h3 fw-bold text-dark mb-1">
+                    {% if card %}Editar Card{% else %}Novo Card{% endif %}
+                </h1>
+                <p class="text-muted mb-0">
+                    {% if card %}
+                    Atualize as informações do card "{{ card.nome }}"
+                    {% else %}
+                    Configure um novo card para o dashboard
+                    {% endif %}
+                </p>
+            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                <a href="{% url 'participante:cards_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                        <form method="post" class="form-standard">
+                            {% csrf_token %}
+                            
+                            <!-- Informações Básicas -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-primary bg-opacity-10 me-3">
+                                <i class="fas fa-info-circle text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Informações Básicas</h4>
+                                <p class="text-muted mb-0">Dados principais do card</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="nome" name="nome" 
+                                               placeholder="Nome interno do card" 
+                                               value="{{ card.nome|default:'' }}" required>
+                                        <label for="nome">
+                                            <i class="fas fa-tag me-2"></i>Nome do Card
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>Nome interno para identificação
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="titulo" name="titulo" 
+                                               placeholder="Título exibido no card" 
+                                               value="{{ card.titulo|default:'' }}" required>
+                                        <label for="titulo">
+                                            <i class="fas fa-heading me-2"></i>Título
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>Título que aparece no card
+                                    </div>
+                                </div>
+                            </div>
+
+                        <div class="mt-4">
+                                <div class="form-floating">
+                                    <textarea class="form-control" id="descricao" name="descricao" 
+                                              placeholder="Descrição do card" 
+                                              style="height: 100px">{{ card.descricao|default:'' }}</textarea>
+                                    <label for="descricao">
+                                        <i class="fas fa-align-left me-2"></i>Descrição
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Descrição opcional do card
+                                </div>
+                            </div>
+                    </div>
+
+                    <!-- Configurações -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-success bg-opacity-10 me-3">
+                                <i class="fas fa-cogs text-success"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Configurações</h4>
+                                <p class="text-muted mb-0">Tipo, ordem e aparência</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="tipo" name="tipo" required>
+                                            <option value="">Selecione o tipo</option>
+                                            {% for codigo, nome in tipos %}
+                                            <option value="{{ codigo }}" 
+                                                    {% if card.tipo == codigo %}selected{% endif %}>
+                                                {{ nome }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <label for="tipo">
+                                            <i class="fas fa-tag me-2"></i>Tipo
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>Categoria do card
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="number" class="form-control" id="ordem" name="ordem" 
+                                               placeholder="Ordem de exibição" 
+                                               value="{{ card.ordem|default:0 }}" min="0">
+                                        <label for="ordem">
+                                            <i class="fas fa-sort-numeric-up me-2"></i>Ordem
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>Posição na lista (0 = primeiro)
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+
+                    <!-- Aparência -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-warning bg-opacity-10 me-3">
+                                <i class="fas fa-palette text-warning"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Aparência</h4>
+                                <p class="text-muted mb-0">Ícone e cor do card</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="icone" 
+                                               name="icone" 
+                                               value="{{ card.icone|default:'' }}"
+                                               placeholder="fas fa-cog"
+                                               required>
+                                        <label for="icone">
+                                            <i class="fas fa-icons me-2"></i>Ícone
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>Digite o código do ícone FontAwesome
+                                    </div>
+                                    
+                                    <!-- Sugestões de Ícones -->
+                                <div class="mt-3">
+                                    <small class="text-muted fw-semibold mb-2 d-block">Sugestões:</small>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span class="suggestion-badge" onclick="document.getElementById('icone').value='fas fa-cog'">⚙️ fas fa-cog</span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('icone').value='fas fa-file-invoice'">📄 fas fa-file-invoice</span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('icone').value='fas fa-user-edit'">✏️ fas fa-user-edit</span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('icone').value='fas fa-tasks'">📋 fas fa-tasks</span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('icone').value='fas fa-clock'">⏰ fas fa-clock</span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('icone').value='fas fa-chart-bar'">📊 fas fa-chart-bar</span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('icone').value='fas fa-th-large'">🃏 fas fa-th-large</span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('icone').value='fas fa-shield-alt'">🛡️ fas fa-shield-alt</span>
+                                    </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                                                                 <input type="text" 
+                                                class="form-control" 
+                                                id="cor" 
+                                                name="cor" 
+                                                value="{{ card.cor|default:'' }}"
+                                                placeholder="#0d6efd">
+                                        <label for="cor">
+                                            <i class="fas fa-palette me-2"></i>Cor
+                                        </label>
+                                    </div>
+                                                                         <div class="form-text">
+                                         <i class="fas fa-info-circle me-1"></i>Digite o código hexadecimal da cor (#RRGGBB)
+                                     </div>
+                                     
+                                     <!-- Sugestões de Cores -->
+                                <div class="mt-3">
+                                    <small class="text-muted fw-semibold mb-2 d-block">Sugestões:</small>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span class="suggestion-badge" onclick="document.getElementById('cor').value='#0d6efd'">
+                                            <span class="color-suggestion" style="background-color: #0d6efd;"></span>#0d6efd
+                                        </span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('cor').value='#198754'">
+                                            <span class="color-suggestion" style="background-color: #198754;"></span>#198754
+                                        </span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('cor').value='#ffc107'">
+                                            <span class="color-suggestion" style="background-color: #ffc107;"></span>#ffc107
+                                        </span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('cor').value='#dc3545'">
+                                            <span class="color-suggestion" style="background-color: #dc3545;"></span>#dc3545
+                                        </span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('cor').value='#0dcaf0'">
+                                            <span class="color-suggestion" style="background-color: #0dcaf0;"></span>#0dcaf0
+                                        </span>
+                                        <span class="suggestion-badge" onclick="document.getElementById('cor').value='#6c757d'">
+                                            <span class="color-suggestion" style="background-color: #6c757d;"></span>#6c757d
+                                        </span>
+                                    </div>
+                                </div>
+                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- URL de Destino -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-info bg-opacity-10 me-3">
+                                <i class="fas fa-link text-info"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">URL de Destino</h4>
+                                <p class="text-muted mb-0">Para onde o card levará o usuário</p>
+                            </div>
+                        </div>
+                        
+                                <div class="form-floating">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="url" 
+                                           name="url" 
+                                           value="{{ card.url|default:'' }}"
+                                           placeholder="/exemplo/">
+                                    <label for="url">
+                                        <i class="fas fa-link me-2"></i>URL de Destino
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Digite a URL completa (ex: /admin/, /backoffice/, /edit/, etc.)
+                                </div>
+                                
+                                <!-- Sugestões de URLs -->
+                        <div class="mt-3">
+                            <small class="text-muted fw-semibold mb-2 d-block">Sugestões:</small>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="suggestion-badge" onclick="document.getElementById('url').value='/admin/'">/admin/</span>
+                                <span class="suggestion-badge" onclick="document.getElementById('url').value='/backoffice/'">/backoffice/</span>
+                                <span class="suggestion-badge" onclick="document.getElementById('url').value='/edit/'">/edit/</span>
+                                <span class="suggestion-badge" onclick="document.getElementById('url').value='/adddocfiscal/'">/adddocfiscal/</span>
+                                <span class="suggestion-badge" onclick="document.getElementById('url').value='/jornadas/'">/jornadas/</span>
+                                <span class="suggestion-badge" onclick="document.getElementById('url').value='/relatorios/'">/relatorios/</span>
+                                <span class="suggestion-badge" onclick="document.getElementById('url').value='/cards/'">/cards/</span>
+                                <span class="suggestion-badge" onclick="document.getElementById('url').value='/funcionalidades/'">/funcionalidades/</span>
+                            </div>
+                        </div>
+                            </div>
+
+                            <!-- Permissões -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-danger bg-opacity-10 me-3">
+                                <i class="fas fa-shield-alt text-danger"></i>
+                            </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Permissões</h4>
+                                <p class="text-muted mb-0">Quem pode ver este card</p>
+                            </div>
+                        </div>
+                                
+                                <!-- Grupos Permitidos -->
+                        <div class="mb-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-users me-2"></i>Grupos Permitidos
+                                    </label>
+                            <div class="form-text mb-3">
+                                        <i class="fas fa-info-circle me-1"></i>Selecione os grupos que podem ver este card
+                                    </div>
+                            <div class="row g-3">
+                                        {% for grupo in grupos %}
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="grupo_{{ grupo.id }}" 
+                                                       name="grupos_permitidos" 
+                                                       value="{{ grupo.id }}"
+                                                       {% if grupo in card.grupos_permitidos.all %}checked{% endif %}>
+                                                <label class="form-check-label" for="grupo_{{ grupo.id }}">
+                                                    {{ grupo.name }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Usuários Específicos -->
+                        <div class="mb-4">
+                                    <label class="form-label fw-semibold">
+                                        <i class="fas fa-user me-2"></i>Usuários Específicos (Opcional)
+                                    </label>
+                            <div class="form-text mb-3">
+                                        <i class="fas fa-info-circle me-1"></i>Deixe vazio para permitir todos os usuários dos grupos selecionados
+                                    </div>
+                            <div class="row g-3">
+                                        {% for usuario in usuarios %}
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       id="usuario_{{ usuario.id }}" 
+                                                       name="usuarios_permitidos" 
+                                                       value="{{ usuario.id }}"
+                                                       {% if usuario in card.usuarios_permitidos.all %}checked{% endif %}>
+                                                <label class="form-check-label" for="usuario_{{ usuario.id }}">
+                                                    {{ usuario.username }} ({{ usuario.get_full_name|default:usuario.email }})
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Dica -->
+                                <div class="alert alert-info">
+                                    <i class="fas fa-lightbulb me-2"></i>
+                                    <strong>Dica:</strong> Se nenhum grupo for selecionado, o card não aparecerá para ninguém. 
+                                    Para superusuários, selecione pelo menos um grupo ou usuário específico.
+                                </div>
+                            </div>
+
+                    <!-- Status -->
+                    <div class="form-section">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="section-icon bg-success bg-opacity-10 me-3">
+                                <i class="fas fa-toggle-on text-success"></i>
+                                </div>
+                            <div>
+                                <h4 class="h5 fw-bold text-dark mb-1">Status</h4>
+                                <p class="text-muted mb-0">Visibilidade do card</p>
+                            </div>
+                            </div>
+
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="ativo" name="ativo" 
+                                           {% if not card or card.ativo %}checked{% endif %}>
+                                    <label class="form-check-label" for="ativo">
+                                        <i class="fas fa-toggle-on me-2"></i>Card Ativo
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>Card visível no dashboard
+                                </div>
+                            </div>
+
+                            <!-- Botões -->
+                    <div class="card card-standard">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between gap-3">
+                                <a href="{% url 'participante:cards_list' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-gradient">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if card %}Atualizar{% else %}Criar{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Card de Informações -->
+                <div class="info-card mt-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="info-icon bg-info bg-opacity-10 me-3">
+                            <i class="fas fa-info-circle text-info"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-semibold text-dark mb-1">Dicas de Uso</h5>
+                            <p class="text-muted mb-0">Informações importantes para criar cards</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                <div class="info-icon bg-info bg-opacity-10 me-3">
+                                        <i class="fas fa-lightbulb text-info"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-dark">Sugestões</div>
+                                        <div class="text-muted small">Use as sugestões para facilitar a criação</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                <div class="info-icon bg-warning bg-opacity-10 me-3">
+                                        <i class="fas fa-eye text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-dark">Visualização</div>
+                                        <div class="text-muted small">O card aparecerá no dashboard dos usuários</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-completar título baseado no nome
+    $('#nome').on('input', function() {
+        const nome = $(this).val();
+        if (nome && !$('#titulo').val()) {
+            const titulo = nome.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            $('#titulo').val(titulo);
+        }
+    });
+    
+    // Mostrar preview do ícone selecionado
+    $('#icone').on('change', function() {
+        const icone = $(this).val();
+        if (icone) {
+            // Aqui você pode adicionar uma preview do ícone se desejar
+            console.log('Ícone selecionado:', icone);
+        }
+    });
+    
+    // Mostrar preview da cor selecionada
+    $('#cor').on('change', function() {
+        const cor = $(this).val();
+        if (cor) {
+            // Aqui você pode adicionar uma preview da cor se desejar
+            console.log('Cor selecionada:', cor);
+        }
+    });
+    
+    // DEBUG: Mostrar valores dos campos no submit
+    $('form').on('submit', function(e) {
+        console.log('=== DEBUG FORM CARD ===');
+        console.log('Nome:', $('#nome').val());
+        console.log('Título:', $('#titulo').val());
+        console.log('Descrição:', $('#descricao').val());
+        console.log('Tipo:', $('#tipo').val());
+        console.log('Ordem:', $('#ordem').val());
+        console.log('Ícone:', $('#icone').val());
+        console.log('Cor:', $('#cor').val());
+        console.log('URL:', $('#url').val());
+        console.log('Ativo:', $('#ativo').is(':checked'));
+        console.log('========================');
+    });
+    
+    // Validação em tempo real do ícone
+    $('#icone').on('input', function() {
+        const icone = $(this).val();
+        $(this).removeClass('is-invalid is-valid');
+        $(this).next('.invalid-feedback, .valid-feedback').remove();
+        
+        if (icone) {
+            if (icone.startsWith('fas fa-') || icone.startsWith('far fa-') || icone.startsWith('fab fa-')) {
+                $(this).addClass('is-valid');
+                $(this).after('<div class="valid-feedback">✅ Formato válido!</div>');
+            } else {
+                $(this).addClass('is-invalid');
+                $(this).after('<div class="invalid-feedback">❌ Formato: fas fa-nome-do-icone</div>');
+            }
+        }
+    });
+    
+    // Validação em tempo real da URL
+    $('#url').on('input', function() {
+        const url = $(this).val();
+        $(this).removeClass('is-invalid is-valid');
+        $(this).next('.invalid-feedback, .valid-feedback').remove();
+        
+        if (url) {
+            if (url.startsWith('/') && url.endsWith('/')) {
+                $(this).addClass('is-valid');
+                $(this).after('<div class="valid-feedback">✅ URL válida!</div>');
+            } else {
+                $(this).addClass('is-invalid');
+                $(this).after('<div class="invalid-feedback">❌ Formato: /exemplo/</div>');
+            }
+        }
+    });
+    
+    // Validação em tempo real da cor (hexadecimal)
+    $('#cor').on('input', function() {
+        const cor = $(this).val();
+        $(this).removeClass('is-invalid is-valid');
+        $(this).next('.invalid-feedback, .valid-feedback').remove();
+        
+        if (cor) {
+            // Regex para validar código hexadecimal (#RRGGBB ou #RGB)
+            const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+            if (hexRegex.test(cor)) {
+                $(this).addClass('is-valid');
+                $(this).after('<div class="valid-feedback">✅ Cor válida!</div>');
+            } else {
+                $(this).addClass('is-invalid');
+                $(this).after('<div class="invalid-feedback">❌ Formato: #RRGGBB ou #RGB</div>');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

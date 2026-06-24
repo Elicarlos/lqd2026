@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Imprimir Cupom - {{ doc.user.profile.nome }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html, body { 
+      margin: 0; 
+      height: 100%; 
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    
+    #wrap, iframe { 
+      width: 100%; 
+      height: 100%; 
+      border: 0; 
+    }
+    
+    .loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 8px;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .loading.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Carregando cupom para impressão...</div>
+    <div class="loading-text" style="font-size: 12px; margin-top: 10px; color: #888;">
+      PDFs grandes podem levar alguns minutos para gerar
+    </div>
+  </div>
+
+  <div id="wrap">
+    <iframe id="pdf" title="Cupom para impressão"></iframe>
+  </div>
+
+  <script>
+    class PrintManager {
+      constructor() {
+        this.printFired = false;
+        this.confirmFired = false;
+        this.iframe = document.getElementById('pdf');
+        this.loading = document.getElementById('loading');
+        this.timeouts = new Set(); // Gerenciar timeouts ativos
+        
+        this.init();
+      }
+      
+      init() {
+        console.log('PrintManager inicializado');
+        console.log('PDF URL:', '{{ pdf_url }}');
+        console.log('Documento ID:', '{{ doc.id }}');
+        
+        this.setupEventListeners();
+        this.loadPDF();
+        this.setupSafetyTimeouts();
+      }
+      
+      setupEventListeners() {
+        // Evento de carregamento do iframe
+        this.iframe.addEventListener('load', () => this.onIframeLoad());
+        this.iframe.addEventListener('error', () => this.onIframeError());
+        
+        // Eventos de impressão - múltiplos listeners para garantir detecção
+        window.addEventListener('afterprint', () => this.onAfterPrint());
+        window.addEventListener('beforeprint', () => this.onBeforePrint());
+        window.addEventListener('beforeunload', () => this.onBeforeUnload());
+        
+        // Também adicionar listeners no iframe se possível
+        this.iframe.addEventListener('load', () => {
+          try {
+            if (this.iframe.contentWindow) {
+              this.iframe.contentWindow.addEventListener('afterprint', () => this.onAfterPrint());
+              this.iframe.contentWindow.addEventListener('beforeprint', () => this.onBeforePrint());
+            }
+          } catch (e) {
+            console.log('🔄 Não foi possível adicionar listeners no iframe (CORS)');
+          }
+        });
+      }
+      
+      loadPDF() {
+        const isTaskUrl = '{{ pdf_url }}'.includes('serve_pdf_from_task');
+        
+        if (isTaskUrl) {
+          const taskId = '{{ pdf_url }}'.split('/').slice(-2, -1)[0];
+          console.log('🔍 Detectada URL de task Celery, aguardando geração...');
+          this.waitForTaskCompletion(taskId);
+        } else {
+          console.log('🔍 URL direta, carregando PDF imediatamente...');
+          this.iframe.src = '{{ pdf_url }}';
+        }
+      }
+      
+      async waitForTaskCompletion(taskId) {
+        console.log('⏳ Aguardando task terminar:', taskId);
+        console.log('📊 PDF grande detectado - pode levar vários minutos para gerar...');
+        console.log('⏰ Timeout configurado para 5 minutos para PDFs grandes');
+        
+        const maxAttempts = 300; // 5 minutos máximo para PDFs grandes (450 cupons)
+        let attempts = 0;
+        
+        const checkStatus = async () => {
+          try {
+            attempts++;
+            console.log(`🔄 Verificando status da task (tentativa ${attempts}/${maxAttempts}) - ${Math.round((attempts/maxAttempts)*100)}% do tempo máximo...`);
+            
+            const response = await fetch(`/barcode/check_task_status/${taskId}/`);
+            const data = await response.json();
+            
+            console.log(`📊 Status da task: ${data.status}`);
+            
+            switch (data.status) {
+              case 'SUCCESS':
+                console.log('✅ Task concluída com sucesso!');
+                console.log('📄 Carregando PDF em:', data.pdf_url);
+                this.iframe.src = data.pdf_url;
+                break;
+                
+              case 'FAILURE':
+                console.error('❌ Task falhou:', data.error);
+                this.showError('Erro ao gerar PDF: ' + data.error);
+                break;
+                
+              case 'PENDING':
+                console.log('⏳ Task ainda pendente...');
+                if (attempts < maxAttempts) {
+                  this.addTimeout(() => checkStatus(), 1000);
+                } else {
+                  console.warn('⚠️ Timeout na verificação da task');
+                  this.showError('Timeout na geração do PDF. Tente novamente.');
+                }
+                break;
+                
+              default:
+                console.log(`🔄 Task em estado: ${data.status}`);
+                if (attempts < maxAttempts) {
+                  this.addTimeout(() => checkStatus(), 1000);
+                } else {
+                  console.warn('⚠️ Timeout na verificação da task, tentando URL direta...');
+                  this.iframe.src = '{{ pdf_url }}';
+                }
+            }
+          } catch (error) {
+            console.error('❌ Erro ao verificar status da task:', error);
+            if (attempts < 3) { // Tentar mais 2 vezes em caso de erro
+              console.log('🔄 Tentando novamente em 2 segundos...');
+              this.addTimeout(() => checkStatus(), 2000);
+            } else {
+              console.warn('⚠️ Muitas tentativas falharam, usando fallback...');
+              this.iframe.src = '{{ pdf_url }}'; // Fallback
+            }
+          }
+        };
+        
+        // Iniciar verificação
+        checkStatus();
+      }
+      
+      onIframeLoad() {
+        console.log('📄 Iframe carregado - verificando conteúdo...');
+        
+        // Verificar se o iframe realmente carregou um PDF
+        try {
+          const iframeDoc = this.iframe.contentDocument;
+          if (iframeDoc && iframeDoc.body) {
+            console.log('✅ Iframe tem documento válido');
+            
+            // Verificar se é um PDF ou página HTML
+            const isPDF = iframeDoc.body.innerHTML.includes('PDF') || 
+                         iframeDoc.querySelector('embed, object') ||
+                         iframeDoc.body.children.length > 0;
+            
+            if (isPDF) {
+              console.log('✅ PDF detectado no iframe');
+              this.waitForPDFReady();
+            } else {
+              console.log('⚠️ Iframe carregou mas não parece ser um PDF');
+              // Aguardar um pouco mais
+              this.addTimeout(() => {
+                this.waitForPDFReady();
+              }, 1000);
+            }
+          } else {
+            console.log('🔄 Iframe carregou mas documento não está acessível (CORS)');
+            this.waitForPDFReady();
+          }
+        } catch (e) {
+          console.log('🔄 Erro ao verificar iframe (CORS) - assumindo PDF válido');
+          this.waitForPDFReady();
+        }
+      }
+      
+      waitForPDFReady() {
+        console.log('📄 Aguardando PDF ficar pronto...');
+        
+        let attempts = 0;
+        const maxAttempts = 30; // Aumentado significativamente para PDFs grandes
+        
+        const checkPDFReady = () => {
+          attempts++;
+          console.log(`🔍 Verificando PDF (tentativa ${attempts}/${maxAttempts})`);
+          
+          try {
+            // Verificar se o iframe tem conteúdo real
+            const iframeDoc = this.iframe.contentDocument;
+            const hasContent = iframeDoc && (
+              iframeDoc.body.children.length > 0 || 
+              iframeDoc.body.textContent.trim().length > 0 ||
+              iframeDoc.querySelector('embed, object') // Viewers de PDF
+            );
+            
+            if (hasContent) {
+              console.log('✅ PDF detectado no iframe');
+              this.onPDFReady();
+              return;
+            }
+          } catch (e) {
+            // CORS ou PDF viewer nativo - verificar se a URL mudou (indicando carregamento)
+            console.log('🔄 PDF em viewer nativo (CORS), verificando se carregou...');
+            
+            // Verificar se o iframe ainda está carregando
+            if (this.iframe.src && !this.iframe.src.includes('about:blank')) {
+              console.log('📄 Iframe tem URL válida, aguardando carregamento...');
+            }
+          }
+          
+          if (attempts < maxAttempts) {
+            this.addTimeout(checkPDFReady, 1000);
+          } else {
+            console.log('⚠️ Timeout na verificação do PDF - tentando mesmo assim');
+            this.onPDFReady();
+          }
+        };
+        
+        // Aguardar mais tempo antes da primeira verificação
+        this.addTimeout(checkPDFReady, 2000); // Aumentado para 2 segundos
+      }
+      
+      onPDFReady() {
+        console.log('✅ PDF pronto para impressão');
+        this.loading.classList.add('hidden');
+        
+        // Aguardar mais tempo para garantir renderização visual completa
+        // Especialmente importante para PDFs grandes com muitos cupons
+        this.addTimeout(() => {
+          console.log('🖨️ Verificando se PDF está realmente pronto...');
+          this.verifyPDFBeforePrint();
+        }, 3000); // Aumentado para 3 segundos para garantir renderização
+      }
+      
+      verifyPDFBeforePrint() {
+        try {
+          // Verificação final antes de imprimir
+          const iframeDoc = this.iframe.contentDocument;
+          const hasContent = iframeDoc && (
+            iframeDoc.body.children.length > 0 || 
+            iframeDoc.body.textContent.trim().length > 0 ||
+            iframeDoc.querySelector('embed, object')
+          );
+          
+          if (hasContent) {
+            console.log('✅ PDF verificado e pronto - iniciando impressão');
+            this.tryPrint();
+          } else {
+            console.log('⚠️ PDF ainda não carregou completamente, aguardando mais...');
+            // Aguardar mais um pouco
+            this.addTimeout(() => {
+              console.log('🖨️ Tentando impressão mesmo assim...');
+              this.tryPrint();
+            }, 2000);
+          }
+        } catch (e) {
+          console.log('🔄 PDF em viewer nativo - iniciando impressão');
+          this.tryPrint();
+        }
+      }
+      
+      onIframeError() {
+        console.error('Erro ao carregar PDF');
+        this.loading.classList.add('hidden');
+        this.showError('Erro ao carregar o PDF');
+        
+        // Mesmo com erro, tentar imprimir
+        this.addTimeout(() => {
+          this.tryPrint();
+        }, 1000);
+      }
+      
+      tryPrint() {
+        if (this.printFired) {
+          console.log('⚠️ Impressão já foi disparada');
+          return;
+        }
+        
+        this.printFired = true;
+        console.log('🖨️ Disparando impressão...');
+        console.log('📋 Aguardando eventos de impressão (afterprint/beforeprint)...');
+        
+        // Focar na janela antes de imprimir
+        window.focus();
+        
+        try {
+          // Tentar imprimir o conteúdo do iframe primeiro
+          if (this.iframe.contentWindow) {
+            console.log('Tentando imprimir via iframe...');
+            this.iframe.contentWindow.focus();
+            
+            // Aguardar um frame antes de imprimir
+            requestAnimationFrame(() => {
+              try {
+                if (this.iframe.contentWindow.print) {
+                  console.log('✅ Usando iframe.contentWindow.print()');
+                  this.iframe.contentWindow.print();
+                } else {
+                  throw new Error('iframe.print não disponível');
+                }
+              } catch (e) {
+                console.log('❌ Erro no iframe print, usando window.print():', e.message);
+                window.print();
+              }
+            });
+          } else {
+            throw new Error('iframe.contentWindow não disponível');
+          }
+        } catch (error) {
+          console.log('❌ Fallback para window.print():', error.message);
+          // Aguardar um frame antes do fallback
+          requestAnimationFrame(() => {
+            window.print();
+          });
+        }
+        
+        // REMOVIDO: Auto-confirmação após timeout
+        // Agora só confirma quando o usuário realmente imprimir
+        console.log('🖨️ Impressão disparada - aguardando usuário imprimir...');
+      }
+      
+      async confirmPrint(source = 'unknown') {
+        if (this.confirmFired) {
+          console.log('⚠️ Confirmação já foi enviada - ignorando chamada duplicada');
+          return;
+        }
+        
+        this.confirmFired = true;
+        console.log(`✅ === CONFIRMANDO IMPRESSÃO (fonte: ${source}) ===`);
+        console.log('📋 Marcando cupons como impressos no banco de dados...');
+        
+        // Cancelar timeouts pendentes
+        this.clearAllTimeouts();
+        
+        try {
+          const response = await fetch("{% url 'bcp:confirm_print' id_=doc.id %}", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({ success: "true" })
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            console.log('✅ Impressão confirmada com sucesso!');
+            this.closeWindow();
+          } else {
+            console.error('❌ Erro ao confirmar impressão:', data.message);
+          }
+        } catch (error) {
+          console.error('❌ Erro na confirmação:', error);
+        }
+      }
+      
+      onBeforePrint() {
+        console.log('🖨️ Evento beforeprint detectado - usuário iniciou impressão');
+      }
+      
+      onAfterPrint() {
+        console.log('✅ Evento afterprint detectado - usuário terminou de imprimir');
+        // DESABILITADO: Confirmação automática removida - agora é manual via popup
+        // this.confirmPrint('afterprint_event');
+      }
+      
+      onBeforeUnload() {
+        console.log('🚪 Usuário fechando aba');
+        // DESABILITADO: Confirmação automática removida - agora é manual via popup
+        console.log('📋 Confirmação automática desabilitada - usuário deve confirmar manualmente');
+        
+        // if (!this.confirmFired && this.printFired) {
+        //   console.log('📋 Confirmando impressão antes de fechar (usuário provavelmente imprimiu)');
+        //   // Confirmação síncrona para beforeunload
+        //   navigator.sendBeacon("{% url 'bcp:confirm_print' id_=doc.id %}", 
+        //     new URLSearchParams({ success: "true" }));
+        // } else if (!this.confirmFired && !this.printFired) {
+        //   console.log('⚠️ Aba fechada sem disparar impressão');
+        // } else if (this.confirmFired) {
+        //   console.log('✅ Aba fechada - impressão já foi confirmada');
+        // }
+      }
+      
+      setupSafetyTimeouts() {
+        // DESABILITADO: Timeouts automáticos removidos - agora é manual via popup
+        console.log('⏰ Timeouts automáticos desabilitados - confirmação manual via popup');
+        
+        // Timeout para confirmar impressão se eventos não funcionarem
+        // this.addTimeout(() => {
+        //   if (!this.confirmFired && this.printFired) {
+        //     console.log('⏰ Timeout de confirmação: eventos de impressão não detectados, confirmando automaticamente');
+        //     this.confirmPrint('timeout_confirmation');
+        //   }
+        // }, 30000); // 30 segundos - tempo razoável para usuário imprimir
+        
+        // Timeout final para confirmar impressão (apenas se já imprimiu)
+        // this.addTimeout(() => {
+        //   if (!this.confirmFired && this.printFired) {
+        //     console.log('⏰ Timeout final: confirmando impressão já realizada');
+        //     this.confirmPrint('final_timeout');
+        //   } else if (!this.confirmFired && !this.printFired) {
+        //     console.log('⚠️ Timeout final: impressão não foi disparada');
+        //   } else if (this.confirmFired) {
+        //     console.log('✅ Timeout final: impressão já foi confirmada');
+        //   }
+        // }, 120000); // 2 minutos - apenas para confirmar se já imprimiu
+      }
+      
+      addTimeout(callback, delay) {
+        const timeoutId = setTimeout(() => {
+          this.timeouts.delete(timeoutId);
+          callback();
+        }, delay);
+        this.timeouts.add(timeoutId);
+        return timeoutId;
+      }
+      
+      clearAllTimeouts() {
+        this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
+        this.timeouts.clear();
+      }
+      
+      showError(message) {
+        alert(message);
+      }
+      
+      closeWindow() {
+        this.addTimeout(() => {
+          if (window.opener) {
+            console.log('Fechando aba...');
+            window.close();
+          }
+        }, 1500);
+      }
+    }
+    
+    // Inicializar quando a página carregar
+    document.addEventListener('DOMContentLoaded', () => {
+      new PrintManager();
+    });
+  </script>
+</body>
+</html>

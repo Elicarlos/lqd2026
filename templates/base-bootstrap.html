@@ -1,0 +1,611 @@
+{% load static %}
+{% load auth_extras %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Natal de Luz e Prêmios - A maior campanha de varejo de Teresina">
+    <title>{% block title %}Natal de Luz e Prêmios{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'img/2023/favicon.ico' %}">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-display: 'Poppins', var(--font-sans);
+            --brand-primary: #11B3EE;
+            --brand-primary-dark: #0e9bd2;
+            --brand-secondary: #8e005c;
+            --brand-secondary-dark: #7a004f;
+        }
+        
+        body {
+            font-family: var(--font-sans);
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-display);
+        }
+
+        .btn-primary {
+            background-color: var(--brand-primary);
+            border-color: var(--brand-primary);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--brand-primary-dark);
+            border-color: var(--brand-primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--brand-secondary);
+            border-color: var(--brand-secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--brand-secondary-dark);
+            border-color: var(--brand-secondary-dark);
+        }
+
+        .text-primary {
+            color: var(--brand-primary) !important;
+        }
+
+        .text-secondary {
+            color: var(--brand-secondary) !important;
+        }
+
+        .bg-primary {
+            background-color: var(--brand-primary) !important;
+        }
+
+        .bg-secondary {
+            background-color: var(--brand-secondary) !important;
+        }
+
+        .navbar {
+            backdrop-filter: blur(8px);
+        }
+
+        .navbar-brand img {
+            height: 40px;
+            width: auto;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .nav-link:hover {
+            color: var(--brand-primary) !important;
+        }
+
+        .nav-link i {
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .navbar-nav {
+            align-items: center;
+        }
+
+        .navbar-nav .nav-item {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Melhorias para centralização da navegação */
+        .navbar-collapse {
+            justify-content: space-between;
+        }
+
+        .navbar-nav.mx-auto {
+            flex: 1;
+            justify-content: center;
+        }
+
+        /* Melhorias para dropdown */
+        .dropdown-menu {
+            border-radius: 0.5rem;
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: #667eea;
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .dropdown-item.text-danger:hover {
+            background-color: #dc3545;
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .dropdown-menu {
+            border-radius: 0.75rem;
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 0;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.25rem;
+            transition: all 0.2s ease;
+            border-radius: 0.5rem;
+            margin: 0 0.25rem;
+        }
+
+        .btn {
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn i {
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+        }
+
+        .modal-content {
+            border-radius: 1rem;
+            border: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 0.25rem rgba(17, 179, 238, 0.25);
+        }
+
+        .input-group-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-group-text i {
+            width: 16px;
+            text-align: center;
+        }
+
+        /* Melhorias para ícones em geral */
+        .icon-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Hover effects para botões com ícones */
+        .btn:hover i {
+            transform: scale(1.1);
+            transition: transform 0.2s ease;
+        }
+
+        /* Melhorias para links de navegação */
+        .nav-link:hover i {
+            transform: translateX(2px);
+            transition: transform 0.2s ease;
+        }
+
+        .toast {
+            border-radius: 0.5rem;
+        }
+
+        .footer {
+            background-color: #f8f9fa;
+        }
+
+        /* ===== LOGIN MODAL BUTTON ===== */
+        #loginModal .btn-primary {
+            transition: all 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        #loginModal .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 179, 238, 0.4);
+        }
+
+        #loginModal .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(17, 179, 238, 0.3);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+
+    {% if campanha %}
+    <style>
+        :root {
+            --brand-primary: {{ campanha.cor_primaria }};
+            --brand-primary-dark: {{ campanha.cor_hover }};
+        }
+    </style>
+    {% endif %}
+</head>
+
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top border-bottom shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+        <div class="container-fluid">
+            <!-- Logo -->
+            <a class="navbar-brand" href="{% if request.user.is_authenticated %}{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}{% else %}{% url 'participante:homepage' %}{% endif %}">
+                {% if campanha.logo_principal %}
+                    <img src="{{ campanha.logo_principal.url }}" alt="Logo {{ campanha.nome }}">
+                {% else %}
+                    <img src="{% static 'img/2023/logo.png' %}" alt="Logo Liquida">
+                {% endif %}
+            </a>
+
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navigation Items -->
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 justify-content-center">                  
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center justify-content-center text-white fw-medium" href="{% url 'participante:homepage' %}#como-participar">
+                            <i class="fas fa-play-circle me-2 text-center" style="width: 16px;"></i>Como Participar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center justify-content-center text-white fw-medium" href="{% url 'participante:homepage' %}#premios">
+                            <i class="fas fa-trophy me-2 text-center" style="width: 16px;"></i>Prêmios
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center justify-content-center text-white fw-medium" href="{% static 'docs/regulamento.pdf' %}" target="_blank">
+                            <i class="fas fa-file-text me-2 text-center" style="width: 16px;"></i>Regulamento
+                        </a>
+                    </li>
+                    {% if not request.user.is_authenticated %}
+                    <li class="nav-item">
+                        <a href="{% url 'participante:register' %}" class="nav-link d-flex align-items-center justify-content-center text-white fw-medium">
+                            <i class="fas fa-user-plus me-2 text-center" style="width: 16px;"></i>Cadastre-se
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <!-- Auth Buttons -->
+                <div class="d-flex gap-2">
+                    {% if request.user.is_authenticated %}
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm rounded-pill px-3 py-2 fw-medium dropdown-toggle" 
+                                    type="button" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                <i class="fas fa-user-circle me-2 text-center" style="width: 16px;"></i>
+                                {{ request.user.username|truncatechars:10 }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center py-3" 
+                                       href="{% if request.user.is_superuser or request.user.is_staff %}{% url 'lojista:homepage' %}{% else %}{% url 'participante:dashboard' %}{% endif %}">
+                                        <i class="fas fa-tachometer-alt me-3 text-primary" style="width: 16px;"></i>
+                                        <span class="fw-medium">Dashboard</span>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-2"></li>
+                                <li>
+                                    <form method="post" action="{% url 'participante:logout' %}" style="display: inline; width: 100%;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item d-flex align-items-center py-3 text-danger border-0 bg-transparent w-100 text-start" style="cursor: pointer;">
+                                            <i class="fas fa-sign-out-alt me-3" style="width: 16px;"></i>
+                                            <span class="fw-medium">Sair</span>
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'participante:register' %}" 
+                           class="btn btn-light btn-sm rounded-pill px-3 py-2 fw-medium">
+                            <i class="fas fa-user-plus me-2 text-center" style="width: 16px;"></i>Cadastre-se
+                        </a>
+                        <button type="button" data-bs-toggle="modal" data-bs-target="#loginModal" 
+                                class="btn btn-outline-light btn-sm rounded-pill px-3 py-2 fw-medium">
+                            <i class="fas fa-sign-in-alt me-2 text-center" style="width: 16px;"></i>Entrar
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- System Messages -->
+    {% if messages %}
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
+        {% for message in messages %}
+        <div class="toast align-items-center text-white bg-{{ message.tags }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}times-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2 text-center" style="width: 16px;"></i>
+                    {{ message }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="footer py-5 mt-5">
+        <div class="container">
+            <div class="row gy-4">
+                <!-- Brand Section -->
+                <div class="col-lg-3">
+                    <img src="{% static 'img/2023/logo-cdl.png' %}" alt="CDL Teresina" class="mb-3" height="48">
+                    <p class="text-muted mb-4">
+                        A maior campanha de varejo de Teresina, promovendo o comércio local e premiando os consumidores.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="https://www.instagram.com/cdlteresina/" target="_blank" 
+                           class="btn btn-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fab fa-instagram text-center"></i>
+                        </a>
+                        <a href="https://www.facebook.com/cdlteresina/" target="_blank"
+                           class="btn btn-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fab fa-facebook text-center"></i>
+                        </a>
+                        <a href="http://www.cdlteresina.com.br/" target="_blank"
+                           class="btn btn-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas fa-globe text-center"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="col-lg-3">
+                    <h5 class="mb-3">Links Rápidos</h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a href="{% url 'participante:homepage' %}#como-participar" class="nav-link px-0 text-muted d-flex align-items-center">
+                                <i class="fas fa-play-circle me-2 text-center" style="width: 16px;"></i>Como Participar
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'participante:homepage' %}#premios" class="nav-link px-0 text-muted d-flex align-items-center">
+                                <i class="fas fa-trophy me-2 text-center" style="width: 16px;"></i>Prêmios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'participante:register' %}" class="nav-link px-0 text-muted d-flex align-items-center">
+                                <i class="fas fa-user-plus me-2 text-center" style="width: 16px;"></i>Cadastre-se
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% static 'docs/regulamento.pdf' %}" target="_blank" class="nav-link px-0 text-muted d-flex align-items-center">
+                                <i class="fas fa-file-text me-2 text-center" style="width: 16px;"></i>Regulamento
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Support -->
+                <div class="col-lg-3">
+                    <h5 class="mb-3">Suporte</h5>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a href="tel:+558632219800" class="nav-link px-0 text-muted d-flex align-items-center">
+                                <i class="fas fa-phone me-2 text-center" style="width: 16px;"></i>(86) 3221-9800
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="mailto:contato@cdlteresina.com.br" class="nav-link px-0 text-muted d-flex align-items-center">
+                                <i class="fas fa-envelope me-2 text-center" style="width: 16px;"></i>contato@cdlteresina.com.br
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/ajuda" class="nav-link px-0 text-muted d-flex align-items-center">
+                                <i class="fas fa-question-circle me-2 text-center" style="width: 16px;"></i>Central de Ajuda
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/faq" class="nav-link px-0 text-muted d-flex align-items-center">
+                                <i class="fas fa-comments me-2 text-center" style="width: 16px;"></i>Perguntas Frequentes
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- CTA Section -->
+                <div class="col-lg-3">
+                    <h5 class="mb-3">Participe Agora</h5>
+                    <p class="text-muted mb-4">
+                        Junte-se à maior campanha de varejo de Teresina e concorra a prêmios incríveis!
+                    </p>
+                    <a href="{% url 'participante:register' %}" class="btn btn-secondary d-flex align-items-center">
+                        <i class="fas fa-user-plus me-2 text-center" style="width: 16px;"></i>
+                        <span>Cadastre-se</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="text-muted mb-0">
+                        &copy; {% now "Y" %} Liquida Teresina. Todos os direitos reservados.
+                    </p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a href="{% url 'participante:politica-privacidade' %}" class="text-muted text-decoration-none me-3">
+                        Política de Privacidade
+                    </a>
+                    <a href="{% url 'participante:termos-uso' %}" class="text-muted text-decoration-none">
+                        Termos de Uso
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery e jQuery Mask -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Common Scripts -->
+    <script>
+        $(document).ready(function() {
+            // Inicializa a máscara de CPF
+            $('.cpf-mask').mask('000.000.000-00', {
+                reverse: false,
+                clearIfNotMatch: true
+            });
+
+            // Inicializa os toasts do Bootstrap
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+            var toastList = toastElList.map(function(toastEl) {
+                return new bootstrap.Toast(toastEl, {
+                    autohide: true,
+                    delay: 3000
+                })
+            });
+            toastList.forEach(toast => toast.show());
+
+            // Handle login form submission
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var cpf = $('#id_username_login').val();
+                
+                // Remove qualquer mensagem de erro anterior
+                $('#username-login-error, #password-login-error').addClass('d-none').text('');
+                
+                $.ajax({
+                    url: "{% url 'participante:login' %}",
+                    type: "POST",
+                    data: {
+                        username: cpf,
+                        password: $('#id_password_login').val(),
+                        csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#loginModal').modal('hide');
+                            setTimeout(() => {
+                                window.location.href = response.redirect_url;
+                            }, 200);
+                        } else {
+                            if (response.message) {
+                                $('#username-login-error').text(response.message).removeClass('d-none');
+                            }
+                            if (response.errors) {
+                                Object.keys(response.errors).forEach(function(key) {
+                                    $('#' + key + '-login-error').text(response.errors[key]).removeClass('d-none');
+                                });
+                            }
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        if (xhr.status === 403) {
+                            $('#username-login-error').text('Erro de segurança. Por favor, recarregue a página e tente novamente.').removeClass('d-none');
+                        } else if (xhr.status === 500) {
+                            $('#username-login-error').text('Erro interno do servidor. Por favor, tente novamente.').removeClass('d-none');
+                        } else {
+                            $('#username-login-error').text('Erro ao tentar fazer login. Por favor, tente novamente.').removeClass('d-none');
+                        }
+                    }
+                });
+            });
+        });
+
+        // Sistema de notificações toast moderno
+        function showToast(message, type = 'info', duration = 3000) {
+            const toastContainer = document.createElement('div');
+            toastContainer.className = 'position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '1080';
+
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-center">
+                        <i class="fas fa-${
+                            type === 'success' ? 'check-circle' :
+                            type === 'danger' ? 'times-circle' :
+                            type === 'warning' ? 'exclamation-triangle' :
+                            'info-circle'
+                        } me-2 text-center" style="width: 16px;"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+            toastContainer.appendChild(toast);
+            document.body.appendChild(toastContainer);
+
+            const bsToast = new bootstrap.Toast(toast, {
+                autohide: true,
+                delay: duration
+            });
+
+            bsToast.show();
+
+            toast.addEventListener('hidden.bs.toast', () => {
+                toastContainer.remove();
+            });
+        }
+
+        // Expor função globalmente
+        window.showToast = showToast;
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

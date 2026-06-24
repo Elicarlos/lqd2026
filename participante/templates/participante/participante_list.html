@@ -1,0 +1,307 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+{% block title %}Lista de Participantes - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header com breadcrumb -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Lista de Participantes</li>
+                </ol>
+            </nav>
+            
+            <div class="card-standard">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-3">
+                                    <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-3 d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-users text-xl text-primary"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h1 class="h3 fw-bold text-dark mb-1">Lista de Participantes</h1>
+                                    <p class="text-muted mb-0">Gerencie e visualize participantes cadastrados (público geral)</p>
+                                </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informação do usuário logado -->
+                        <div class="col-lg-4 text-lg-end">
+                            <div class="bg-primary bg-opacity-10 border border-primary border-opacity-20 rounded-3 px-3 py-2">
+                                <div class="text-center">
+                                    <p class="fw-medium text-primary mb-0">{{ request.user.username }}</p>
+                                    <small class="text-muted">
+                                    {% if request.user.is_superuser %}
+                                            <i class="fas fa-crown text-warning me-1"></i>Superusuário
+                                    {% elif request.user.is_staff %}
+                                            <i class="fas fa-user-tag text-primary me-1"></i>Staff
+                                    {% else %}
+                                            <i class="fas fa-user text-muted me-1"></i>Usuário
+                                    {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtro de Busca -->
+        <div class="card-standard mb-4">
+            <div class="card-body p-4">
+                <form method="get" class="form-standard row g-3">
+                    <!-- Busca por CPF -->
+                    <div class="col-md-5">
+                        <div class="form-floating">
+                            <input 
+                                type="text" 
+                                name="CPF" 
+                                id="id_CPF" 
+                                class="form-control cpf-mask"
+                                placeholder="000.000.000-00"
+                                value="{% if filter.form.CPF.value %}{{ filter.form.CPF.value|slice:':14' }}{% endif %}"
+                                maxlength="14"
+                            >
+                            <label for="id_CPF">
+                                <i class="fas fa-id-card text-muted me-1"></i>CPF
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Busca por Nome -->
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                        <input 
+                            type="text" 
+                            name="nome" 
+                            id="id_nome" 
+                                class="form-control"
+                            placeholder="Nome do participante"
+                            value="{{ filter.form.nome.value|default_if_none:'' }}"
+                        >
+                            <label for="id_nome">
+                                <i class="fas fa-user text-muted me-1"></i>Nome
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="d-flex gap-2 w-100">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fas fa-search me-2"></i>Buscar
+                        </button>
+                        <button type="button" 
+                                onclick="limparFiltros()" 
+                                    class="btn btn-outline-secondary"
+                                title="Limpar filtros">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+                </div>
+            </div>
+            
+        <!-- Results Table -->
+        <div class="card-standard">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-standard mb-0">
+                        <thead>
+                            <tr>
+                                <th>Participante</th>
+                                <th>CPF</th>
+                                <th>Email</th>
+                                <th>Telefone</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                        </tr>
+                    </thead>
+                        <tbody>
+                            {% for participante in participantes %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="w-8 h-8 bg-light rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="fas fa-user text-muted"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ participante.profile.nome }}</div>
+                                            <div class="text-muted small">ID: {{ participante.id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark">{{ participante.profile.CPF }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ participante.email }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ participante.profile.whatsapp }}</span>
+                                </td>
+                                <td>
+                                    {% if participante.is_active %}
+                                        <span class="status-active">Ativo</span>
+                                    {% else %}
+                                        <span class="status-inactive">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                onclick="showParticipanteDetails({{ participante.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <a href="{% url 'participante:editbyoperador' participante.id %}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-search fa-2x mb-3"></i>
+                                        <p class="mb-0">Nenhum participante encontrado</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal Único para Detalhes do Participante -->
+<div class="modal fade" id="participantModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalParticipantName"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-user text-primary"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">CPF</small>
+                                <span class="fw-medium" id="modalParticipantCPF"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="w-12 h-12 bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-envelope text-info"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Email</small>
+                                <span class="fw-medium" id="modalParticipantEmail"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center p-3 bg-light rounded-3">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="w-12 h-12 bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-calendar text-success"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Data Cadastro</small>
+                                <span class="fw-medium" id="modalParticipantDate"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Fechar
+                </button>
+                <a href="#" id="modalParticipantLink" class="btn btn-primary">
+                    Ver perfil completo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Wait for jQuery to be available
+function waitForJQuery(callback) {
+    if (typeof jQuery !== 'undefined') {
+        callback();
+                } else {
+        setTimeout(function() {
+            waitForJQuery(callback);
+        }, 100);
+    }
+}
+
+// Função para abrir modal do participante
+function openParticipantModal(nome, cpf, email, dataCadastro, linkPerfil) {
+    // Preencher dados do modal
+    document.getElementById('modalParticipantName').textContent = nome;
+    document.getElementById('modalParticipantCPF').textContent = cpf;
+    document.getElementById('modalParticipantEmail').textContent = email;
+    document.getElementById('modalParticipantDate').textContent = dataCadastro;
+    document.getElementById('modalParticipantLink').href = linkPerfil;
+    
+    // Abrir modal usando Bootstrap
+    var modal = new bootstrap.Modal(document.getElementById('participantModal'));
+    modal.show();
+}
+
+waitForJQuery(function() {
+    $(document).ready(function() {
+        // Initialize masks
+            $('.cpf-mask').mask('000.000.000-00');
+        
+        // Função para limpar filtros
+        window.limparFiltros = function() {
+            $('#id_CPF').val('');
+            $('#id_nome').val('');
+            $('form[method="get"]').submit();
+        };
+        
+        // Buscar com Enter
+        $('#id_CPF, #id_nome').on('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $('form[method="get"]').submit();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

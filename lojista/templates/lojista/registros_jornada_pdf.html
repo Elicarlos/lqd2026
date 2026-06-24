@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Relatório de Jornada</title>
+    <style>
+        @page { 
+            size: A4 portrait;
+            margin: 14mm;
+            @frame footer_frame {
+                -pdf-frame-content: footer_content;
+                left: 40pt; 
+                width: 515pt; 
+                top: 750pt; 
+                height: 60pt;
+            }
+        }
+        body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11px; line-height: 1.35; }
+        h1 { margin: 0 0 6px; font-size: 16px; }
+        .muted { color: #555; font-size: 10px; }
+        .header { margin: 0 0 6mm 0; }
+        .header-line { margin: 0 0 2mm 0; }
+
+        /* Conteúdo */
+        .content { margin-bottom: 20mm; }
+        
+        .signatures { width: 100%; border: 0; border-collapse: collapse; margin-top: 6mm; }
+        .sign-cell { width: 50%; border: 0; text-align: center; }
+        .sign-line { border-top: 1px solid #000; height: 1px; margin: 0 18mm 3mm 18mm; }
+        .sign-label { font-size: 10px; color: #444; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 2mm; }
+        th, td { border: 1px solid #ccc; padding: 6px 5px; vertical-align: middle; }
+        th { background: #f7f7f7; font-size: 11px; text-align: center; }
+        td { font-size: 10px; }
+        .center { text-align: center; }
+        .nowrap { white-space: nowrap; }
+        .wrap { word-wrap: break-word; }
+
+        /* Colunas enxutas para retrato */
+        .c-data    { width: 16%; }
+        .c-inicio  { width: 10%; }
+        .c-fim     { width: 10%; }
+        .c-duracao { width: 14%; }
+        .c-posto   { width: 36%; }
+        .c-status  { width: 14%; }
+
+        /* Destaque do nome do colaborador */
+        .name-strong { text-transform: uppercase; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <!-- Footer fixo usando @frame -->
+    <div id="footer_content">
+        <table class="signatures">
+            <tr>
+                <td class="sign-cell">
+                    <div class="sign-line"></div>
+                    <div class="sign-label">
+                        ___________________________________________________
+                        Assinatura do Colaborador
+                    </div>
+                </td>
+                <td class="sign-cell">
+                    <div class="sign-line"></div>
+                    <div class="sign-label">
+                        ___________________________________________________
+                        Assinatura do Gestor
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    {% for p in pages %}
+    {% with u=p.user %}
+    <div class="content">
+        <div class="header">
+        <h1 class="header-line">Relatório de Jornada</h1>
+        <div class="muted header-line">
+            Colaborador: <span class="name-strong">{% if u.profile.nome %}{{ u.profile.nome |upper }}{% elif u.get_full_name %}{{ u.get_full_name|upper }}{% else %}{{ u.username }}{% endif %}</span>
+            {% if u.profile.CPF %} — CPF: {{ u.profile.CPF }}{% endif %}
+        </div>
+        <div class="muted header-line">            
+            Gerado em: {{ gerado_em|date:"d/m/Y H:i" }}
+            — Total de horas: <strong>{{ p.total_duracao }}</strong>
+        </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="c-data">Data</th>
+                    <th class="c-inicio">Início</th>
+                    <th class="c-fim">Fim</th>
+                    <th class="c-duracao">Duração</th>
+                    <th class="c-posto">Posto</th>
+                    <th class="c-status">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in p.registros %}
+                <tr>
+                    <td class="nowrap center">{{ r.horario_inicio|date:"d/m/Y" }}</td>
+                    <td class="nowrap center">{{ r.horario_inicio|date:"H:i" }}</td>
+                    <td class="nowrap center">{% if r.horario_fim %}{{ r.horario_fim|date:"H:i" }}{% else %}Em andamento{% endif %}</td>
+                    <td class="nowrap center">{{ r.duracao_exibicao }}</td>
+                    <td class="wrap">{% if r.posto_trabalho %}{{ r.posto_trabalho.nome }}{% else %}-{% endif %}</td>
+                    <td class="nowrap center">{{ r.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if not forloop.last %}
+        <pdf:nextpage/>
+    {% endif %}
+    {% endwith %}
+    {% endfor %}
+</body>
+</html>

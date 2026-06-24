@@ -1,0 +1,377 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Relatórios da Campanha - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for relatorios camp - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Animation for stats cards */
+    .card .h2 {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 700;
+    }
+    
+    .card:hover .h2 {
+        transform: scale(1.08);
+        color: #667eea;
+    }
+    
+    /* Melhorar ícones dos cards de estatísticas */
+    .card .bg-primary.bg-opacity-10,
+    .card .bg-success.bg-opacity-10,
+    .card .bg-warning.bg-opacity-10,
+    .card .bg-info.bg-opacity-10 {
+        transition: all 0.3s ease;
+        border-radius: 0.75rem;
+    }
+    
+    .card:hover .bg-primary.bg-opacity-10 {
+        background-color: rgba(102, 126, 234, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-success.bg-opacity-10 {
+        background-color: rgba(25, 135, 84, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-warning.bg-opacity-10 {
+        background-color: rgba(255, 193, 7, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-info.bg-opacity-10 {
+        background-color: rgba(13, 202, 240, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'participante:backoffice' %}" class="text-decoration-none">Backoffice</a>
+                    </li>
+                    <li class="breadcrumb-item active">Relatórios da Campanha</li>
+                </ol>
+            </nav>
+            
+            <div class="card bg-white rounded-4 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Relatórios da Campanha</h1>
+                            <p class="text-muted mb-0">Acompanhe o desempenho e estatísticas da campanha</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'participante:backoffice' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Backoffice
+                                </a>
+                                <button class="btn btn-primary" onclick="window.print()">
+                                    <i class="fas fa-print me-2"></i>Imprimir Relatório
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas Gerais -->
+        <div class="row g-4 mb-4">
+            <!-- Total de Participantes -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Total Participantes</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ total_participantes|default:0 }}</h3>
+                                <p class="small text-primary mb-0">
+                                    <i class="fas fa-users me-1"></i>Cadastrados
+                                </p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-users text-xl text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total de Documentos -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Total Documentos</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ total_documentos|default:0 }}</h3>
+                                <p class="small text-success mb-0">
+                                    <i class="fas fa-file-invoice me-1"></i>Enviados
+                                </p>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-file-invoice text-xl text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Documentos Validados -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Validados</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ documentos_validados|default:0 }}</h3>
+                                <p class="small text-warning mb-0">
+                                    <i class="fas fa-check-circle me-1"></i>Aprovados
+                                </p>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-check-circle text-xl text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Valor Total -->
+            <div class="col-md-3">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Valor Total</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">R$ {{ valor_total|default:0|floatformat:2 }}</h3>
+                                <p class="small text-info mb-0">
+                                    <i class="fas fa-dollar-sign me-1"></i>Movimentado
+                                </p>
+                            </div>
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-dollar-sign text-xl text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relatórios Detalhados -->
+        <div class="row g-4">
+            <!-- Top Lojistas -->
+            <div class="col-lg-6">
+                <div class="card bg-white rounded-4 shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="fas fa-trophy me-2"></i>Top Lojistas
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0">Lojista</th>
+                                        <th class="border-0">Documentos</th>
+                                        <th class="border-0">Valor Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lojista in top_lojistas %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0 me-3">
+                                                    <div class="w-8 h-8 bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                                        <i class="fas fa-store text-primary"></i>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">{{ lojista.fantasiaLojista }}</div>
+                                                    <div class="text-muted small">{{ lojista.CNPJLojista }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary rounded-pill">{{ lojista.total_docs }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-primary">R$ {{ lojista.valor_total|floatformat:2 }}</div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-4">
+                                            <div class="text-muted">
+                                                <i class="fas fa-chart-bar me-2"></i>Nenhum dado disponível
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Participantes -->
+            <div class="col-lg-6">
+                <div class="card bg-white rounded-4 shadow-sm border-0 h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="fas fa-medal me-2"></i>Top Participantes
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0">Participante</th>
+                                        <th class="border-0">Documentos</th>
+                                        <th class="border-0">Valor Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for participante in top_participantes %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0 me-3">
+                                                    <div class="w-8 h-8 bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                                        <i class="fas fa-user text-success"></i>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">{{ participante.nome }}</div>
+                                                    <div class="text-muted small">{{ participante.CPF }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success rounded-pill">{{ participante.total_docs }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-success">R$ {{ participante.valor_total|floatformat:2 }}</div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-4">
+                                            <div class="text-muted">
+                                                <i class="fas fa-chart-line me-2"></i>Nenhum dado disponível
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas por Período -->
+        <div class="row g-4 mt-4">
+            <div class="col-12">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="fas fa-calendar-alt me-2"></i>Estatísticas por Período
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <!-- Esta Semana -->
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                        <i class="fas fa-calendar-week text-info" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h4 class="fw-bold text-dark mb-1">{{ stats_semana.documentos|default:0 }}</h4>
+                                    <p class="text-muted mb-0">Esta Semana</p>
+                                    <small class="text-info">R$ {{ stats_semana.valor|default:0|floatformat:2 }}</small>
+                                </div>
+                            </div>
+
+                            <!-- Este Mês -->
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                        <i class="fas fa-calendar-alt text-primary" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h4 class="fw-bold text-dark mb-1">{{ stats_mes.documentos|default:0 }}</h4>
+                                    <p class="text-muted mb-0">Este Mês</p>
+                                    <small class="text-primary">R$ {{ stats_mes.valor|default:0|floatformat:2 }}</small>
+                                </div>
+                            </div>
+
+                            <!-- Últimos 30 Dias -->
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                        <i class="fas fa-chart-line text-success" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h4 class="fw-bold text-dark mb-1">{{ stats_30dias.documentos|default:0 }}</h4>
+                                    <p class="text-muted mb-0">Últimos 30 Dias</p>
+                                    <small class="text-success">R$ {{ stats_30dias.valor|default:0|floatformat:2 }}</small>
+                                </div>
+                            </div>
+
+                            <!-- Total Geral -->
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                                        <i class="fas fa-trophy text-warning" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <h4 class="fw-bold text-dark mb-1">{{ total_documentos|default:0 }}</h4>
+                                    <p class="text-muted mb-0">Total Geral</p>
+                                    <small class="text-warning">R$ {{ valor_total|default:0|floatformat:2 }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

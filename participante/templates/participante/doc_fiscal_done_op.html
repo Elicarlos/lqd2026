@@ -1,0 +1,15 @@
+{% extends "mobile.html" %}
+
+{% block title %}Documento fiscal lançado com sucesso!{% endblock %}
+
+{% block content %}
+    <h1 style="margin-top: 70px;">O documento numero <strong>{{ new_documentoFiscal.numeroDocumento }}</strong> foi lançado para o participante <strong> {{participante.username}}</strong>!</h1>
+    <p><a type="button" id="mymodal" class="btn btn-primary btn-lg" data-toggle="modal" href="{% url "participante:adddocfiscalbyop" new_documentoFiscal.user.id %}">
+  Adicionar outro documento fiscal
+</a><a type="button" class="btn" href="{% url 'lojista:homepage' %}">Voltar para área de operação</button>
+  <a type="button" id="mymodal" class="btn btn-info btn-lg" data-toggle="modal" href="{% url "participante:user_detail" new_documentoFiscal.user.id %}">
+    Validar documentos <span class="glyphicon glyphicon-thumbs-up"></span>
+  </a>
+</p>
+
+{% endblock %}

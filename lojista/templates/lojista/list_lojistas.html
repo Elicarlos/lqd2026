@@ -1,0 +1,338 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Lista de Lojistas - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for lojistas list - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Animation for stats cards */
+    .card .h2 {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 700;
+    }
+    
+    .card:hover .h2 {
+        transform: scale(1.08);
+        color: #667eea;
+    }
+    
+    /* Melhorar ícones dos cards de estatísticas */
+    .card .bg-primary.bg-opacity-10,
+    .card .bg-success.bg-opacity-10,
+    .card .bg-warning.bg-opacity-10,
+    .card .bg-danger.bg-opacity-10,
+    .card .bg-info.bg-opacity-10 {
+        transition: all 0.3s ease;
+        border-radius: 0.75rem;
+    }
+    
+    .card:hover .bg-primary.bg-opacity-10 {
+        background-color: rgba(102, 126, 234, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-success.bg-opacity-10 {
+        background-color: rgba(25, 135, 84, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-warning.bg-opacity-10 {
+        background-color: rgba(255, 193, 7, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-danger.bg-opacity-10 {
+        background-color: rgba(220, 53, 69, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    .card:hover .bg-info.bg-opacity-10 {
+        background-color: rgba(13, 202, 240, 0.2) !important;
+        transform: scale(1.1);
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Lista de Lojistas</li>
+                </ol>
+            </nav>
+            
+            <div class="card bg-white rounded-4 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Lista de Lojistas</h1>
+                            <p class="text-muted mb-0">Gerencie todos os lojistas cadastrados no sistema</p>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{% url 'lojista:cadastro_lojista' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Novo Lojista
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row g-4 mb-4">
+            <!-- Total de Lojistas -->
+            <div class="col-md-2 col-sm-4">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Total</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ lojistas.count }}</h3>
+                                <p class="small text-primary mb-0">
+                                    <i class="fas fa-store me-1"></i>Lojistas
+                                </p>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-store text-xl text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ativos -->
+            <div class="col-md-2 col-sm-4">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Ativos</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ lojistas.filter.status.Sim.count }}</h3>
+                                <p class="small text-success mb-0">
+                                    <i class="fas fa-check me-1"></i>Autorizados
+                                </p>
+                            </div>
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-check-circle text-xl text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pendentes -->
+            <div class="col-md-2 col-sm-4">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Pendentes</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ lojistas.filter.status.Pendente.count }}</h3>
+                                <p class="small text-warning mb-0">
+                                    <i class="fas fa-clock me-1"></i>Aguardando
+                                </p>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-clock text-xl text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rejeitados -->
+            <div class="col-md-2 col-sm-4">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Rejeitados</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ lojistas.filter.status.Não.count }}</h3>
+                                <p class="small text-danger mb-0">
+                                    <i class="fas fa-times me-1"></i>Negados
+                                </p>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-times-circle text-xl text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Inativos -->
+            <div class="col-md-2 col-sm-4">
+                <div class="card bg-white rounded-4 shadow-sm h-100 border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted small fw-semibold text-uppercase mb-1">Inativos</p>
+                                <h3 class="h2 fw-bold text-dark mb-0">{{ lojistas.filter.status.Inativo.count }}</h3>
+                                <p class="small text-info mb-0">
+                                    <i class="fas fa-pause me-1"></i>Pausados
+                                </p>
+                            </div>
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-pause-circle text-xl text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensagens -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Lista de Lojistas -->
+        <div class="card bg-white rounded-4 shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-store me-2"></i>Lojistas Cadastrados
+                </h5>
+    </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="border-0">Lojista</th>
+                                <th class="border-0">CNPJ</th>
+                                <th class="border-0">Status</th>
+                                <th class="border-0">Ramo</th>
+                                <th class="border-0">Localização</th>
+                                <th class="border-0">Cadastrado em</th>
+                                <th class="border-0">Ações</th>
+                    </tr>
+                </thead>
+                        <tbody>
+                    {% for lojista in lojistas %}
+                    <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="w-10 h-10 bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="fas fa-store text-primary"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ lojista.fantasiaLojista }}</div>
+                                            <div class="text-muted small">{{ lojista.razaoLojista }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ lojista.CNPJLojista }}</div>
+                                </td>
+                                <td>
+                            {% if lojista.status == 'Sim' %}
+                                        <span class="badge bg-success rounded-pill">
+                                            <i class="fas fa-check-circle me-1"></i>Ativo
+                                        </span>
+                            {% elif lojista.status == 'Pendente' %}
+                                        <span class="badge bg-warning rounded-pill">
+                                            <i class="fas fa-clock me-1"></i>Pendente
+                                        </span>
+                                    {% elif lojista.status == 'Não' %}
+                                        <span class="badge bg-danger rounded-pill">
+                                            <i class="fas fa-times-circle me-1"></i>Rejeitado
+                                        </span>
+                                    {% elif lojista.status == 'Inativo' %}
+                                        <span class="badge bg-info rounded-pill">
+                                            <i class="fas fa-pause-circle me-1"></i>Inativo
+                                        </span>
+                            {% else %}
+                                        <span class="badge bg-secondary rounded-pill">
+                                            {{ lojista.status }}
+                                        </span>
+                            {% endif %}
+                        </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">
+                                        {{ lojista.ramoAtividade.atividade|default:"Não informado" }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">
+                                        {{ lojista.localizacao.nome|default:"Não informado" }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">
+                                        {{ lojista.dataCadastro|date:"d/m/Y" }}
+                                    </div>
+                                    <div class="text-muted small">
+                                        {{ lojista.dataCadastro|date:"H:i" }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'lojista:editar_lojista' lojista.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-edit me-1"></i>Editar
+                                        </a>
+                                        <a href="{% url 'lojista:editar_lojista' lojista.id %}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>Ver
+                                        </a>
+                                    </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                                <td colspan="7" class="text-center py-5">
+                            <div class="text-center">
+                                        <div class="mb-3">
+                                            <i class="fas fa-store text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                                        <h4 class="text-muted">Nenhum lojista encontrado</h4>
+                                        <p class="text-muted">Cadastre o primeiro lojista para começar.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+    </div>
+</main>
+{% endblock %}

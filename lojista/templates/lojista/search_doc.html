@@ -1,0 +1,263 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Buscar Documento - Natal de Luz e Prêmios{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Buscar Documento</li>
+                </ol>
+            </nav>
+            
+            <div class="card bg-white rounded-4 shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h1 class="h3 fw-bold text-dark mb-1">Buscar Documento</h1>
+                            <p class="text-muted mb-0">Localize documentos para reimpressão de cupons</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário de Busca -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-search me-2"></i>Buscar Documento
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="GET" class="row g-3">
+                            <!-- Número do Documento -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="numero_documento" name="numero_documento" 
+                                           value="{{ request.GET.numero_documento|default:'' }}" placeholder="Número do Documento">
+                                    <label for="numero_documento">Número do Documento</label>
+                                </div>
+                            </div>
+
+                            <!-- CPF do Participante -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="cpf_participante" name="cpf_participante" 
+                                           value="{{ request.GET.cpf_participante|default:'' }}" placeholder="CPF do Participante">
+                                    <label for="cpf_participante">CPF do Participante</label>
+                                </div>
+                            </div>
+
+                            <!-- Data do Documento -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="date" class="form-control" id="data_documento" name="data_documento" 
+                                           value="{{ request.GET.data_documento|default:'' }}" placeholder="Data do Documento">
+                                    <label for="data_documento">Data do Documento</label>
+                                </div>
+                            </div>
+
+                            <!-- Lojista -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="lojista" name="lojista">
+                                        <option value="">Todos os lojistas</option>
+                                        {% for lojista in lojistas %}
+                                        <option value="{{ lojista.id }}" 
+                                                {% if request.GET.lojista == lojista.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ lojista.fantasiaLojista }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="lojista">Lojista</label>
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="">Todos os status</option>
+                                        <option value="validado" {% if request.GET.status == 'validado' %}selected{% endif %}>Validado</option>
+                                        <option value="pendente" {% if request.GET.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                                        <option value="inconsistente" {% if request.GET.status == 'inconsistente' %}selected{% endif %}>Inconsistente</option>
+                                    </select>
+                                    <label for="status">Status</label>
+                                </div>
+                            </div>
+
+                            <!-- Valor Mínimo -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="number" step="0.01" class="form-control" id="valor_minimo" name="valor_minimo" 
+                                           value="{{ request.GET.valor_minimo|default:'' }}" placeholder="Valor Mínimo">
+                                    <label for="valor_minimo">Valor Mínimo (R$)</label>
+                                </div>
+                            </div>
+
+                            <!-- Botões -->
+                            <div class="col-12">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search me-2"></i>Buscar
+                                    </button>
+                                    <a href="{% url 'lojista:search_by_doc' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Limpar
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Informações -->
+            <div class="col-lg-4">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-info-circle me-2"></i>Informações
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-dark">Como buscar documentos:</h6>
+                            <ul class="list-unstyled text-muted small">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Digite o número do documento</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Informe o CPF do participante</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Selecione a data do documento</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Escolha o lojista específico</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Filtre por status</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Defina um valor mínimo</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Dica:</strong> Use pelo menos um critério para refinar sua busca.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        {% if documentos %}
+        <div class="row g-4 mt-4">
+            <div class="col-12">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-list me-2"></i>Resultados ({{ documentos|length }} documentos)
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0">Documento</th>
+                                        <th class="border-0">Participante</th>
+                                        <th class="border-0">Lojista</th>
+                                        <th class="border-0">Data</th>
+                                        <th class="border-0">Valor</th>
+                                        <th class="border-0">Status</th>
+                                        <th class="border-0">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for documento in documentos %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold text-dark">{{ documento.numeroDocumento }}</div>
+                                            <div class="text-muted small">{{ documento.tipoDocumento|default:"N/A" }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0 me-3">
+                                                    <div class="w-8 h-8 bg-light rounded-circle d-flex align-items-center justify-content-center">
+                                                        <i class="fas fa-user text-muted"></i>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold text-dark">{{ documento.user.profile.nome }}</div>
+                                                    <div class="text-muted small">{{ documento.user.profile.CPF }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-dark">{{ documento.lojista.fantasiaLojista }}</div>
+                                            <div class="text-muted small">{{ documento.lojista.CNPJLojista }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-dark">{{ documento.dataDocumento|date:"d/m/Y" }}</div>
+                                            <div class="text-muted small">{{ documento.dataCadastro|date:"H:i" }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-primary">R$ {{ documento.valorDocumento|floatformat:2 }}</div>
+                                        </td>
+                                        <td>
+                                            {% if documento.status == 'validado' %}
+                                                <span class="badge bg-success">Validado</span>
+                                            {% elif documento.status == 'pendente' %}
+                                                <span class="badge bg-warning">Pendente</span>
+                                            {% elif documento.status == 'inconsistente' %}
+                                                <span class="badge bg-danger">Inconsistente</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ documento.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                {% if documento.status == 'validado' %}
+                                                    <form action="{% url 'bcp:print' documento.id %}" method="post" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger btn-sm">
+                                                            <i class="fas fa-print me-1"></i>Imprimir
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <span class="text-muted small">Apenas documentos validados podem ser impressos</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif request.GET %}
+        <div class="row g-4 mt-4">
+            <div class="col-12">
+                <div class="card bg-white rounded-4 shadow-sm border-0">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                        <h4 class="text-muted">Nenhum documento encontrado</h4>
+                        <p class="text-muted">Tente ajustar os critérios de busca.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

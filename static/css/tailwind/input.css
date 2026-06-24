@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Design Tokens */
+@import "../design-tokens.css";
+
+/* Import Base Styles */
+@import "base.css";
+
+/* Import Components */
+@import "../components.css";
+
+@layer components {
+  .btn-secondary {
+    @apply bg-[var(--brand-secondary)] text-white font-bold py-2 px-4 rounded;
+  }
+  
+  .btn-secondary:hover {
+    background-color: color-mix(in srgb, var(--brand-secondary) 90%, transparent);
+  }
+
+  /* Utilitários de animação */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animate-delay-300 {
+    animation-delay: 300ms;
+  }
+}

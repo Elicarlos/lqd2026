@@ -1,0 +1,712 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Dashboard do Suporte{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+        transition: all 0.3s ease;
+    }
+    
+    .search-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    
+    .result-card {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,.05);
+        margin-bottom: 1rem;
+    }
+    
+    .btn-action {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .status-pendente { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+    .status-validado { background: rgba(25, 135, 84, 0.1); color: #198754; }
+    .status-rejeitado { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    
+    .loading-spinner {
+        display: none;
+    }
+    
+    .loading-spinner.show {
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- CSRF Token para AJAX -->
+{% csrf_token %}
+
+<!-- Main Content -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        <i class="fas fa-headset me-1"></i>Suporte
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">Dashboard do Suporte</h1>
+                    <p class="text-muted mb-0">Ferramentas para auxiliar o suporte técnico</p>
+                </div>
+                <div class="flex-shrink-0">
+                    <span class="badge bg-primary-subtle text-primary">
+                        <i class="fas fa-shield-alt me-1"></i>Suporte
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards de Busca -->
+        <div class="row mb-4">
+            <!-- Busca por CPF -->
+            <div class="col-md-6 mb-3">
+                <div class="search-card p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        
+                        <div>
+                            <h5 class="mb-1">Buscar por CPF</h5>
+                            <p class="text-muted small mb-0">Encontre participante pelo CPF</p>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="cpfInput" 
+                               placeholder="Digite o CPF (apenas números)" maxlength="11">
+                        <button class="btn btn-primary" type="button" onclick="buscarPorCPF()">
+                            <i class="fas fa-search me-2"></i>Buscar
+                            <div class="spinner-border spinner-border-sm ms-2 loading-spinner" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Busca por Número do Documento -->
+            <div class="col-md-6 mb-3">
+                <div class="search-card p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        
+                        <div>
+                            <h5 class="mb-1">Buscar por Documento</h5>
+                            <p class="text-muted small mb-0">Encontre documento pelo número</p>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="documentoInput" 
+                               placeholder="Digite o número do documento">
+                        <button class="btn btn-success" type="button" onclick="buscarPorDocumento()">
+                            <i class="fas fa-search me-2"></i>Buscar
+                            <div class="spinner-border spinner-border-sm ms-2 loading-spinner" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div id="resultadosContainer" style="display: none;">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Resultados da Busca
+                    </h5>
+                </div>
+                <div class="card-body" id="resultadosContent">
+                    <!-- Conteúdo será inserido via JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentos Recentes -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>Documentos Recentes
+                </h5>
+                <button class="btn btn-outline-primary btn-sm" onclick="carregarDocumentosRecentes()">
+                    <i class="fas fa-sync-alt me-1"></i>Atualizar
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="documentosRecentesContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="text-muted mt-2">Carregando documentos recentes...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal de Confirmação de Reversão -->
+<div class="modal fade" id="confirmacaoReversaoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Reversão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Atenção:</strong> Esta ação irá:</p>
+                <ul>
+                    <li>Apagar todos os cupons do documento</li>
+                    <li>Colocar o documento como PENDENTE</li>
+                    <li>Permitir revalidação/correção</li>
+                </ul>
+                
+                <div class="mb-3">
+                    <label for="motivoReversao" class="form-label">Motivo da reversão:</label>
+                    <textarea class="form-control" id="motivoReversao" rows="3" 
+                              placeholder="Descreva o motivo da reversão..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmarReversao()">
+                    <i class="fas fa-undo me-2"></i>Confirmar Reversão
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+let documentoAtualId = null;
+
+// Função para buscar por CPF
+async function buscarPorCPF() {
+    const cpf = document.getElementById('cpfInput').value.trim();
+    const btn = event.target.closest('button');
+    
+    if (!cpf) {
+        showErrorToast('Digite um CPF válido');
+        return;
+    }
+    
+    // Validar se tem o formato correto (xxx.xxx.xxx-xx)
+    if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)) {
+        showErrorToast('CPF deve ter o formato: 000.000.000-00');
+        return;
+    }
+    
+    // Mostrar loading
+    btn.querySelector('.loading-spinner').classList.add('show');
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`{% url 'suporte:buscar_participante' %}?cpf=${cpf}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarResultadosParticipante(data);
+        } else {
+            showErrorToast(data.message);
+        }
+    } catch (error) {
+        showErrorToast('Erro na busca. Tente novamente.');
+    } finally {
+        btn.querySelector('.loading-spinner').classList.remove('show');
+        btn.disabled = false;
+    }
+}
+
+// Função para buscar por documento
+async function buscarPorDocumento() {
+    const numero = document.getElementById('documentoInput').value.trim();
+    const btn = event.target.closest('button');
+    
+    if (!numero) {
+        showErrorToast('Digite um número de documento válido');
+        return;
+    }
+    
+    // Mostrar loading
+    btn.querySelector('.loading-spinner').classList.add('show');
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`{% url 'suporte:buscar_documento' %}?numero=${numero}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            mostrarResultadoDocumento(data.documento);
+        } else {
+            showErrorToast(data.message);
+        }
+    } catch (error) {
+        showErrorToast('Erro na busca. Tente novamente.');
+    } finally {
+        btn.querySelector('.loading-spinner').classList.remove('show');
+        btn.disabled = false;
+    }
+}
+
+// Função para mostrar resultados do participante
+function mostrarResultadosParticipante(data) {
+    const container = document.getElementById('resultadosContainer');
+    const content = document.getElementById('resultadosContent');
+    
+    let html = `
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info mb-3">
+                    <h6 class="alert-heading mb-2">
+                        <i class="fas fa-user-check me-2"></i>Participante Encontrado
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Nome:</strong> ${data.participante.nome}</p>
+                            <p class="mb-1"><strong>CPF:</strong> <span class="badge bg-secondary">${data.participante.cpf}</span></p>
+                            <p class="mb-1"><strong>Email:</strong> ${data.participante.email}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Telefone:</strong> ${data.participante.telefone || 'N/A'}</p>
+                            <p class="mb-1"><strong>Cadastro:</strong> ${data.participante.data_cadastro}</p>
+                            <p class="mb-0"><strong>Total de Documentos:</strong> <span class="badge bg-primary">${data.total_documentos}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-0">
+                        <h6 class="mb-0">
+                            <i class="fas fa-file-invoice me-2"></i>Documentos do Participante
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0">Número</th>
+                                        <th class="border-0">Lojista</th>
+                                        <th class="border-0">Valor</th>
+                                        <th class="border-0">Status</th>
+                                        <th class="border-0">Data</th>
+                                        <th class="border-0">Cupons</th>
+                                        <th class="border-0 text-center">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+    `;
+    
+    if (data.documentos.length === 0) {
+        html += `
+            <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                    <p class="mb-0">Nenhum documento encontrado para este participante</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        data.documentos.forEach(doc => {
+            const statusClass = `status-${doc.status.toLowerCase()}`;
+            const statusIcon = doc.status === 'validado' ? 'fas fa-check-circle text-success' : 
+                              doc.status === 'pendente' ? 'fas fa-clock text-warning' : 
+                              'fas fa-times-circle text-danger';
+            
+            html += `
+                <tr>
+                    <td>
+                        <strong>${doc.numero}</strong>
+                    </td>
+                    <td>
+                        <small class="text-muted">${doc.lojista}</small>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-success">R$ ${doc.valor.toFixed(2)}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusClass}">
+                            <i class="${statusIcon} me-1"></i>${doc.status}
+                        </span>
+                    </td>
+                    <td>
+                        <small>${doc.data_documento}</small>
+                    </td>
+                    <td>
+                        ${doc.has_cupons ? 
+                            `<span class="badge bg-info">${doc.cupons_count} cupon(s)</span>` : 
+                            '<span class="text-muted small">Sem cupons</span>'
+                        }
+                    </td>
+                    <td class="text-center">
+                        ${doc.has_cupons ? 
+                            `<button class="btn btn-warning btn-sm" onclick="solicitarReversao(${doc.id}, '${doc.numero}')" title="Reverter documento">
+                                <i class="fas fa-undo"></i> Reverter
+                            </button>` : 
+                            '<span class="text-muted small">-</span>'
+                        }
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+    container.style.display = 'block';
+}
+
+// Função para mostrar resultado do documento
+function mostrarResultadoDocumento(documento) {
+    const container = document.getElementById('resultadosContainer');
+    const content = document.getElementById('resultadosContent');
+    
+    const statusClass = `status-${documento.status.toLowerCase()}`;
+    const statusIcon = documento.status === 'validado' ? 'fas fa-check-circle text-success' : 
+                      documento.status === 'pendente' ? 'fas fa-clock text-warning' : 
+                      'fas fa-times-circle text-danger';
+    
+    let html = `
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-success mb-3">
+                    <h6 class="alert-heading mb-2">
+                        <i class="fas fa-file-invoice me-2"></i>Documento Encontrado
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Número:</strong> <span class="badge bg-dark">${documento.numero}</span></p>
+                            <p class="mb-1"><strong>Lojista:</strong> ${documento.lojista.fantasia}</p>
+                            <p class="mb-1"><strong>Valor:</strong> <span class="fw-bold text-success">R$ ${documento.valor.toFixed(2)}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Status:</strong> 
+                                <span class="status-badge ${statusClass}">
+                                    <i class="${statusIcon} me-1"></i>${documento.status}
+                                </span>
+                            </p>
+                            <p class="mb-1"><strong>Data:</strong> ${documento.data_documento}</p>
+                            <p class="mb-0"><strong>Cadastro:</strong> ${documento.data_cadastro}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-0">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user me-2"></i>Dados do Participante
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2"><strong>Nome:</strong> ${documento.participante.nome}</p>
+                        <p class="mb-2"><strong>CPF:</strong> <span class="badge bg-secondary">${documento.participante.cpf}</span></p>
+                        <p class="mb-0"><strong>Email:</strong> ${documento.participante.email}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-light border-0">
+                        <h6 class="mb-0">
+                            <i class="fas fa-ticket-alt me-2"></i>Informações dos Cupons
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="border-end">
+                                    <h4 class="text-primary mb-1">${documento.cupons.total}</h4>
+                                    <small class="text-muted">Total</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="border-end">
+                                    <h4 class="text-success mb-1">${documento.cupons.impressos}</h4>
+                                    <small class="text-muted">Impressos</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <h4 class="text-warning mb-1">${documento.cupons.nao_impressos}</h4>
+                                <small class="text-muted">Não Impressos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${documento.cupons.total > 0 ? `
+                    <div class="mt-3">
+                        <button class="btn btn-warning w-100" onclick="solicitarReversao(${documento.id}, '${documento.numero}')">
+                            <i class="fas fa-undo me-2"></i>Reverter Documento
+                        </button>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Esta ação irá apagar todos os ${documento.cupons.total} cupon(s) e colocar o documento como pendente.
+                        </small>
+                    </div>
+                ` : `
+                    <div class="mt-3 text-center">
+                        <div class="alert alert-light">
+                            <i class="fas fa-info-circle text-muted"></i>
+                            <p class="mb-0 mt-2">Documento sem cupons para reverter</p>
+                        </div>
+                    </div>
+                `}
+            </div>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+    container.style.display = 'block';
+}
+
+// Função para solicitar reversão
+function solicitarReversao(docId, docNumero) {
+    documentoAtualId = docId;
+    document.getElementById('motivoReversao').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmacaoReversaoModal'));
+    modal.show();
+}
+
+// Função para confirmar reversão
+async function confirmarReversao() {
+    const motivo = document.getElementById('motivoReversao').value.trim();
+    
+    if (!motivo) {
+        showErrorToast('Digite o motivo da reversão');
+        return;
+    }
+    
+    if (!documentoAtualId) {
+        showErrorToast('Erro: ID do documento não encontrado');
+        return;
+    }
+    
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Revertendo...';
+    btn.disabled = true;
+    
+    try {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const response = await fetch(`{% url 'suporte:reverter_documento' doc_id=0 %}`.replace('0', documentoAtualId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ motivo: motivo })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccessToast(data.message);
+            bootstrap.Modal.getInstance(document.getElementById('confirmacaoReversaoModal')).hide();
+            // Recarregar resultados se necessário
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showErrorToast(data.message);
+        }
+    } catch (error) {
+        showErrorToast('Erro na reversão. Tente novamente.');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Função para carregar documentos recentes
+async function carregarDocumentosRecentes() {
+    const content = document.getElementById('documentosRecentesContent');
+    
+    try {
+        const response = await fetch('{% url "suporte:documentos_recentes" %}');
+        const data = await response.json();
+        
+        if (data.success) {
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Participante</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th>Cupons</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            data.documentos.forEach(doc => {
+                const statusClass = `status-${doc.status.toLowerCase()}`;
+                html += `
+                    <tr>
+                        <td>${doc.numero}</td>
+                        <td>
+                            <div>${doc.participante.nome}</div>
+                            <small class="text-muted">${doc.participante.cpf}</small>
+                        </td>
+                        <td>R$ ${doc.valor.toFixed(2)}</td>
+                        <td><span class="status-badge ${statusClass}">${doc.status}</span></td>
+                        <td>${doc.data_cadastro}</td>
+                        <td>${doc.cupons_count} (${doc.cupons_impressos} imp.)</td>
+                        <td>
+                            ${doc.cupons_count > 0 ? 
+                                `<button class="btn btn-warning btn-action" onclick="solicitarReversao(${doc.id}, '${doc.numero}')">
+                                    <i class="fas fa-undo"></i>
+                                </button>` : 
+                                '<span class="text-muted small">Sem cupons</span>'
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = '<p class="text-muted text-center">Erro ao carregar documentos</p>';
+        }
+    } catch (error) {
+        content.innerHTML = '<p class="text-muted text-center">Erro ao carregar documentos</p>';
+    }
+}
+
+// Funções de toast
+function showSuccessToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check me-2"></i>
+                <strong class="me-auto">Sucesso!</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">${message}</div>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 3000);
+}
+
+function showErrorToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong class="me-auto">Erro!</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">${message}</div>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 5000);
+}
+
+// Carregar documentos recentes ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    carregarDocumentosRecentes();
+});
+
+// Máscara para CPF
+document.getElementById('cpfInput').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    // Formatar CPF quando tiver 11 dígitos
+    if (value.length === 11) {
+        value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+    
+    e.target.value = value;
+});
+</script>
+{% endblock %}

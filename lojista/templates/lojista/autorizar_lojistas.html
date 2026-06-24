@@ -1,0 +1,821 @@
+{% extends "base-dashboard.html" %}
+{% load static %}
+
+{% block title %}Autorizar Lojistas - Natal de Luz e Prêmios{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom styles for autorizar lojistas - same as other pages */
+    .card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 1rem;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar seções do formulário */
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .form-section:hover {
+        background: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    /* Melhorar ícones das seções */
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    /* Melhorar tabela */
+    .table-modern {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+    }
+    
+    .table-modern .table {
+        margin-bottom: 0;
+    }
+    
+    .table-modern .table thead th {
+        background: #f8f9fa;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-modern .table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+    
+    .table-modern .table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: translateX(4px);
+    }
+    
+    .table-modern .table tbody tr:last-child {
+        border-bottom: none;
+    }
+    
+    .table-modern .table tbody td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+    }
+    
+    /* Melhorar badges */
+    .badge-modern {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+    }
+    
+    .badge-modern.badge-success {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .badge-modern.badge-danger {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .badge-modern.badge-warning {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+    
+    .badge-modern.badge-primary {
+        background: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+    
+    .badge-modern.badge-secondary {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+    
+    .badge-modern.badge-light {
+        background: rgba(248, 249, 250, 0.1);
+        color: #6c757d;
+    }
+    
+    /* Melhorar botões de ação */
+    .btn-action {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Melhorar ícones dos lojistas */
+    .lojista-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    /* Estado vazio melhorado */
+    .empty-state {
+        padding: 3rem 2rem;
+        text-align: center;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 1rem;
+        border: 2px dashed rgba(0,0,0,.1);
+    }
+    
+    /* Melhorar cards de estatísticas */
+    .stats-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    .stats-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover .stats-icon {
+        transform: scale(1.1);
+    }
+    
+    /* Melhorar breadcrumb */
+    .breadcrumb-standard {
+        background: transparent;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .breadcrumb-standard .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        color: #6c757d;
+        font-weight: bold;
+    }
+    
+    /* Melhorar card padrão */
+    .card-standard {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .card-standard:hover {
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: rgba(0,0,0,.15);
+    }
+    
+    /* Melhorar alertas */
+    .alert-standard {
+        border-radius: 0.75rem;
+        border: 1px solid rgba(0,0,0,.08);
+        padding: 1rem 1.5rem;
+    }
+    
+    .alert-success {
+        background: rgba(25, 135, 84, 0.1);
+        border-color: rgba(25, 135, 84, 0.2);
+        color: #198754;
+    }
+    
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.1);
+        border-color: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    /* Melhorias de responsividade */
+    @media (max-width: 768px) {
+        .form-section {
+            padding: 1rem;
+        }
+        
+        .table-modern .table thead th,
+        .table-modern .table tbody td {
+            padding: 0.75rem 1rem;
+        }
+        
+        .table-modern .table thead th {
+            font-size: 0.75rem;
+        }
+        
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        
+        .stats-card {
+            padding: 1rem;
+        }
+        
+        /* Ajustes para filtro em mobile */
+        .btn-group .btn {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        .btn-group .btn i {
+            display: none;
+        }
+    }
+    
+    /* Estilos para o filtro */
+    .btn-group .btn-check:checked + .btn {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn-group .btn {
+        transition: all 0.2s ease;
+        border-radius: 0.5rem !important;
+        margin: 0 2px;
+    }
+    
+    .btn-group .btn:hover {
+        transform: translateY(-1px);
+    }
+    
+    #contadorLojistas {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content with padding for fixed header -->
+<main class="pt-5 mt-5">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <nav class="mb-3">
+                <ol class="breadcrumb breadcrumb-standard">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'lojista:homepage' %}" class="text-decoration-none">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Autorizar Lojistas</li>
+                </ol>
+            </nav>
+            <div class="d-flex align-items-start justify-content-between ">
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">Autorizar Lojistas</h1>
+                            
+                </div>
+                <div class="flex-shrink-0">
+                    <a href="{% url 'lojista:gerenciar_lojistas' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-2"></i>Ver Todos
+                    </a>
+                </div>
+            </div>            
+        </div>        
+
+        <!-- Mensagens -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert alert-standard {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Filtros Combinados -->
+        <div class="card card-standard mb-4">
+            <div class="card-body py-3">
+                <!-- Busca e Paginação -->
+                <form method="GET" action="{% url 'lojista:autorizar_lojistas' %}" class="row g-3 align-items-end mb-3">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label fw-semibold">
+                            <i class="fas fa-search text-muted me-1"></i>Buscar Lojista
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="search" 
+                               name="search" 
+                               value="{{ search_query }}"
+                               placeholder="CNPJ, fantasia ou razão social...">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="per_page" class="form-label fw-semibold">
+                            <i class="fas fa-list text-muted me-1"></i>Por página
+                        </label>
+                        <select class="form-select" id="per_page" name="per_page">
+                            <option value="10" {% if per_page == '10' %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == '20' %}selected{% endif %}>20</option>
+                            <option value="50" {% if per_page == '50' %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i>Buscar
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{% url 'lojista:autorizar_lojistas' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-times me-1"></i>Limpar
+                        </a>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <span class="badge bg-primary" id="contadorLojistas">
+                            <i class="fas fa-store me-1"></i><span id="contadorNumero">{{ lojistas_paginados.paginator.count }}</span> lojistas
+                        </span>
+                    </div>
+                </form>
+                
+                <!-- Filtros de Status -->
+                <div class="row align-items-center">
+                    <div class="col-md-9">
+                        <label class="form-label fw-semibold mb-2">
+                            <i class="fas fa-filter text-muted me-1"></i>Filtrar por Status:
+                        </label>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="statusFilter" id="todos" value="todos">
+                            <label class="btn btn-outline-primary btn-sm" for="todos">
+                                <i class="fas fa-list me-1"></i>Todos
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="statusFilter" id="pendentes" value="Pendente" checked>
+                            <label class="btn btn-warning btn-sm" for="pendentes">
+                                <i class="fas fa-clock me-1"></i>Pendentes
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="statusFilter" id="autorizados" value="Sim">
+                            <label class="btn btn-outline-success btn-sm" for="autorizados">
+                                <i class="fas fa-check me-1"></i>Autorizados
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="statusFilter" id="rejeitados" value="Não">
+                            <label class="btn btn-outline-danger btn-sm" for="rejeitados">
+                                <i class="fas fa-times me-1"></i>Rejeitados
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="statusFilter" id="inativos" value="Inativo">
+                            <label class="btn btn-outline-secondary btn-sm" for="inativos">
+                                <i class="fas fa-pause me-1"></i>Inativos
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Lojistas -->
+        {% if search_query %}
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-search me-2"></i>
+            <strong>Resultados da busca:</strong> 
+            Mostrando {{ lojistas_paginados.paginator.count }} lojista(s) para "<strong>{{ search_query }}</strong>"
+            <a href="{% url 'lojista:autorizar_lojistas' %}" class="btn btn-sm btn-outline-info ms-2">
+                <i class="fas fa-times me-1"></i>Limpar busca
+            </a>
+        </div>
+        {% endif %}
+        
+        <div class="table-modern">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="border-0">Lojista</th>
+                                <th class="border-0">CNPJ</th>
+                                <th class="border-0">Status</th>
+                                <th class="border-0">Ramo</th>
+                                <th class="border-0">Ações</th>
+                        </tr>
+                    </thead>
+                        <tbody>
+                            {% for lojista in lojistas_paginados %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">                                       
+                                    </div>
+                                        <div>
+                                            <div class="fw-semibold text-dark">{{ lojista.fantasiaLojista }}</div>
+                                            <div class="text-muted small">{{ lojista.razaoLojista }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">{{ lojista.CNPJLojista }}</div>
+                            </td>
+                                <td>
+                                    {% if lojista.status == 'Sim' %}
+                                        <span class="badge badge-modern badge-success">
+                                            <i class="fas fa-check-circle me-1"></i>Autorizado
+                                        </span>
+                                    {% elif lojista.status == 'Pendente' %}
+                                        <span class="badge badge-modern badge-warning">
+                                            <i class="fas fa-clock me-1"></i>Pendente
+                                        </span>
+                                    {% elif lojista.status == 'Não' %}
+                                        <span class="badge badge-modern badge-danger">
+                                            <i class="fas fa-times-circle me-1"></i>Rejeitado
+                                        </span>
+                                    {% elif lojista.status == 'Inativo' %}
+                                        <span class="badge badge-modern badge-secondary">
+                                            <i class="fas fa-pause-circle me-1"></i>Inativo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-modern badge-light">
+                                            <i class="fas fa-question-circle me-1"></i>{{ lojista.status|default:"Não definido" }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">
+                                        {{ lojista.ramoAtividade.atividade|default:"Não informado" }}
+                                    </div>
+                             </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        {% if lojista.status == 'Pendente' %}
+                                        <button type="button" 
+                                                class="btn btn-success btn-action"
+                                                onclick="autorizarLojista('{{ lojista.id }}', '{{ lojista.fantasiaLojista }}')">
+                                            <i class="fas fa-check me-1"></i>Autorizar
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-danger btn-action"
+                                                onclick="rejeitarLojista('{{ lojista.id }}', '{{ lojista.fantasiaLojista }}')">
+                                            <i class="fas fa-times me-1"></i>Rejeitar
+                                        </button>
+                                        {% else %}
+                                        <button type="button" 
+                                                class="btn btn-warning btn-action"
+                                                onclick="alterarStatus('{{ lojista.id }}', '{{ lojista.fantasiaLojista }}', '{{ lojista.status }}')">
+                                            <i class="fas fa-edit me-1"></i>Alterar
+                                        </button>
+                                        {% endif %}
+                                        <a href="{% url 'lojista:editar_lojista' lojista.id %}" class="btn btn-outline-secondary btn-action">
+                                            <i class="fas fa-eye me-1"></i>Ver
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state">
+                                        <div class="mb-3">
+                                            <i class="fas fa-store text-muted" style="font-size: 3rem;"></i>
+                                        </div>
+                                        <h4 class="text-muted">Nenhum lojista encontrado</h4>
+                                        <p class="text-muted">Não há lojistas para autorização no momento.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Paginação -->
+        {% if lojistas_paginados.paginator.num_pages > 1 %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if lojistas_paginados.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ lojistas_paginados.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in lojistas_paginados.paginator.page_range %}
+                            {% if num == lojistas_paginados.number %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > lojistas_paginados.number|add:'-3' and num < lojistas_paginados.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if lojistas_paginados.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ lojistas_paginados.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ lojistas_paginados.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page %}&per_page={{ per_page }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Página {{ lojistas_paginados.number }} de {{ lojistas_paginados.paginator.num_pages }} 
+                        ({{ lojistas_paginados.paginator.count }} lojistas no total)
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+            </div>
+        </div>
+</main>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">
+                    <i class="fas fa-question-circle text-primary me-2"></i>Confirmar Ação
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            <div class="modal-body">
+                <p id="modalMessage"></p>
+                
+                <!-- Campos para alteração de status (apenas para alterar) -->
+                <div id="alterarCampos" style="display: none;">
+                    <hr class="my-3">
+                    <div class="mb-3">
+                        <label for="novoStatus" class="form-label fw-semibold">Novo Status:</label>
+                        <select name="novo_status" id="novoStatus" class="form-select">
+                            <option value="Sim">Autorizado</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Não">Rejeitado</option>
+                            <option value="Inativo">Inativo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label fw-semibold">
+                            <span id="observacaoLabel">Observação (opcional):</span>
+                        </label>
+                        <textarea name="observacao" id="observacao" class="form-control" rows="3" placeholder="Motivo da alteração..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <form method="POST" id="actionForm" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" id="actionType">
+                    <input type="hidden" name="lojista_id" id="lojistaId">
+                    <input type="hidden" name="novo_status" id="novoStatusHidden">
+                    <textarea name="observacao" id="observacaoHidden" style="display: none;"></textarea>
+                    <button type="submit" class="btn" id="confirmButton">
+                        <i class="fas fa-check me-1"></i>Confirmar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function autorizarLojista(lojistaId, lojistaNome) {
+    document.getElementById('modalMessage').innerHTML = `Tem certeza que deseja <strong>autorizar</strong> o lojista <strong>${lojistaNome}</strong>?`;
+    document.getElementById('actionType').value = 'alterar_status';
+    document.getElementById('lojistaId').value = lojistaId;
+    document.getElementById('novoStatus').value = 'Sim';
+    document.getElementById('novoStatusHidden').value = 'Sim';
+    document.getElementById('confirmButton').className = 'btn btn-success';
+    document.getElementById('confirmButton').innerHTML = '<i class="fas fa-check me-1"></i>Autorizar';
+    document.getElementById('alterarCampos').style.display = 'block'; // Mostrar campo de observação
+    document.getElementById('novoStatus').style.display = 'none'; // Ocultar select de status
+    document.getElementById('observacaoLabel').innerHTML = 'Observação (opcional):';
+    document.getElementById('observacao').placeholder = 'Observação (opcional)...';
+    
+    var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+function rejeitarLojista(lojistaId, lojistaNome) {
+    document.getElementById('modalMessage').innerHTML = `Tem certeza que deseja <strong>rejeitar</strong> o lojista <strong>${lojistaNome}</strong>?`;
+    document.getElementById('actionType').value = 'alterar_status';
+    document.getElementById('lojistaId').value = lojistaId;
+    document.getElementById('novoStatus').value = 'Não';
+    document.getElementById('novoStatusHidden').value = 'Não';
+    document.getElementById('confirmButton').className = 'btn btn-danger';
+    document.getElementById('confirmButton').innerHTML = '<i class="fas fa-times me-1"></i>Rejeitar';
+    document.getElementById('alterarCampos').style.display = 'block'; // Mostrar campos para justificativa
+    document.getElementById('novoStatus').style.display = 'none'; // Ocultar select de status
+    document.getElementById('observacaoLabel').innerHTML = 'Motivo da rejeição <span class="text-danger">(obrigatório)</span>:';
+    document.getElementById('observacao').placeholder = 'Motivo da rejeição (obrigatório)...';
+    
+    var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+function alterarStatus(lojistaId, lojistaNome, statusAtual) {
+    document.getElementById('modalMessage').innerHTML = `Deseja alterar o status do lojista <strong>${lojistaNome}</strong> (atual: ${statusAtual})?`;
+    document.getElementById('actionType').value = 'alterar_status';
+    document.getElementById('lojistaId').value = lojistaId;
+    document.getElementById('novoStatus').value = statusAtual; // Manter status atual como padrão
+    document.getElementById('novoStatusHidden').value = statusAtual;
+    document.getElementById('confirmButton').className = 'btn btn-warning';
+    document.getElementById('confirmButton').innerHTML = '<i class="fas fa-edit me-1"></i>Alterar';
+    document.getElementById('alterarCampos').style.display = 'block'; // Mostrar campos de alteração
+    document.getElementById('novoStatus').style.display = 'block'; // Mostrar select de status
+    document.getElementById('observacaoLabel').innerHTML = 'Motivo da alteração (opcional):';
+    document.getElementById('observacao').placeholder = 'Motivo da alteração (opcional)...';
+    
+    var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+// Sincronizar valores quando o usuário alterar os campos
+document.addEventListener('DOMContentLoaded', function() {
+    const novoStatusSelect = document.getElementById('novoStatus');
+    const observacaoTextarea = document.getElementById('observacao');
+    const modal = document.getElementById('confirmModal');
+    
+    if (novoStatusSelect) {
+        novoStatusSelect.addEventListener('change', function() {
+            document.getElementById('novoStatusHidden').value = this.value;
+        });
+    }
+    
+    if (observacaoTextarea) {
+        observacaoTextarea.addEventListener('input', function() {
+            document.getElementById('observacaoHidden').value = this.value;
+        });
+    }
+    
+    // Limpar campos quando modal é fechado
+    if (modal) {
+        modal.addEventListener('hidden.bs.modal', function() {
+            document.getElementById('novoStatusHidden').value = '';
+            document.getElementById('observacaoHidden').value = '';
+            document.getElementById('observacao').value = '';
+        });
+    }
+    
+    // Prevenir reenvio de formulário
+    const actionForm = document.getElementById('actionForm');
+    if (actionForm) {
+        actionForm.addEventListener('submit', function() {
+            // Desabilitar o botão após o clique
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processando...';
+            }
+        });
+    }
+    
+    // Removido alerta de "Sair do site" para evitar interferência com operações
+    // window.addEventListener('beforeunload', function(e) {
+    //     // Verificar se há dados no formulário E se o modal está aberto
+    //     const modal = document.getElementById('confirmModal');
+    //     const novoStatus = document.getElementById('novoStatusHidden')?.value;
+    //     const observacao = document.getElementById('observacaoHidden')?.value;
+    //     
+    //     // Só mostrar confirmação se o modal estiver aberto E houver dados
+    //     if (modal && modal.classList.contains('show') && (novoStatus || observacao)) {
+    //         e.preventDefault();
+    //         e.returnValue = 'Você tem alterações não salvas. Tem certeza que deseja sair?';
+    //         return e.returnValue;
+    //     }
+    // });
+    
+    // Verificar se a página foi recarregada (removido para evitar loop)
+    // if (sessionStorage.getItem('pageReloaded') === 'true') {
+    //     sessionStorage.removeItem('pageReloaded');
+    //     // Redirecionar para evitar reenvio
+    //     window.location.href = window.location.pathname;
+    // }
+    
+    // Filtro por status
+    const statusFilters = document.querySelectorAll('input[name="statusFilter"]');
+    const tableRows = document.querySelectorAll('tbody tr');
+    const contadorNumero = document.getElementById('contadorNumero');
+    
+    function filtrarPorStatus(status) {
+        let contador = 0;
+        
+        tableRows.forEach(row => {
+            const statusCell = row.querySelector('td:nth-child(3) .badge');
+            if (statusCell) {
+                const rowStatus = getStatusFromBadge(statusCell);
+                
+                if (status === 'todos' || rowStatus === status) {
+                    row.style.display = '';
+                    contador++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+        
+        // Atualizar contador
+        if (contadorNumero) {
+            contadorNumero.textContent = contador;
+        }
+    }
+    
+    function getStatusFromBadge(badgeElement) {
+        const badgeText = badgeElement.textContent.trim();
+        if (badgeText.includes('Autorizado')) return 'Sim';
+        if (badgeText.includes('Pendente')) return 'Pendente';
+        if (badgeText.includes('Rejeitado')) return 'Não';
+        if (badgeText.includes('Inativo')) return 'Inativo';
+        return '';
+    }
+    
+    // Adicionar event listeners aos filtros
+    statusFilters.forEach(filter => {
+        filter.addEventListener('change', function() {
+            filtrarPorStatus(this.value);
+        });
+    });
+    
+    // Aplicar filtro inicial (pendentes)
+    filtrarPorStatus('Pendente');
+    
+    // Auto-submit quando mudar o número de itens por página
+    const perPageSelect = document.getElementById('per_page');
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function() {
+            this.form.submit();
+        });
+    }
+    
+    // Focar no campo de busca quando a página carregar
+    const searchInput = document.getElementById('search');
+    if (searchInput && !searchInput.value) {
+        searchInput.focus();
+    }
+});
+</script>
+{% endblock %}
